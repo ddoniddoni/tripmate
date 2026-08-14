@@ -1,0 +1,97 @@
+import { parseTripItinerary } from "@/entities/itinerary/model/trip-itinerary";
+
+export const jejuTrip = parseTripItinerary({
+  trip: {
+    id: "jeju-spring",
+    title: "봄의 제주",
+    destination: "대한민국 · 제주도",
+    startDate: "2026-04-18",
+    endDate: "2026-04-21",
+    timeZone: "Asia/Seoul",
+  },
+  itinerary: {
+    dayOrder: ["jeju-day-1", "jeju-day-2", "jeju-day-3", "jeju-day-4"],
+    days: {
+      "jeju-day-1": {
+        id: "jeju-day-1",
+        tripId: "jeju-spring",
+        date: "2026-04-18",
+        itemIds: ["woojin-breakfast", "hamdeok-beach", "bijarim-forest"],
+      },
+      "jeju-day-2": {
+        id: "jeju-day-2",
+        tripId: "jeju-spring",
+        date: "2026-04-19",
+        itemIds: [],
+      },
+      "jeju-day-3": {
+        id: "jeju-day-3",
+        tripId: "jeju-spring",
+        date: "2026-04-20",
+        itemIds: [],
+      },
+      "jeju-day-4": {
+        id: "jeju-day-4",
+        tripId: "jeju-spring",
+        date: "2026-04-21",
+        itemIds: [],
+      },
+    },
+    items: {
+      "woojin-breakfast": {
+        id: "woojin-breakfast",
+        dayId: "jeju-day-1",
+        place: {
+          provider: "mapbox",
+          providerPlaceId: "mock.mapbox.woojin",
+          name: "우진해장국",
+          address: "서사로 11, 제주시",
+          longitude: 126.5201,
+          latitude: 33.5115,
+          category: "아침 식사",
+        },
+        startTime: "09:30",
+        durationMinutes: 90,
+        note: "공항에서 바로 이동 · 웨이팅 예상",
+        createdBy: "user-jiwoo",
+        updatedAt: "2026-01-15T09:00:00.000Z",
+      },
+      "hamdeok-beach": {
+        id: "hamdeok-beach",
+        dayId: "jeju-day-1",
+        place: {
+          provider: "mapbox",
+          providerPlaceId: "mock.mapbox.hamdeok",
+          name: "함덕해수욕장",
+          address: "조천읍 조함해안로 525",
+          longitude: 126.6692,
+          latitude: 33.5431,
+          category: "해변",
+        },
+        startTime: "12:00",
+        durationMinutes: 120,
+        note: "산책 후 델문도에서 커피",
+        createdBy: "user-jiwoo",
+        updatedAt: "2026-01-15T09:00:00.000Z",
+      },
+      "bijarim-forest": {
+        id: "bijarim-forest",
+        dayId: "jeju-day-1",
+        place: {
+          provider: "mapbox",
+          providerPlaceId: "mock.mapbox.bijarim",
+          name: "비자림",
+          address: "구좌읍 비자숲길 55",
+          longitude: 126.8114,
+          latitude: 33.4913,
+          category: "자연",
+        },
+        startTime: "15:30",
+        durationMinutes: 90,
+        note: "편한 신발 챙기기",
+        createdBy: "user-jiwoo",
+        updatedAt: "2026-01-15T09:00:00.000Z",
+      },
+    },
+  },
+});

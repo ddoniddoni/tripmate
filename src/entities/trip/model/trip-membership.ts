@@ -1,0 +1,28 @@
+import { z } from "zod";
+
+export const tripMemberRoleSchema = z.enum(["owner", "editor", "viewer"]);
+export const tripInvitationRoleSchema = z.enum(["editor", "viewer"]);
+
+export type TripMemberRole = z.infer<typeof tripMemberRoleSchema>;
+export type TripInvitationRole = z.infer<typeof tripInvitationRoleSchema>;
+
+export const tripMemberSchema = z.object({
+  role: tripMemberRoleSchema,
+  userId: z.uuid(),
+});
+
+export type TripMember = z.infer<typeof tripMemberSchema>;
+
+export type TripPermissions = {
+  canDeleteTrip: boolean;
+  canEditItinerary: boolean;
+  canManageMembers: boolean;
+};
+
+export function getTripPermissions(role: TripMemberRole): TripPermissions {
+  return {
+    canDeleteTrip: role === "owner",
+    canEditItinerary: role === "owner" || role === "editor",
+    canManageMembers: role === "owner",
+  };
+}
