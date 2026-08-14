@@ -74,7 +74,7 @@ export async function startDevelopmentSession(
   const supabase = await createSupabaseServerClient();
   const { error: verificationError } = await supabase.auth.verifyOtp({
     token_hash: data.properties.hashed_token,
-    type: "magiclink",
+    type: "email",
   });
 
   if (verificationError) {

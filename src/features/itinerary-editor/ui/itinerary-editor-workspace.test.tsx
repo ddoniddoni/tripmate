@@ -7,12 +7,12 @@ import { describe, expect, it } from "vitest";
 import { jejuTrip } from "@/entities/itinerary/mock/jeju-trip";
 import { ItineraryEditorWorkspace } from "@/features/itinerary-editor/ui/itinerary-editor-workspace";
 
-function renderWorkspace(canEditItinerary = true) {
+function renderWorkspace(canEditItinerary = true, initialTripItinerary = jejuTrip) {
   const user = userEvent.setup();
   render(
     <ItineraryEditorWorkspace
       canEditItinerary={canEditItinerary}
-      initialTripItinerary={jejuTrip}
+      initialTripItinerary={initialTripItinerary}
     />,
   );
   return user;
@@ -82,6 +82,36 @@ describe("ItineraryEditorWorkspace", () => {
     expect(screen.getByRole("heading", { name: "우진 해장국 본점" })).toBeInTheDocument();
     const headings = screen.getAllByRole("heading", { level: 3 });
     expect(headings[0]).toHaveTextContent("우진 해장국 본점");
+  });
+
+  it("warns about overlapping schedules without preventing the update", async () => {
+    const user = renderWorkspace();
+
+    await user.click(screen.getByRole("button", { name: "우진해장국 수정" }));
+    const dialog = await screen.findByRole("dialog", { name: "우진해장국" });
+    const startTimeInput = within(dialog).getByLabelText("시작 시간");
+
+    await user.clear(startTimeInput);
+    await user.type(startTimeInput, "11:30");
+
+    expect(await within(dialog).findByText("일정 시간이 겹쳐요.")).toBeInTheDocument();
+    expect(within(dialog).getByText(/함덕해수욕장 일정과 겹쳐요/)).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "변경 저장" }));
+
+    expect(screen.getAllByText("시간 겹침")).toHaveLength(2);
+    expect(screen.getByText("시간이 겹치는 일정 2개")).toBeInTheDocument();
+  });
+
+  it("only warns about conflicts involving the schedule being drafted", async () => {
+    const tripWithExistingConflict = structuredClone(jejuTrip);
+    tripWithExistingConflict.itinerary.items["hamdeok-beach"].startTime = "10:00";
+    const user = renderWorkspace(true, tripWithExistingConflict);
+
+    await user.click(screen.getByRole("button", { name: "장소 추가" }));
+    const dialog = await screen.findByRole("dialog", { name: "장소를 일정에 추가" });
+
+    expect(within(dialog).queryByText("일정 시간이 겹쳐요.")).not.toBeInTheDocument();
   });
 
   it("requires confirmation before deleting an item", async () => {

@@ -23,6 +23,7 @@ Core:
 
 - `/trips` for a simple trip list.
 - `/trips/[tripId]` for the editor.
+- A trip overview that summarizes itinerary, preparation, and shared expenses with direct next actions.
 - Day navigation and itinerary timeline.
 - Place search and normalized place data.
 - Add, edit, duplicate, and delete itinerary items.
@@ -30,6 +31,8 @@ Core:
 - Timeline-to-map and map-to-timeline synchronization.
 - Route visualization after committed order changes.
 - Shared document state, presence, and reconnect UI.
+- Shared preparation checklist with category, assignee, and completion state.
+- Shared expense records and equal-split settlement guidance.
 - Owner, editor, and viewer permissions.
 - Undo/redo with one drag represented as one history entry.
 - Loading, empty, error, offline, saving, synced, and unauthorized states.
@@ -119,6 +122,8 @@ Use for durable state edited by collaborators:
 - Attached places.
 - Item time, duration, and note.
 - Shared editor document fields.
+- Shared preparation checklist items and their completion state.
+- Shared expense records and settlement inputs.
 
 Do not maintain a second local or query-cache copy of the collaborative document.
 
@@ -205,6 +210,7 @@ Invariants:
 - Duration is positive and bounded.
 - Coordinates are finite and within valid ranges.
 - Schedule times are interpreted in the trip time zone, not silently in the browser time zone.
+- Overlapping scheduled items receive a non-blocking warning so deliberate overlaps remain possible.
 - Shared mutations preserve invariants after cancellation and concurrent edits.
 
 Expose typed operations:

@@ -89,7 +89,7 @@ describe("auth actions", () => {
       email: "traveler@example.com",
       type: "magiclink",
     });
-    expect(mocks.verifyOtp).toHaveBeenCalledWith({ token_hash: "hashed-token", type: "magiclink" });
+    expect(mocks.verifyOtp).toHaveBeenCalledWith({ token_hash: "hashed-token", type: "email" });
     expect(mocks.redirect).toHaveBeenCalledWith("/trips");
   });
 

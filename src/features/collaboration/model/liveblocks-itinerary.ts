@@ -1,5 +1,7 @@
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 
+import type { TripExpense } from "@/entities/expense/model/trip-expense";
+import type { PreparationChecklistItem } from "@/entities/preparation-checklist/model/preparation-checklist";
 import type { ItineraryMutationResult } from "@/entities/itinerary/model/mutations";
 import {
   itineraryDocumentSchema,
@@ -20,8 +22,10 @@ export type LiveTripDay = Omit<TripDay, "itemIds"> & {
 };
 
 export type TripItineraryStorage = {
+  checklistItems: LiveMap<string, LiveObject<PreparationChecklistItem>>;
   dayOrder: LiveList<string>;
   days: LiveMap<string, LiveObject<LiveTripDay>>;
+  expenseItems: LiveMap<string, LiveObject<TripExpense>>;
   items: LiveMap<string, LiveObject<ItineraryItem>>;
 };
 
@@ -38,10 +42,12 @@ export function createTripItineraryStorage(
   itinerary: ItineraryDocument,
 ): TripItineraryStorage {
   return {
+    checklistItems: new LiveMap(),
     dayOrder: new LiveList(itinerary.dayOrder),
     days: new LiveMap(
       Object.values(itinerary.days).map((day) => [day.id, createLiveTripDay(day)]),
     ),
+    expenseItems: new LiveMap(),
     items: new LiveMap(
       Object.values(itinerary.items).map((item) => [item.id, new LiveObject(item)]),
     ),

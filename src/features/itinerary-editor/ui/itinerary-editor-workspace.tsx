@@ -17,6 +17,7 @@ import type {
   TripDay,
   TripItinerary,
 } from "@/entities/itinerary/model/trip-itinerary";
+import { getItineraryScheduleConflicts } from "@/entities/itinerary/model/schedule-conflicts";
 import {
   dayDropTargetPrefix,
   getDayDropTargetId,
@@ -214,6 +215,7 @@ function MapArtwork({ destination, markers, onSelect, routeCoordinates }: MapArt
 type SortableTimelineItemProps = {
   canEditItinerary: boolean;
   dayId: string;
+  hasScheduleConflict: boolean;
   index: number;
   isSelected: boolean;
   item: ItineraryItem;
@@ -229,6 +231,7 @@ type SortableTimelineItemProps = {
 function SortableTimelineItem({
   canEditItinerary,
   dayId,
+  hasScheduleConflict,
   index,
   isSelected,
   item,
@@ -262,11 +265,21 @@ function SortableTimelineItem({
         <span className={`track-dot track-${tone}`}>{getMarkerLabel(index)}</span>
         {index < itemCount - 1 ? <i /> : null}
       </div>
-      <article className="place-card">
+      <article
+        aria-describedby={hasScheduleConflict ? `schedule-conflict-${item.id}` : undefined}
+        className="place-card"
+      >
         <div className="place-card-topline">
-          <span className={`place-category category-${tone}`}>
-            {item.place.category ?? "장소"}
-          </span>
+          <div className="place-card-labels">
+            <span className={`place-category category-${tone}`}>
+              {item.place.category ?? "장소"}
+            </span>
+            {hasScheduleConflict ? (
+              <span className="schedule-conflict-badge" id={`schedule-conflict-${item.id}`}>
+                시간 겹침
+              </span>
+            ) : null}
+          </div>
           {canEditItinerary ? (
             <div className="place-actions">
               <button
@@ -476,6 +489,9 @@ function TimelinePanel({
   statusMessage,
   timeZone,
 }: TimelinePanelProps) {
+  const scheduleConflicts = getItineraryScheduleConflicts(itineraryItems);
+  const conflictedItemIds = new Set(scheduleConflicts.flatMap((conflict) => conflict.itemIds));
+
   return (
     <section className="timeline-panel" aria-labelledby="timeline-heading">
       <div className="timeline-header">
@@ -490,6 +506,11 @@ function TimelinePanel({
           <p>
             일정 {itineraryItems.length}개 · {timeZone}
           </p>
+          {conflictedItemIds.size > 0 ? (
+            <p className="schedule-conflict-summary" role="status">
+              시간이 겹치는 일정 {conflictedItemIds.size}개
+            </p>
+          ) : null}
         </div>
         {canEditItinerary ? (
           <button className="add-place-placeholder" type="button" onClick={onAdd}>
@@ -527,6 +548,7 @@ function TimelinePanel({
             <SortableTimelineItem
               canEditItinerary={canEditItinerary}
               dayId={selectedDay?.id ?? ""}
+              hasScheduleConflict={conflictedItemIds.has(item.id)}
               index={index}
               isSelected={item.id === selectedItemId}
               item={item}
@@ -750,6 +772,7 @@ export function ItineraryEditorWorkspaceView({
             }
           }}
           onSubmit={editor.handleFormSubmit}
+          scheduledItems={editor.itineraryItems}
         />
       ) : null}
 

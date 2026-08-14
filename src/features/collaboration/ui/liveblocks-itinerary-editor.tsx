@@ -2,30 +2,92 @@
 
 import { useMutation, useStorage } from "@liveblocks/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import {
   applyItineraryMutationToStorage,
   getLiveblocksItinerarySnapshot,
   getLiveblocksTripDateRange,
 } from "@/features/collaboration/model/liveblocks-itinerary";
+import { getLiveblocksPreparationChecklistSnapshot } from "@/features/collaboration/model/liveblocks-preparation-checklist";
+import { getLiveblocksTripExpenseSnapshot } from "@/features/collaboration/model/liveblocks-trip-expenses";
 import { useItineraryEditorController } from "@/features/itinerary-editor/model/use-itinerary-editor";
 import { ItineraryEditorWorkspaceView } from "@/features/itinerary-editor/ui/itinerary-editor-workspace";
+import { TripPreparationChecklist } from "@/features/preparation-checklist/ui/trip-preparation-checklist";
+import { TripExpenseWorkspace } from "@/features/trip-expenses/ui/trip-expense-workspace";
+import { createTripOverview } from "@/features/trip-overview/model/trip-overview";
+import { TripOverviewWorkspaceView } from "@/features/trip-overview/ui/trip-overview-workspace";
+import type { TripMember } from "@/entities/trip/model/trip-membership";
 import type { Trip } from "@/entities/trip/model/trip";
 
 type LiveblocksItineraryEditorProps = {
   canEditItinerary: boolean;
   currentUserId: string;
+  members: readonly TripMember[];
   trip: Trip;
 };
 
 type LiveblocksItineraryEditorContentProps = LiveblocksItineraryEditorProps & {
+  expenses: readonly NonNullable<ReturnType<typeof getLiveblocksTripExpenseSnapshot>>["items"][string][];
+  preparationItems: readonly NonNullable<
+    ReturnType<typeof getLiveblocksPreparationChecklistSnapshot>
+  >["items"][string][];
   tripItinerary: NonNullable<ReturnType<typeof getLiveblocksItinerarySnapshot>>;
 };
+
+type TripWorkspaceView = "overview" | "itinerary" | "preparation" | "expenses";
+
+function TripWorkspaceTabs({
+  activeView,
+  onChange,
+}: {
+  activeView: TripWorkspaceView;
+  onChange: (view: TripWorkspaceView) => void;
+}) {
+  return (
+    <nav aria-label="여행 작업 공간" className="trip-workspace-tabs">
+      <button
+        aria-current={activeView === "overview" ? "page" : undefined}
+        className={activeView === "overview" ? "trip-workspace-tab-active" : undefined}
+        onClick={() => onChange("overview")}
+        type="button"
+      >
+        개요
+      </button>
+      <button
+        aria-current={activeView === "itinerary" ? "page" : undefined}
+        className={activeView === "itinerary" ? "trip-workspace-tab-active" : undefined}
+        onClick={() => onChange("itinerary")}
+        type="button"
+      >
+        일정
+      </button>
+      <button
+        aria-current={activeView === "preparation" ? "page" : undefined}
+        className={activeView === "preparation" ? "trip-workspace-tab-active" : undefined}
+        onClick={() => onChange("preparation")}
+        type="button"
+      >
+        준비하기
+      </button>
+      <button
+        aria-current={activeView === "expenses" ? "page" : undefined}
+        className={activeView === "expenses" ? "trip-workspace-tab-active" : undefined}
+        onClick={() => onChange("expenses")}
+        type="button"
+      >
+        경비
+      </button>
+    </nav>
+  );
+}
 
 function LiveblocksItineraryEditorContent({
   canEditItinerary,
   currentUserId,
+  expenses,
+  members,
+  preparationItems,
   trip,
   tripItinerary,
 }: LiveblocksItineraryEditorContentProps) {
@@ -40,13 +102,44 @@ function LiveblocksItineraryEditorContent({
     initialStatusMessage: "공유 일정을 불러왔습니다.",
     tripItinerary,
   });
+  const [activeView, setActiveView] = useState<TripWorkspaceView>("overview");
+  const overview = createTripOverview({
+    expenses,
+    itinerary: tripItinerary.itinerary,
+    preparationItems,
+  });
 
-  return <ItineraryEditorWorkspaceView canEditItinerary={canEditItinerary} editor={editor} />;
+  return (
+    <>
+      <TripWorkspaceTabs activeView={activeView} onChange={setActiveView} />
+      {activeView === "overview" ? (
+        <TripOverviewWorkspaceView onNavigate={setActiveView} overview={overview} trip={trip} />
+      ) : null}
+      {activeView === "itinerary" ? (
+        <ItineraryEditorWorkspaceView canEditItinerary={canEditItinerary} editor={editor} />
+      ) : null}
+      {activeView === "preparation" ? (
+        <TripPreparationChecklist
+          canEditChecklist={canEditItinerary}
+          currentUserId={currentUserId}
+          members={members}
+        />
+      ) : null}
+      {activeView === "expenses" ? (
+        <TripExpenseWorkspace
+          canEditExpenses={canEditItinerary}
+          currentUserId={currentUserId}
+          members={members}
+        />
+      ) : null}
+    </>
+  );
 }
 
 export function LiveblocksItineraryEditor({
   canEditItinerary,
   currentUserId,
+  members,
   trip,
 }: LiveblocksItineraryEditorProps) {
   const router = useRouter();
@@ -72,6 +165,8 @@ export function LiveblocksItineraryEditor({
   }
 
   const tripItinerary = getLiveblocksItinerarySnapshot(sharedTrip, storage);
+  const preparationChecklist = getLiveblocksPreparationChecklistSnapshot(storage);
+  const expenseDocument = getLiveblocksTripExpenseSnapshot(storage);
 
   if (!tripItinerary) {
     return (
@@ -85,6 +180,9 @@ export function LiveblocksItineraryEditor({
     <LiveblocksItineraryEditorContent
       canEditItinerary={canEditItinerary}
       currentUserId={currentUserId}
+      expenses={expenseDocument ? Object.values(expenseDocument.items) : []}
+      members={members}
+      preparationItems={preparationChecklist ? Object.values(preparationChecklist.items) : []}
       trip={sharedTrip}
       tripItinerary={tripItinerary}
     />

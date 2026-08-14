@@ -71,6 +71,7 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
         <LiveblocksItineraryEditor
           canEditItinerary={permissions.canEditItinerary}
           currentUserId={user.id}
+          members={members}
           trip={trip}
         />
       }
