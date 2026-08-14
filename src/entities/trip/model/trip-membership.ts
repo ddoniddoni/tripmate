@@ -13,6 +13,32 @@ export const tripMemberSchema = z.object({
 
 export type TripMember = z.infer<typeof tripMemberSchema>;
 
+export const updateTripMemberRoleSchema = z.object({
+  memberId: z.uuid(),
+  role: tripInvitationRoleSchema,
+  tripId: z.uuid(),
+});
+
+export const removeTripMemberSchema = z.object({
+  memberId: z.uuid(),
+  tripId: z.uuid(),
+});
+
+export function parseUpdateTripMemberRoleFormData(formData: FormData) {
+  return updateTripMemberRoleSchema.safeParse({
+    memberId: formData.get("memberId"),
+    role: formData.get("role"),
+    tripId: formData.get("tripId"),
+  });
+}
+
+export function parseRemoveTripMemberFormData(formData: FormData) {
+  return removeTripMemberSchema.safeParse({
+    memberId: formData.get("memberId"),
+    tripId: formData.get("tripId"),
+  });
+}
+
 export type TripPermissions = {
   canDeleteTrip: boolean;
   canEditItinerary: boolean;

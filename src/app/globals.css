@@ -2825,6 +2825,150 @@ textarea {
   padding-top: 4px;
 }
 
+.trip-members {
+  display: grid;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.trip-members-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.trip-members-heading h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.trip-members-heading p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.trip-members-heading > span {
+  padding: 4px 7px;
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.trip-members-list {
+  display: grid;
+  gap: 7px;
+  max-height: 240px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.trip-members-list li {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  background: #f7f8f5;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.trip-member-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+
+.trip-member-identity > div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.trip-member-identity strong,
+.trip-member-identity span:not(.trip-member-avatar) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trip-member-identity strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.trip-member-identity span:not(.trip-member-avatar) {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.trip-member-avatar {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: white;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.trip-member-avatar-owner {
+  background: var(--green);
+}
+
+.trip-member-avatar-editor {
+  background: var(--blue);
+}
+
+.trip-member-avatar-viewer {
+  color: #5f512d;
+  background: var(--sand);
+}
+
+.trip-member-role-badge {
+  padding: 5px 7px;
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border: 1px solid rgb(38 112 82 / 15%);
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.trip-member-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+}
+
+.trip-member-controls select {
+  min-height: 30px;
+  max-width: 92px;
+  padding: 0 23px 0 8px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
 .pending-invitations-heading {
   display: flex;
   align-items: center;
@@ -3790,6 +3934,21 @@ textarea {
 
   .dialog-content {
     padding: 22px;
+  }
+
+  .trip-members-list li {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .trip-member-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .trip-member-controls select {
+    flex: 1;
+    max-width: none;
   }
 }
 

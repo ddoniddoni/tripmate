@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   getTripPermissions,
+  parseRemoveTripMemberFormData,
+  parseUpdateTripMemberRoleFormData,
   tripInvitationRoleSchema,
   tripMemberRoleSchema,
 } from "@/entities/trip/model/trip-membership";
+
+const tripId = "d4f6f86c-8e85-4d2a-b77f-f2b15d1be3d8";
+const memberId = "791fa61b-fd1e-4f09-a331-e0816e32728d";
 
 describe("trip membership permissions", () => {
   it("accepts the three supported member roles", () => {
@@ -33,6 +38,32 @@ describe("trip membership permissions", () => {
       canEditItinerary: false,
       canManageMembers: false,
       canUpdateTrip: false,
+    });
+  });
+
+  it("accepts only editor and viewer role updates for another trip member", () => {
+    const formData = new FormData();
+    formData.set("memberId", memberId);
+    formData.set("role", "editor");
+    formData.set("tripId", tripId);
+
+    expect(parseUpdateTripMemberRoleFormData(formData)).toMatchObject({
+      data: { memberId, role: "editor", tripId },
+      success: true,
+    });
+
+    formData.set("role", "owner");
+    expect(parseUpdateTripMemberRoleFormData(formData).success).toBe(false);
+  });
+
+  it("parses a member removal target", () => {
+    const formData = new FormData();
+    formData.set("memberId", memberId);
+    formData.set("tripId", tripId);
+
+    expect(parseRemoveTripMemberFormData(formData)).toMatchObject({
+      data: { memberId, tripId },
+      success: true,
     });
   });
 });

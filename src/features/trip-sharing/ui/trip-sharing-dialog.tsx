@@ -11,14 +11,18 @@ import {
   type CreateTripInvitationInput,
   type TripInvitation,
 } from "@/entities/trip/model/trip-invitation";
+import type { TripMember } from "@/entities/trip/model/trip-membership";
 import { createTripInvitation } from "@/features/trip-sharing/model/trip-invitation-actions";
 import { initialCreateTripInvitationActionState } from "@/features/trip-sharing/model/trip-invitation-action-state";
 import { PendingTripInvitations } from "@/features/trip-sharing/ui/pending-trip-invitations";
+import { TripMembers } from "@/features/trip-sharing/ui/trip-members";
 
 type TripSharingDialogProps = {
   canManageMembers: boolean;
+  currentUserId: string;
   invitations: TripInvitation[];
   memberCount: number;
+  members: readonly TripMember[];
   tripId: string;
 };
 
@@ -41,8 +45,10 @@ function toFormData(values: TripInvitationFormValues, tripId: string) {
 
 export function TripSharingDialog({
   canManageMembers,
+  currentUserId,
   invitations,
   memberCount,
+  members,
   tripId,
 }: TripSharingDialogProps) {
   const router = useRouter();
@@ -172,6 +178,8 @@ export function TripSharingDialog({
                 {copyMessage ? <span role="status">{copyMessage}</span> : null}
               </div>
             ) : null}
+
+            <TripMembers currentUserId={currentUserId} members={members} tripId={tripId} />
 
             <PendingTripInvitations invitations={invitations} tripId={tripId} />
 

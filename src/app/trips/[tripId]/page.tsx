@@ -78,8 +78,10 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
       sharingControl={
         <TripSharingDialog
           canManageMembers={permissions.canManageMembers}
+          currentUserId={user.id}
           invitations={pendingInvitations}
           memberCount={members.length}
+          members={members}
           tripId={trip.id}
         />
       }
