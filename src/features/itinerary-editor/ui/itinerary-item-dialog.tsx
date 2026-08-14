@@ -2,10 +2,11 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import type { PlaceSnapshot } from "@/entities/place/model/place-snapshot";
 import type { ItineraryItem } from "@/entities/itinerary/model/trip-itinerary";
+import { getItineraryScheduleConflicts } from "@/entities/itinerary/model/schedule-conflicts";
 import {
   itineraryItemFormSchema,
   type ItineraryItemFormValues,
@@ -17,6 +18,7 @@ type ItineraryItemDialogProps = {
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: ItineraryItemFormValues) => void;
   open: boolean;
+  scheduledItems: readonly ItineraryItem[];
 };
 
 function getDefaultValues(item?: ItineraryItem): ItineraryItemFormValues {
@@ -37,8 +39,10 @@ export function ItineraryItemDialog({
   onOpenChange,
   onSubmit,
   open,
+  scheduledItems,
 }: ItineraryItemDialogProps) {
   const {
+    control,
     formState: { errors },
     handleSubmit,
     register,
@@ -50,6 +54,38 @@ export function ItineraryItemDialog({
 
   const mode = item ? "edit" : "add";
   const placeSearch = usePlaceSearch();
+  const startTime = useWatch({ control, name: "startTime" });
+  const durationMinutes = useWatch({ control, name: "durationMinutes" });
+  const parsedDurationMinutes = Number(durationMinutes);
+  const draftId = item?.id ?? "itinerary-form-draft";
+  const scheduleConflicts = getItineraryScheduleConflicts([
+    ...scheduledItems.filter((scheduledItem) => scheduledItem.id !== item?.id),
+    {
+      durationMinutes:
+        Number.isInteger(parsedDurationMinutes) && parsedDurationMinutes > 0
+          ? parsedDurationMinutes
+          : undefined,
+      id: draftId,
+      startTime: startTime || undefined,
+    },
+  ]);
+  const conflictingItemIds = new Set<string>();
+
+  for (const conflict of scheduleConflicts) {
+    if (!conflict.itemIds.includes(draftId)) {
+      continue;
+    }
+
+    for (const itemId of conflict.itemIds) {
+      if (itemId !== draftId) {
+        conflictingItemIds.add(itemId);
+      }
+    }
+  }
+
+  const conflictingItems = scheduledItems.filter((scheduledItem) =>
+    conflictingItemIds.has(scheduledItem.id),
+  );
 
   function handlePlaceSelect(place: PlaceSnapshot) {
     setValue("name", place.name, { shouldDirty: true, shouldValidate: true });
@@ -204,6 +240,16 @@ export function ItineraryItemDialog({
                 </span>
               ) : null}
             </div>
+
+            {conflictingItems.length > 0 ? (
+              <p className="form-field-wide schedule-conflict-notice" role="status">
+                <strong>일정 시간이 겹쳐요.</strong>
+                <span>
+                  {conflictingItems.map((conflictingItem) => conflictingItem.place.name).join(", ")} 일정과
+                  겹쳐요. 필요하면 시간을 조정해 주세요.
+                </span>
+              </p>
+            ) : null}
 
             <div className="form-field">
               <label htmlFor="place-longitude">경도</label>
