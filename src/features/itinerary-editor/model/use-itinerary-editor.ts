@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import {
   addItineraryItem,
+  duplicateItineraryItem,
   moveItineraryItem,
   removeItineraryItem,
   reorderItineraryItem,
@@ -212,6 +213,36 @@ export function useItineraryEditorController({
     }
   }
 
+  function handleDuplicateItem(itemId: string) {
+    if (!ensureCanEditItinerary()) {
+      return;
+    }
+
+    const item = itinerary.items[itemId];
+
+    if (!item) {
+      setStatusMessage("복제할 일정 아이템을 찾을 수 없습니다.");
+      return;
+    }
+
+    const duplicateItemId = crypto.randomUUID();
+
+    if (
+      applyMutation(
+        (current) =>
+          duplicateItineraryItem(current, {
+            createdBy: currentUserId,
+            itemId,
+            newItemId: duplicateItemId,
+            updatedAt: new Date().toISOString(),
+          }),
+        `${item.place.name} 일정을 복제했습니다.`,
+      )
+    ) {
+      setSelectedItemId(duplicateItemId);
+    }
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     if (!ensureCanEditItinerary()) {
       return;
@@ -355,6 +386,7 @@ export function useItineraryEditorController({
     editingItem,
     handleDeleteConfirm,
     handleDragEnd,
+    handleDuplicateItem,
     handleFormSubmit,
     handleMoveItem,
     handleMoveToDay,

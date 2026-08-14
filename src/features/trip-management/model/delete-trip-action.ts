@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { z } from "zod";
+import { z } from "@/shared/lib/zod";
 
 import type { DeleteTripActionState } from "@/features/trip-management/model/delete-trip-action-state";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";

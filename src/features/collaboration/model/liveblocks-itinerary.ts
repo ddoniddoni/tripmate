@@ -1,7 +1,10 @@
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 
 import type { ItineraryMutationResult } from "@/entities/itinerary/model/mutations";
-import { tripItinerarySchema } from "@/entities/itinerary/model/trip-itinerary";
+import {
+  itineraryDocumentSchema,
+  tripItinerarySchema,
+} from "@/entities/itinerary/model/trip-itinerary";
 import type {
   ItineraryDocument,
   ItineraryItem,
@@ -252,4 +255,22 @@ export function getLiveblocksItinerarySnapshot(
   const result = readTripItineraryFromStorage(trip, storage);
 
   return result.success ? result.data : null;
+}
+
+export function getLiveblocksTripDateRange(storage: unknown) {
+  const result = itineraryDocumentSchema.safeParse(storage);
+
+  if (!result.success) {
+    return null;
+  }
+
+  const dates = Object.values(result.data.days).map((day) => day.date).toSorted();
+  const startDate = dates[0];
+  const endDate = dates.at(-1);
+
+  if (!startDate || !endDate) {
+    return null;
+  }
+
+  return { endDate, startDate };
 }

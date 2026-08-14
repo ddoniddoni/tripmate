@@ -1,6 +1,6 @@
 import { Liveblocks } from "@liveblocks/node";
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { z } from "@/shared/lib/zod";
 
 import { listSupabaseTripMembers } from "@/entities/trip/api/supabase-trip-repository";
 import { getAuthenticatedUser } from "@/features/auth/model/get-authenticated-user";

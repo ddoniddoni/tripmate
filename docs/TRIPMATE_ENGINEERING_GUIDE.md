@@ -295,6 +295,12 @@ TanStack Query:
   trip list, membership, place search, directions
 ```
 
+Trip metadata remains canonical in Supabase. When a trip period changes, validate the
+current Liveblocks itinerary before updating metadata, add only empty newly included
+days, and never silently remove a day that contains itinerary items. If the
+collaborative-document update fails after metadata was written, compensate by restoring
+the previous metadata and show a recoverable error.
+
 ## 8. Map and search behavior
 
 Hide Mapbox response shapes behind project-owned interfaces.
@@ -364,6 +370,7 @@ Avoid design noise. Use restrained motion, clear hierarchy, and product-like den
 - Respect reduced motion.
 - Avoid auto-focus, auto-scroll, or viewport jumps caused by collaborator activity.
 - Keep UI copy in one language unless localization is intentionally implemented.
+- Present every user-facing validation message in Korean; do not expose library-default error text.
 - Test critical flows with keyboard-only navigation.
 
 ## 11. Performance

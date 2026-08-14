@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/shared/lib/zod";
 
 import type { TripMemberRole } from "@/entities/trip/model/trip-membership";
 

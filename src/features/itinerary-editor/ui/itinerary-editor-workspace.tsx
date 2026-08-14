@@ -219,6 +219,7 @@ type SortableTimelineItemProps = {
   item: ItineraryItem;
   itemCount: number;
   onDelete: (itemId: string) => void;
+  onDuplicate: (itemId: string) => void;
   onEdit: (itemId: string) => void;
   onMove: (itemId: string, toIndex: number) => void;
   onMoveToDay: (itemId: string) => void;
@@ -233,6 +234,7 @@ function SortableTimelineItem({
   item,
   itemCount,
   onDelete,
+  onDuplicate,
   onEdit,
   onMove,
   onMoveToDay,
@@ -302,6 +304,14 @@ function SortableTimelineItem({
                 aria-label={`${item.place.name} 다른 날짜로 이동`}
               >
                 이동
+              </button>
+              <button
+                className="text-action"
+                type="button"
+                onClick={() => onDuplicate(item.id)}
+                aria-label={`${item.place.name} 복제`}
+              >
+                복제
               </button>
               <button
                 className="text-action"
@@ -437,6 +447,7 @@ type TimelinePanelProps = {
   itineraryItems: ItineraryItem[];
   onAdd: () => void;
   onDelete: (itemId: string) => void;
+  onDuplicate: (itemId: string) => void;
   onEdit: (itemId: string) => void;
   onMove: (itemId: string, toIndex: number) => void;
   onMoveToDay: (itemId: string) => void;
@@ -454,6 +465,7 @@ function TimelinePanel({
   itineraryItems,
   onAdd,
   onDelete,
+  onDuplicate,
   onEdit,
   onMove,
   onMoveToDay,
@@ -521,6 +533,7 @@ function TimelinePanel({
               itemCount={itineraryItems.length}
               key={item.id}
               onDelete={onDelete}
+              onDuplicate={onDuplicate}
               onEdit={onEdit}
               onMove={onMove}
               onMoveToDay={onMoveToDay}
@@ -694,6 +707,7 @@ export function ItineraryEditorWorkspaceView({
             itineraryItems={editor.itineraryItems}
             onAdd={editor.openAddItemDialog}
             onDelete={editor.openDeleteDialog}
+            onDuplicate={editor.handleDuplicateItem}
             onEdit={editor.openEditItemDialog}
             onMove={editor.handleMoveItem}
             onMoveToDay={editor.openMoveDialog}

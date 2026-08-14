@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/shared/lib/zod";
 
 const calendarDatePattern = /^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/;
 
@@ -18,7 +18,9 @@ function isRealCalendarDate(value: string) {
 }
 
 export const calendarDateSchema = z
-  .string()
+  .string("날짜를 입력해 주세요.")
+  .trim()
+  .min(1, "날짜를 입력해 주세요.")
   .refine(isRealCalendarDate, "YYYY-MM-DD 형식의 유효한 날짜여야 합니다.");
 
 export function calendarDateToUtcDate(value: string) {

@@ -659,6 +659,29 @@ textarea {
   gap: 14px;
 }
 
+.trip-details-button {
+  min-height: 32px;
+  padding: 6px 9px;
+  color: var(--muted);
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.trip-details-button:hover {
+  color: var(--green-dark);
+  border-color: var(--green);
+}
+
+.trip-details-button:focus-visible {
+  outline: 3px solid rgb(38 112 82 / 27%);
+  outline-offset: 3px;
+}
+
 .sync-pill {
   display: inline-flex;
   align-items: center;
@@ -866,10 +889,10 @@ textarea {
   position: relative;
   display: grid;
   width: 100%;
-  min-height: 67px;
-  grid-template-columns: 28px 34px 1fr;
+  min-height: 76px;
+  grid-template-columns: 38px 42px minmax(0, 1fr);
   align-items: center;
-  padding: 9px 11px;
+  padding: 12px;
   color: var(--muted);
   border: 1px solid transparent;
   border-radius: 13px;
@@ -894,20 +917,27 @@ textarea {
 }
 
 .day-weekday {
-  font-size: 8px;
+  color: var(--green);
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.1em;
-  transform: rotate(-90deg);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .day-row strong {
   font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", system-ui, sans-serif;
-  font-size: 25px;
-  font-weight: 500;
+  font-size: 29px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .day-label {
-  font-size: 10px;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .day-active-dot {
@@ -2145,11 +2175,13 @@ textarea {
   }
 
   .day-list > li {
-    width: 132px;
+    width: 146px;
   }
 
   .day-row {
-    min-height: 58px;
+    min-height: 68px;
+    grid-template-columns: 36px 40px minmax(0, 1fr);
+    padding: 11px;
   }
 
   .timeline-panel {

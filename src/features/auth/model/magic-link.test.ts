@@ -16,7 +16,12 @@ describe("magic link email", () => {
   });
 
   it("rejects absent and malformed email addresses", () => {
-    expect(parseMagicLinkEmail(null).success).toBe(false);
+    const missingEmail = parseMagicLinkEmail(null);
+
+    expect(missingEmail).toMatchObject({ success: false });
+    if (!missingEmail.success) {
+      expect(missingEmail.error.issues[0]?.message).toBe("이메일 주소를 입력해 주세요.");
+    }
     expect(parseMagicLinkEmail("not-an-email").success).toBe(false);
   });
 

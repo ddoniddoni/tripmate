@@ -13,6 +13,7 @@ type ItineraryEditorShellProps = {
   historyControl?: ReactNode;
   itineraryEditor?: ReactNode;
   sharingControl?: ReactNode;
+  tripDetailsControl?: ReactNode;
   tripItinerary: TripItinerary;
 };
 
@@ -23,6 +24,7 @@ export function ItineraryEditorShell({
   historyControl,
   itineraryEditor,
   sharingControl,
+  tripDetailsControl,
   tripItinerary,
 }: ItineraryEditorShellProps) {
   const { trip } = tripItinerary;
@@ -46,6 +48,7 @@ export function ItineraryEditorShell({
         </div>
 
         <div className="header-actions">
+          {tripDetailsControl}
           {collaborationControl ?? (
             <span className="sync-pill">
               <i aria-hidden="true" />

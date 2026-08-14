@@ -29,6 +29,24 @@ describe("create trip input", () => {
     }
   });
 
+  it("uses Korean validation messages for missing travel details", () => {
+    const result = createTripSchema.safeParse({
+      ...validTrip,
+      destination: "",
+      title: "",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ message: "여행 이름을 입력해 주세요.", path: ["title"] }),
+          expect.objectContaining({ message: "여행지를 입력해 주세요.", path: ["destination"] }),
+        ]),
+      );
+    }
+  });
+
   it("parses only the expected fields from form data", () => {
     const formData = new FormData();
     Object.entries(validTrip).forEach(([key, value]) => formData.set(key, value));

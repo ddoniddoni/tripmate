@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/shared/lib/zod";
 
 export const tripMemberRoleSchema = z.enum(["owner", "editor", "viewer"]);
 export const tripInvitationRoleSchema = z.enum(["editor", "viewer"]);
@@ -17,6 +17,7 @@ export type TripPermissions = {
   canDeleteTrip: boolean;
   canEditItinerary: boolean;
   canManageMembers: boolean;
+  canUpdateTrip: boolean;
 };
 
 export function getTripPermissions(role: TripMemberRole): TripPermissions {
@@ -24,5 +25,6 @@ export function getTripPermissions(role: TripMemberRole): TripPermissions {
     canDeleteTrip: role === "owner",
     canEditItinerary: role === "owner" || role === "editor",
     canManageMembers: role === "owner",
+    canUpdateTrip: role === "owner",
   };
 }

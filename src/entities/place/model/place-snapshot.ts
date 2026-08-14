@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/shared/lib/zod";
 
 export const placeSnapshotSchema = z.object({
   provider: z.literal("mapbox"),

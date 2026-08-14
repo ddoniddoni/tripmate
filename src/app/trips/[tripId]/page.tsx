@@ -16,6 +16,7 @@ import { TripCollaborationRoom } from "@/features/collaboration/ui/trip-collabor
 import { TripCollaborationStatus } from "@/features/collaboration/ui/trip-collaboration-status";
 import { ItineraryEditorShell } from "@/features/itinerary-editor/ui/itinerary-editor-shell";
 import { DeleteTripDialog } from "@/features/trip-management/ui/delete-trip-dialog";
+import { EditTripDetailsDialog } from "@/features/trip-management/ui/edit-trip-details-dialog";
 import { TripSharingDialog } from "@/features/trip-sharing/ui/trip-sharing-dialog";
 
 type TripEditorPageProps = {
@@ -86,6 +87,16 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
           canDeleteTrip={permissions.canDeleteTrip}
           tripId={trip.id}
           tripTitle={trip.title}
+        />
+      }
+      tripDetailsControl={
+        <EditTripDetailsDialog
+          canUpdateTrip={permissions.canUpdateTrip}
+          destination={trip.destination}
+          endDate={trip.endDate}
+          startDate={trip.startDate}
+          title={trip.title}
+          tripId={trip.id}
         />
       }
       tripItinerary={initialTripItinerary}

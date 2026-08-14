@@ -1,12 +1,17 @@
 import { LiveObject } from "@liveblocks/client";
 import { describe, expect, it } from "vitest";
 
-import { moveItineraryItem, updateItineraryItem } from "@/entities/itinerary/model/mutations";
+import {
+  duplicateItineraryItem,
+  moveItineraryItem,
+  updateItineraryItem,
+} from "@/entities/itinerary/model/mutations";
 import { jejuTrip } from "@/entities/itinerary/mock/jeju-trip";
 import {
   applyItineraryMutationToStorage,
   createTripItineraryStorage,
   getLiveblocksItinerarySnapshot,
+  getLiveblocksTripDateRange,
 } from "@/features/collaboration/model/liveblocks-itinerary";
 
 function createStorageRoot() {
@@ -58,5 +63,40 @@ describe("Liveblocks itinerary storage", () => {
     expect(snapshot?.itinerary.items["bijarim-forest"]).toEqual(
       jejuTrip.itinerary.items["bijarim-forest"],
     );
+  });
+
+  it("persists a duplicated item immediately after its source", () => {
+    const storage = createStorageRoot();
+
+    const result = applyItineraryMutationToStorage(storage, jejuTrip.trip, (current) =>
+      duplicateItineraryItem(current, {
+        createdBy: "user-minji",
+        itemId: "woojin-breakfast",
+        newItemId: "woojin-breakfast-copy",
+        updatedAt: "2026-01-20T10:00:00.000Z",
+      }),
+    );
+    const snapshot = getLiveblocksItinerarySnapshot(jejuTrip.trip, storage.toJSON());
+
+    expect(result.success).toBe(true);
+    expect(snapshot?.itinerary.days["jeju-day-1"]?.itemIds).toEqual([
+      "woojin-breakfast",
+      "woojin-breakfast-copy",
+      "hamdeok-beach",
+      "bijarim-forest",
+    ]);
+    expect(snapshot?.itinerary.items["woojin-breakfast-copy"]).toMatchObject({
+      createdBy: "user-minji",
+      id: "woojin-breakfast-copy",
+    });
+  });
+
+  it("derives the active trip date range from shared itinerary days", () => {
+    const storage = createStorageRoot();
+
+    expect(getLiveblocksTripDateRange(storage.toJSON())).toEqual({
+      endDate: "2026-04-21",
+      startDate: "2026-04-18",
+    });
   });
 });

@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import { jejuTrip } from "@/entities/itinerary/mock/jeju-trip";
 import {
   addItineraryItem,
+  duplicateItineraryItem,
   moveItineraryItem,
   removeItineraryItem,
   reorderItineraryItem,
+  resizeTripItinerary,
   updateItineraryItem,
 } from "@/entities/itinerary/model/mutations";
 import type { ItineraryItem } from "@/entities/itinerary/model/trip-itinerary";
@@ -125,6 +127,53 @@ describe("itinerary mutations", () => {
       success: false,
       code: "item-not-found",
     });
+  });
+
+  it("duplicates an item directly after its source with a new identity", () => {
+    const before = structuredClone(jejuTrip);
+    const result = duplicateItineraryItem(jejuTrip, {
+      createdBy: "user-minji",
+      itemId: "woojin-breakfast",
+      newItemId: "woojin-breakfast-copy",
+      updatedAt: "2026-01-20T10:00:00.000Z",
+    });
+    const next = expectSuccess(result);
+
+    expect(next.itinerary.days["jeju-day-1"].itemIds).toEqual([
+      "woojin-breakfast",
+      "woojin-breakfast-copy",
+      "hamdeok-beach",
+      "bijarim-forest",
+    ]);
+    expect(next.itinerary.items["woojin-breakfast-copy"]).toMatchObject({
+      ...jejuTrip.itinerary.items["woojin-breakfast"],
+      createdBy: "user-minji",
+      id: "woojin-breakfast-copy",
+      updatedAt: "2026-01-20T10:00:00.000Z",
+    });
+    expect(next.itinerary.items["woojin-breakfast-copy"]?.place).not.toBe(
+      next.itinerary.items["woojin-breakfast"]?.place,
+    );
+    expect(jejuTrip).toEqual(before);
+  });
+
+  it("rejects duplication of a missing item or duplicate item ID", () => {
+    expect(
+      duplicateItineraryItem(jejuTrip, {
+        createdBy: "user-minji",
+        itemId: "missing-item",
+        newItemId: "missing-item-copy",
+        updatedAt: "2026-01-20T10:00:00.000Z",
+      }),
+    ).toMatchObject({ success: false, code: "item-not-found" });
+    expect(
+      duplicateItineraryItem(jejuTrip, {
+        createdBy: "user-minji",
+        itemId: "woojin-breakfast",
+        newItemId: "woojin-breakfast",
+        updatedAt: "2026-01-20T10:00:00.000Z",
+      }),
+    ).toMatchObject({ success: false, code: "item-already-exists" });
   });
 
   it("reorders an item forward and backward within one day", () => {
@@ -300,5 +349,59 @@ describe("itinerary mutations", () => {
         toIndex: 1,
       }),
     ).toMatchObject({ success: false, code: "invalid-position" });
+  });
+
+  it("adds empty days at both ends of an expanded trip without changing existing schedules", () => {
+    const before = structuredClone(jejuTrip);
+    const result = resizeTripItinerary(jejuTrip, {
+      endDate: "2026-04-23",
+      startDate: "2026-04-17",
+    });
+    const next = expectSuccess(result);
+
+    expect(next.trip).toMatchObject({
+      endDate: "2026-04-23",
+      startDate: "2026-04-17",
+    });
+    expect(next.itinerary.dayOrder.map((dayId) => next.itinerary.days[dayId]?.date)).toEqual([
+      "2026-04-17",
+      "2026-04-18",
+      "2026-04-19",
+      "2026-04-20",
+      "2026-04-21",
+      "2026-04-22",
+      "2026-04-23",
+    ]);
+    expect(next.itinerary.days["jeju-day-1"]?.itemIds).toEqual(
+      jejuTrip.itinerary.days["jeju-day-1"]?.itemIds,
+    );
+    expect(next.itinerary.days["jeju-spring-day-20260417"]?.itemIds).toEqual([]);
+    expect(next.itinerary.days["jeju-spring-day-20260423"]?.itemIds).toEqual([]);
+    expect(jejuTrip).toEqual(before);
+  });
+
+  it("removes only empty dates that leave the reduced trip range", () => {
+    const result = resizeTripItinerary(jejuTrip, {
+      endDate: "2026-04-19",
+      startDate: "2026-04-18",
+    });
+    const next = expectSuccess(result);
+
+    expect(next.itinerary.dayOrder).toEqual(["jeju-day-1", "jeju-day-2"]);
+    expect(next.itinerary.days["jeju-day-3"]).toBeUndefined();
+    expect(next.itinerary.days["jeju-day-4"]).toBeUndefined();
+    expect(next.itinerary.items).toEqual(jejuTrip.itinerary.items);
+  });
+
+  it("refuses to remove a date that contains itinerary items", () => {
+    const result = resizeTripItinerary(jejuTrip, {
+      endDate: "2026-04-21",
+      startDate: "2026-04-19",
+    });
+
+    expect(result).toMatchObject({
+      code: "scheduled-day-outside-range",
+      success: false,
+    });
   });
 });

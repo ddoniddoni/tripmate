@@ -97,6 +97,20 @@ describe("ItineraryEditorWorkspace", () => {
     expect(screen.getByText("일정 2개 · Asia/Seoul")).toBeInTheDocument();
   });
 
+  it("duplicates an existing item immediately after its source", async () => {
+    const user = renderWorkspace();
+
+    await user.click(screen.getByRole("button", { name: "우진해장국 복제" }));
+
+    expect(screen.getAllByRole("heading", { name: "우진해장국" })).toHaveLength(2);
+    expect(screen.getByText("일정 4개 · Asia/Seoul")).toBeInTheDocument();
+    expect(screen.getByText("우진해장국 일정을 복제했습니다.")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "우진해장국 선택" })[1]).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
   it("exposes keyboard instructions from every drag handle", () => {
     renderWorkspace();
 
@@ -191,6 +205,7 @@ describe("ItineraryEditorWorkspace", () => {
 
     expect(screen.queryByRole("button", { name: "장소 추가" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "우진해장국 수정" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "우진해장국 복제" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "우진해장국 순서 이동" })).not.toBeInTheDocument();
 
     const mapMarker = screen.getByRole("button", { name: "함덕해수욕장 지도에서 선택" });

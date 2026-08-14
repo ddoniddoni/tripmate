@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/shared/lib/zod";
 
 import { placeSnapshotSchema } from "@/entities/place/model/place-snapshot";
 import { tripSchema } from "@/entities/trip/model/trip";

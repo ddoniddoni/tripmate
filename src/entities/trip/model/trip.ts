@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/shared/lib/zod";
 
 import { calendarDateSchema } from "@/shared/lib/calendar-date";
 
@@ -13,12 +13,28 @@ function isIanaTimeZone(value: string) {
 
 export const tripSchema = z
   .object({
-    id: z.string().trim().min(1).max(100),
-    title: z.string().trim().min(1).max(120),
-    destination: z.string().trim().min(1).max(160),
+    id: z
+      .string("여행 정보를 확인해 주세요.")
+      .trim()
+      .min(1, "여행 정보를 확인해 주세요.")
+      .max(100),
+    title: z
+      .string("여행 이름을 입력해 주세요.")
+      .trim()
+      .min(1, "여행 이름을 입력해 주세요.")
+      .max(120, "여행 이름은 120자 이내로 입력해 주세요."),
+    destination: z
+      .string("여행지를 입력해 주세요.")
+      .trim()
+      .min(1, "여행지를 입력해 주세요.")
+      .max(160, "여행지는 160자 이내로 입력해 주세요."),
     startDate: calendarDateSchema,
     endDate: calendarDateSchema,
-    timeZone: z.string().trim().refine(isIanaTimeZone, "유효한 IANA 시간대여야 합니다."),
+    timeZone: z
+      .string("여행 시간대를 선택해 주세요.")
+      .trim()
+      .min(1, "여행 시간대를 선택해 주세요.")
+      .refine(isIanaTimeZone, "유효한 IANA 시간대여야 합니다."),
   })
   .superRefine((trip, context) => {
     if (trip.startDate > trip.endDate) {

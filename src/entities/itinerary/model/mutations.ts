@@ -1,8 +1,10 @@
 import type {
   ItineraryItem,
+  TripDay,
   TripItinerary,
 } from "@/entities/itinerary/model/trip-itinerary";
 import { tripItinerarySchema } from "@/entities/itinerary/model/trip-itinerary";
+import { calendarDateToUtcDate } from "@/shared/lib/calendar-date";
 
 export type ItineraryMutationErrorCode =
   | "day-not-found"
@@ -10,7 +12,8 @@ export type ItineraryMutationErrorCode =
   | "item-not-found"
   | "item-not-in-day"
   | "invalid-position"
-  | "invalid-document";
+  | "invalid-document"
+  | "scheduled-day-outside-range";
 
 export type ItineraryMutationResult =
   | { success: true; data: TripItinerary }
@@ -34,11 +37,23 @@ type ReorderItineraryItemInput = {
   toIndex: number;
 };
 
+type DuplicateItineraryItemInput = {
+  createdBy: string;
+  itemId: string;
+  newItemId: string;
+  updatedAt: string;
+};
+
 type MoveItineraryItemInput = {
   destinationDayId: string;
   itemId: string;
   sourceDayId: string;
   toIndex: number;
+};
+
+type ResizeTripItineraryInput = {
+  endDate: string;
+  startDate: string;
 };
 
 function mutationError(
@@ -59,6 +74,33 @@ function validateMutation(candidate: unknown): ItineraryMutationResult {
     "invalid-document",
     result.error.issues[0]?.message ?? "일정 문서가 유효하지 않습니다.",
   );
+}
+
+function getCalendarDatesInRange(startDate: string, endDate: string) {
+  const dates: string[] = [];
+  let currentDate = calendarDateToUtcDate(startDate);
+  const finalDate = calendarDateToUtcDate(endDate);
+
+  while (currentDate <= finalDate) {
+    dates.push(currentDate.toISOString().slice(0, 10));
+    currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1_000);
+  }
+
+  return dates;
+}
+
+function createAddedDayId(tripId: string, date: string, usedDayIds: Set<string>) {
+  const baseId = `${tripId}-day-${date.replaceAll("-", "")}`;
+  let candidateId = baseId;
+  let suffix = 2;
+
+  while (usedDayIds.has(candidateId)) {
+    candidateId = `${baseId}-${suffix}`;
+    suffix += 1;
+  }
+
+  usedDayIds.add(candidateId);
+  return candidateId;
 }
 
 export function addItineraryItem(
@@ -158,6 +200,40 @@ export function removeItineraryItem(
       },
       items,
     },
+  });
+}
+
+export function duplicateItineraryItem(
+  current: TripItinerary,
+  { createdBy, itemId, newItemId, updatedAt }: DuplicateItineraryItemInput,
+): ItineraryMutationResult {
+  const item = current.itinerary.items[itemId];
+
+  if (!item) {
+    return mutationError("item-not-found", "복제할 일정 아이템을 찾을 수 없습니다.");
+  }
+
+  const day = current.itinerary.days[item.dayId];
+
+  if (!day) {
+    return mutationError("day-not-found", "복제할 일정의 날짜를 찾을 수 없습니다.");
+  }
+
+  const sourceIndex = day.itemIds.indexOf(itemId);
+
+  if (sourceIndex < 0) {
+    return mutationError("item-not-in-day", "복제할 일정이 지정된 날짜에 없습니다.");
+  }
+
+  return addItineraryItem(current, {
+    item: {
+      ...item,
+      createdBy,
+      id: newItemId,
+      place: { ...item.place },
+      updatedAt,
+    },
+    position: sourceIndex + 1,
   });
 }
 
@@ -261,6 +337,81 @@ export function moveItineraryItem(
         ...current.itinerary.items,
         [itemId]: { ...item, dayId: destinationDayId },
       },
+    },
+  });
+}
+
+export function resizeTripItinerary(
+  current: TripItinerary,
+  { endDate, startDate }: ResizeTripItineraryInput,
+): ItineraryMutationResult {
+  const nextTrip = {
+    ...current.trip,
+    endDate,
+    startDate,
+  };
+  const nextTripValidation = tripItinerarySchema.shape.trip.safeParse(nextTrip);
+
+  if (!nextTripValidation.success) {
+    return mutationError(
+      "invalid-document",
+      nextTripValidation.error.issues[0]?.message ?? "여행 기간을 확인해 주세요.",
+    );
+  }
+
+  if (current.trip.startDate === startDate && current.trip.endDate === endDate) {
+    return { success: true, data: current };
+  }
+
+  const removedDays = Object.values(current.itinerary.days).filter(
+    (day) => day.date < startDate || day.date > endDate,
+  );
+  const scheduledDay = removedDays.find((day) => day.itemIds.length > 0);
+
+  if (scheduledDay) {
+    return mutationError(
+      "scheduled-day-outside-range",
+      `${scheduledDay.date}에 일정이 있어 여행 기간을 줄일 수 없습니다. 일정을 다른 날짜로 옮기거나 삭제한 뒤 다시 시도해 주세요.`,
+    );
+  }
+
+  const nextDaysByDate = new Map<string, TripDay>();
+
+  for (const day of Object.values(current.itinerary.days)) {
+    if (day.date >= startDate && day.date <= endDate) {
+      nextDaysByDate.set(day.date, day);
+    }
+  }
+  const usedDayIds = new Set(Object.keys(current.itinerary.days));
+  const nextDays: TripItinerary["itinerary"]["days"] = {};
+  const dayOrder: string[] = [];
+
+  getCalendarDatesInRange(startDate, endDate).forEach((date) => {
+    const existingDay = nextDaysByDate.get(date);
+
+    if (existingDay) {
+      nextDays[existingDay.id] = existingDay;
+      dayOrder.push(existingDay.id);
+      return;
+    }
+
+    const dayId = createAddedDayId(current.trip.id, date, usedDayIds);
+
+    nextDays[dayId] = {
+      date,
+      id: dayId,
+      itemIds: [],
+      tripId: current.trip.id,
+    };
+    dayOrder.push(dayId);
+  });
+
+  return validateMutation({
+    trip: nextTripValidation.data,
+    itinerary: {
+      ...current.itinerary,
+      dayOrder,
+      days: nextDays,
     },
   });
 }

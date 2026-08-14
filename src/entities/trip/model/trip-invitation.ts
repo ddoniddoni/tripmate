@@ -1,10 +1,11 @@
-import { z } from "zod";
+import { z } from "@/shared/lib/zod";
 
 import { tripInvitationRoleSchema } from "@/entities/trip/model/trip-membership";
 
 export const tripInvitationEmailSchema = z
-  .string()
+  .string("초대할 이메일 주소를 입력해 주세요.")
   .trim()
+  .min(1, "초대할 이메일 주소를 입력해 주세요.")
   .toLowerCase()
   .email("유효한 이메일 주소를 입력해 주세요.")
   .max(320, "이메일 주소가 너무 깁니다.");

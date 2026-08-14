@@ -1,10 +1,13 @@
 "use client";
 
 import { useMutation, useStorage } from "@liveblocks/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 import {
   applyItineraryMutationToStorage,
   getLiveblocksItinerarySnapshot,
+  getLiveblocksTripDateRange,
 } from "@/features/collaboration/model/liveblocks-itinerary";
 import { useItineraryEditorController } from "@/features/itinerary-editor/model/use-itinerary-editor";
 import { ItineraryEditorWorkspaceView } from "@/features/itinerary-editor/ui/itinerary-editor-workspace";
@@ -46,7 +49,19 @@ export function LiveblocksItineraryEditor({
   currentUserId,
   trip,
 }: LiveblocksItineraryEditorProps) {
+  const router = useRouter();
   const storage = useStorage((root) => root);
+  const sharedDateRange = getLiveblocksTripDateRange(storage);
+  const hasUpdatedTripDates =
+    sharedDateRange !== null &&
+    (sharedDateRange.startDate !== trip.startDate || sharedDateRange.endDate !== trip.endDate);
+  const sharedTrip = sharedDateRange ? { ...trip, ...sharedDateRange } : trip;
+
+  useEffect(() => {
+    if (hasUpdatedTripDates) {
+      router.refresh();
+    }
+  }, [hasUpdatedTripDates, router]);
 
   if (!storage) {
     return (
@@ -56,7 +71,7 @@ export function LiveblocksItineraryEditor({
     );
   }
 
-  const tripItinerary = getLiveblocksItinerarySnapshot(trip, storage);
+  const tripItinerary = getLiveblocksItinerarySnapshot(sharedTrip, storage);
 
   if (!tripItinerary) {
     return (
@@ -70,7 +85,7 @@ export function LiveblocksItineraryEditor({
     <LiveblocksItineraryEditorContent
       canEditItinerary={canEditItinerary}
       currentUserId={currentUserId}
-      trip={trip}
+      trip={sharedTrip}
       tripItinerary={tripItinerary}
     />
   );
