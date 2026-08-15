@@ -16,6 +16,7 @@ import type {
   TripWorkspaceView,
 } from "@/features/collaboration/model/trip-workspace-navigation";
 import { useTripWorkspaceNavigation } from "@/features/collaboration/model/use-trip-workspace-navigation";
+import { useTripWorkspacePresence } from "@/features/collaboration/model/use-trip-workspace-presence";
 import { useItineraryEditorController } from "@/features/itinerary-editor/model/use-itinerary-editor";
 import { ItineraryEditorWorkspaceView } from "@/features/itinerary-editor/ui/itinerary-editor-workspace";
 import { TripPreparationChecklist } from "@/features/preparation-checklist/ui/trip-preparation-checklist";
@@ -101,6 +102,7 @@ function LiveblocksItineraryEditorContent({
     initialNavigation: initialWorkspaceNavigation,
     pathname: `/trips/${trip.id}`,
   });
+  useTripWorkspacePresence(workspaceNavigation.navigation.view);
   const commitMutation = useMutation(
     ({ storage }, mutation) => applyItineraryMutationToStorage(storage, trip, mutation),
     [trip],

@@ -1,5 +1,6 @@
 import type { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 
+import type { TripWorkspaceView } from "@/features/collaboration/model/trip-workspace-navigation";
 import type { TripExpense } from "@/entities/expense/model/trip-expense";
 import type { PreparationChecklistItem } from "@/entities/preparation-checklist/model/preparation-checklist";
 import type {
@@ -14,7 +15,9 @@ type LiveTripDay = Omit<TripDay, "itemIds"> & {
 
 declare global {
   interface Liveblocks {
-    Presence: Record<string, never>;
+    Presence: {
+      activeWorkspace?: TripWorkspaceView;
+    };
     Storage: {
       checklistItems: LiveMap<string, LiveObject<PreparationChecklistItem>>;
       dayOrder: LiveList<string>;

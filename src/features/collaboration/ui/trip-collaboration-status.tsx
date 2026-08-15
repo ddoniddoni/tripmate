@@ -3,6 +3,7 @@
 import { shallow } from "@liveblocks/client";
 import { useOthers, useStatus } from "@liveblocks/react";
 
+import { getCollaboratorActivityCopy } from "@/features/collaboration/model/collaboration-presence";
 import { getCollaborationConnectionCopy } from "@/features/collaboration/model/trip-room";
 
 export function TripCollaborationStatus() {
@@ -13,15 +14,17 @@ export function TripCollaborationStatus() {
         color: other.info.color,
         connectionId: other.connectionId,
         name: other.info.name,
+        activeWorkspace: other.presence.activeWorkspace,
       })),
     shallow,
   );
   const connectionCopy = getCollaborationConnectionCopy(status);
   const collaboratorCount = collaborators.length;
+  const activityCopy = getCollaboratorActivityCopy(collaborators);
 
   return (
     <div
-      aria-label={`${connectionCopy}. 나 외 ${collaboratorCount}명 접속 중`}
+      aria-label={`${connectionCopy}. 나 외 ${collaboratorCount}명 접속 중${activityCopy ? `. ${activityCopy}` : ""}`}
       className={`sync-pill collaboration-status collaboration-status-${status}`}
       role="status"
     >
@@ -44,6 +47,11 @@ export function TripCollaborationStatus() {
             </li>
           ) : null}
         </ol>
+      ) : null}
+      {activityCopy ? (
+        <span aria-hidden="true" className="collaboration-activity">
+          {activityCopy}
+        </span>
       ) : null}
     </div>
   );
