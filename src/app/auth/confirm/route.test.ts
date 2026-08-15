@@ -13,6 +13,9 @@ vi.mock("@/shared/api/supabase/route-handler", () => ({
 import { GET } from "@/app/auth/confirm/route";
 
 const invitationToken = "a".repeat(43);
+const tripId = "d4f6f86c-8e85-4d2a-b77f-f2b15d1be3d8";
+const dayId = "bbd0c1f9-a6e4-40b6-a320-4b5e35296c9a";
+const tripEditorPath = `/trips/${tripId}?view=itinerary&day=${dayId}`;
 
 describe("GET /auth/confirm", () => {
   beforeEach(() => {
@@ -64,5 +67,17 @@ describe("GET /auth/confirm", () => {
     expect(response.headers.get("location")).toBe(
       `http://localhost:3000/invites/${invitationToken}`,
     );
+  });
+
+  it("returns to the requested trip workspace after a successful confirmation", async () => {
+    verifyOtp.mockResolvedValue({ error: null });
+
+    const response = await GET(
+      new NextRequest(
+        `http://localhost:3000/auth/confirm?token_hash=opaque&type=email&next=${encodeURIComponent(tripEditorPath)}`,
+      ),
+    );
+
+    expect(response.headers.get("location")).toBe(`http://localhost:3000${tripEditorPath}`);
   });
 });

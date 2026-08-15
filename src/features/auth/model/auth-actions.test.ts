@@ -12,6 +12,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 const invitationToken = "a".repeat(43);
+const tripId = "d4f6f86c-8e85-4d2a-b77f-f2b15d1be3d8";
+const dayId = "bbd0c1f9-a6e4-40b6-a320-4b5e35296c9a";
+const tripEditorPath = `/trips/${tripId}?view=itinerary&day=${dayId}`;
 
 vi.mock("@/features/auth/model/development-auth", () => ({
   isDevelopmentAuthenticationEnabled: mocks.isDevelopmentAuthenticationEnabled,
@@ -45,6 +48,12 @@ function createEmailFormData() {
 function createInvitationEmailFormData() {
   const formData = createEmailFormData();
   formData.set("next", `/invites/${invitationToken}`);
+  return formData;
+}
+
+function createTripEditorEmailFormData() {
+  const formData = createEmailFormData();
+  formData.set("next", tripEditorPath);
   return formData;
 }
 
@@ -121,6 +130,28 @@ describe("auth actions", () => {
       },
     });
     expect(mocks.redirect).toHaveBeenCalledWith(`/invites/${invitationToken}`);
+  });
+
+  it("preserves a safe trip editor path through both login methods", async () => {
+    mocks.signInWithOtp.mockResolvedValue({ error: null });
+    mocks.generateLink.mockResolvedValue({
+      data: { properties: { hashed_token: "hashed-token" } },
+      error: null,
+    });
+    mocks.verifyOtp.mockResolvedValue({ error: null });
+
+    await requestMagicLink(initialMagicLinkActionState, createTripEditorEmailFormData());
+    await expect(
+      startDevelopmentSession(initialMagicLinkActionState, createTripEditorEmailFormData()),
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(mocks.signInWithOtp).toHaveBeenCalledWith({
+      email: "traveler@example.com",
+      options: {
+        emailRedirectTo: `http://localhost:3000/auth/confirm?next=${encodeURIComponent(tripEditorPath)}`,
+      },
+    });
+    expect(mocks.redirect).toHaveBeenCalledWith(tripEditorPath);
   });
 
   it("rejects direct sign-in outside development", async () => {

@@ -20,6 +20,7 @@ import { ItineraryEditorShell } from "@/features/itinerary-editor/ui/itinerary-e
 import { DeleteTripDialog } from "@/features/trip-management/ui/delete-trip-dialog";
 import { EditTripDetailsDialog } from "@/features/trip-management/ui/edit-trip-details-dialog";
 import { TripSharingDialog } from "@/features/trip-sharing/ui/trip-sharing-dialog";
+import { getSafeTripEditorPath } from "@/shared/lib/safe-internal-path";
 
 type TripEditorPageProps = {
   params: Promise<{ tripId: string }>;
@@ -43,9 +44,10 @@ export default async function TripEditorPage({ params, searchParams }: TripEdito
     getAuthenticatedUser(),
     searchParams,
   ]);
+  const tripEditorPath = getSafeTripEditorPath(tripId, workspaceSearchParams);
 
   if (!user) {
-    redirect("/login");
+    redirect(`/login?next=${encodeURIComponent(tripEditorPath)}`);
   }
 
   const [profileResult, tripResult, membersResult] = await Promise.allSettled([
@@ -61,7 +63,7 @@ export default async function TripEditorPage({ params, searchParams }: TripEdito
   const profile = profileResult.value;
 
   if (!profile?.displayName) {
-    redirect("/profile");
+    redirect(`/profile?next=${encodeURIComponent(tripEditorPath)}`);
   }
 
   if (tripResult.status === "rejected") {
