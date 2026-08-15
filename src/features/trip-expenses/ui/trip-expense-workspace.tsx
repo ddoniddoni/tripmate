@@ -14,6 +14,7 @@ import {
   type TripExpense,
   type TripExpenseCategory,
 } from "@/entities/expense/model/trip-expense";
+import { getTripMemberLabels } from "@/entities/trip/lib/get-trip-member-labels";
 import type { TripMember } from "@/entities/trip/model/trip-membership";
 import {
   applyTripExpenseMutationToStorage,
@@ -45,7 +46,7 @@ const tripExpenseFormSchema = z
   });
 
 type TripExpenseFormValues = z.infer<typeof tripExpenseFormSchema>;
-type TripExpenseMember = Pick<TripMember, "role" | "userId">;
+type TripExpenseMember = Pick<TripMember, "displayName" | "role" | "userId">;
 
 type TripExpenseWorkspaceViewProps = {
   canEditExpenses: boolean;
@@ -65,44 +66,33 @@ const categoryCopy: Record<TripExpenseCategory, { icon: string; title: string }>
   transport: { icon: "↗", title: "교통" },
 };
 
+const wonFormatter = new Intl.NumberFormat("ko-KR", {
+  currency: "KRW",
+  maximumFractionDigits: 0,
+  style: "currency",
+});
+
 function formatWon(amount: number) {
-  return new Intl.NumberFormat("ko-KR", {
-    currency: "KRW",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(amount);
+  return wonFormatter.format(amount);
 }
 
-function getMemberLabel(member: TripExpenseMember, memberIndex: number, currentUserId: string) {
-  return member.userId === currentUserId ? "나" : `여행 멤버 ${memberIndex + 1}`;
-}
-
-function getMemberName(
-  userId: string,
-  members: readonly TripExpenseMember[],
-  currentUserId: string,
-) {
-  const memberIndex = members.findIndex((member) => member.userId === userId);
-  const member = members[memberIndex];
-
-  return member ? getMemberLabel(member, memberIndex, currentUserId) : "여행 멤버";
+function getMemberName(userId: string, memberLabels: ReadonlyMap<string, string>) {
+  return memberLabels.get(userId) ?? "여행 멤버";
 }
 
 function TripExpenseRow({
   canEditExpenses,
-  currentUserId,
   expense,
-  members,
+  memberLabels,
   onRemove,
 }: {
   canEditExpenses: boolean;
-  currentUserId: string;
   expense: TripExpense;
-  members: readonly TripExpenseMember[];
+  memberLabels: ReadonlyMap<string, string>;
   onRemove: (expenseId: string) => void;
 }) {
   const category = categoryCopy[expense.category];
-  const payerName = getMemberName(expense.paidBy, members, currentUserId);
+  const payerName = getMemberName(expense.paidBy, memberLabels);
 
   return (
     <li className="expense-row">
@@ -140,6 +130,7 @@ export function TripExpenseWorkspaceView({
   statusMessage,
 }: TripExpenseWorkspaceViewProps) {
   const memberIds = members.map((member) => member.userId);
+  const memberLabels = getTripMemberLabels(members, currentUserId);
   const settlement = calculateTripExpenseSettlement(expenses, memberIds);
   const orderedExpenses = expenses.toSorted((left, right) =>
     right.createdAt.localeCompare(left.createdAt),
@@ -164,6 +155,7 @@ export function TripExpenseWorkspaceView({
   });
   const paidBy = useWatch({ control, name: "paidBy" });
   const participantIds = useWatch({ control, name: "participantIds" }) ?? [];
+  const participantIdSet = new Set(participantIds);
   const paidByField = register("paidBy");
 
   function handleAdd(values: TripExpenseFormValues) {
@@ -265,9 +257,9 @@ export function TripExpenseWorkspaceView({
                       }
                     }}
                   >
-                    {members.map((member, memberIndex) => (
+                    {members.map((member) => (
                       <option key={member.userId} value={member.userId}>
-                        {getMemberLabel(member, memberIndex, currentUserId)}
+                        {memberLabels.get(member.userId) ?? "여행 멤버"}
                       </option>
                     ))}
                   </select>
@@ -277,9 +269,9 @@ export function TripExpenseWorkspaceView({
               <fieldset className="expense-participant-fieldset">
                 <legend>정산 참여자</legend>
                 <div>
-                  {members.map((member, memberIndex) => {
+                  {members.map((member) => {
                     const isPayer = member.userId === paidBy;
-                    const isSelected = participantIds.includes(member.userId);
+                    const isSelected = participantIdSet.has(member.userId);
 
                     return (
                       <label className="expense-participant-option" key={member.userId}>
@@ -302,7 +294,7 @@ export function TripExpenseWorkspaceView({
                           type="checkbox"
                           value={member.userId}
                         />
-                        <span>{getMemberLabel(member, memberIndex, currentUserId)}</span>
+                        <span>{memberLabels.get(member.userId) ?? "여행 멤버"}</span>
                         {isPayer ? <em>결제</em> : null}
                       </label>
                     );
@@ -340,10 +332,9 @@ export function TripExpenseWorkspaceView({
                 {orderedExpenses.map((expense) => (
                   <TripExpenseRow
                     canEditExpenses={canEditExpenses}
-                    currentUserId={currentUserId}
                     expense={expense}
                     key={expense.id}
-                    members={members}
+                    memberLabels={memberLabels}
                     onRemove={onRemove}
                   />
                 ))}
@@ -364,7 +355,7 @@ export function TripExpenseWorkspaceView({
             <>
               <ol className="expense-balance-list">
                 {settlement.balances.map((balance) => {
-                  const label = getMemberName(balance.userId, members, currentUserId);
+                  const label = getMemberName(balance.userId, memberLabels);
                   const direction = balance.balance > 0 ? "받을 돈" : balance.balance < 0 ? "보낼 돈" : "정산 완료";
 
                   return (
@@ -383,9 +374,9 @@ export function TripExpenseWorkspaceView({
               <ol className="expense-transfer-list">
                 {settlement.transfers.map((transfer) => (
                   <li key={`${transfer.fromUserId}-${transfer.toUserId}`}>
-                    <span>{getMemberName(transfer.fromUserId, members, currentUserId)}</span>
+                    <span>{getMemberName(transfer.fromUserId, memberLabels)}</span>
                     <i aria-hidden="true">→</i>
-                    <span>{getMemberName(transfer.toUserId, members, currentUserId)}</span>
+                    <span>{getMemberName(transfer.toUserId, memberLabels)}</span>
                     <strong>{formatWon(transfer.amount)}</strong>
                   </li>
                 ))}

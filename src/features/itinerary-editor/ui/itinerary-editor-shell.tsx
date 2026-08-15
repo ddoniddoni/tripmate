@@ -31,6 +31,9 @@ export function ItineraryEditorShell({
 
   return (
     <main className="editor-shell" data-trip-id={trip.id}>
+      <a className="skip-link" href="#trip-workspace-content">
+        일정 내용으로 건너뛰기
+      </a>
       <header className="editor-header">
         <Link className="brand-link" href="/trips" aria-label="여행 목록으로 이동">
           <BrandMark />
@@ -61,12 +64,14 @@ export function ItineraryEditorShell({
         </div>
       </header>
 
-      {itineraryEditor ?? (
-        <ItineraryEditorWorkspace
-          canEditItinerary={canEditItinerary}
-          initialTripItinerary={tripItinerary}
-        />
-      )}
+      <section aria-label="여행 작업 공간" id="trip-workspace-content" tabIndex={-1}>
+        {itineraryEditor ?? (
+          <ItineraryEditorWorkspace
+            canEditItinerary={canEditItinerary}
+            initialTripItinerary={tripItinerary}
+          />
+        )}
+      </section>
     </main>
   );
 }

@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   verifyOtp: vi.fn(),
 }));
 
+const invitationToken = "a".repeat(43);
+
 vi.mock("@/features/auth/model/development-auth", () => ({
   isDevelopmentAuthenticationEnabled: mocks.isDevelopmentAuthenticationEnabled,
 }));
@@ -40,6 +42,12 @@ function createEmailFormData() {
   return formData;
 }
 
+function createInvitationEmailFormData() {
+  const formData = createEmailFormData();
+  formData.set("next", `/invites/${invitationToken}`);
+  return formData;
+}
+
 describe("auth actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -66,7 +74,7 @@ describe("auth actions", () => {
 
     expect(mocks.signInWithOtp).toHaveBeenCalledWith({
       email: "traveler@example.com",
-      options: { emailRedirectTo: "http://localhost:3000/auth/confirm" },
+      options: { emailRedirectTo: "http://localhost:3000/auth/confirm?next=%2Ftrips" },
     });
     expect(result).toEqual({
       message: "로그인 링크를 보냈어요. 이메일에서 링크를 열어 계속해 주세요.",
@@ -91,6 +99,28 @@ describe("auth actions", () => {
     });
     expect(mocks.verifyOtp).toHaveBeenCalledWith({ token_hash: "hashed-token", type: "email" });
     expect(mocks.redirect).toHaveBeenCalledWith("/trips");
+  });
+
+  it("preserves an internal invitation path through both login methods", async () => {
+    mocks.signInWithOtp.mockResolvedValue({ error: null });
+    mocks.generateLink.mockResolvedValue({
+      data: { properties: { hashed_token: "hashed-token" } },
+      error: null,
+    });
+    mocks.verifyOtp.mockResolvedValue({ error: null });
+
+    await requestMagicLink(initialMagicLinkActionState, createInvitationEmailFormData());
+    await expect(
+      startDevelopmentSession(initialMagicLinkActionState, createInvitationEmailFormData()),
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(mocks.signInWithOtp).toHaveBeenCalledWith({
+      email: "traveler@example.com",
+      options: {
+        emailRedirectTo: `http://localhost:3000/auth/confirm?next=%2Finvites%2F${invitationToken}`,
+      },
+    });
+    expect(mocks.redirect).toHaveBeenCalledWith(`/invites/${invitationToken}`);
   });
 
   it("rejects direct sign-in outside development", async () => {

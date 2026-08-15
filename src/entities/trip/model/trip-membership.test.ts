@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   getTripPermissions,
+  parseLeaveTripFormData,
   parseRemoveTripMemberFormData,
+  parseTransferTripOwnershipFormData,
   parseUpdateTripMemberRoleFormData,
   tripInvitationRoleSchema,
   tripMemberRoleSchema,
@@ -62,6 +64,27 @@ describe("trip membership permissions", () => {
     formData.set("tripId", tripId);
 
     expect(parseRemoveTripMemberFormData(formData)).toMatchObject({
+      data: { memberId, tripId },
+      success: true,
+    });
+  });
+
+  it("parses a member leaving a trip without accepting another user id", () => {
+    const formData = new FormData();
+    formData.set("tripId", tripId);
+
+    expect(parseLeaveTripFormData(formData)).toMatchObject({
+      data: { tripId },
+      success: true,
+    });
+  });
+
+  it("parses an ownership transfer target", () => {
+    const formData = new FormData();
+    formData.set("memberId", memberId);
+    formData.set("tripId", tripId);
+
+    expect(parseTransferTripOwnershipFormData(formData)).toMatchObject({
       data: { memberId, tripId },
       success: true,
     });

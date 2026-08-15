@@ -224,10 +224,15 @@ describe("ItineraryEditorWorkspace", () => {
     const mapButton = screen.getByRole("button", { name: "지도" });
 
     expect(itineraryButton).toHaveAttribute("aria-pressed", "true");
+    expect(itineraryButton).toHaveAttribute("aria-controls", "itinerary-timeline-panel");
+    expect(mapButton).toHaveAttribute("aria-controls", "itinerary-map-panel");
     await user.click(mapButton);
 
     expect(mapButton).toHaveAttribute("aria-pressed", "true");
     expect(itineraryButton).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(screen.getByRole("button", { name: "함덕해수욕장 지도에서 선택" }));
+    expect(itineraryButton).toHaveAttribute("aria-pressed", "true");
   });
 
   it("keeps a viewer in read-only mode while preserving day and map navigation", async () => {

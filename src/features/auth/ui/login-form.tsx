@@ -10,6 +10,7 @@ import { initialMagicLinkActionState } from "@/features/auth/model/magic-link";
 
 type LoginFormProps = {
   allowDevelopmentSession: boolean;
+  nextPath: string;
 };
 
 function EmailField({ disabled }: { disabled: boolean }) {
@@ -30,7 +31,7 @@ function EmailField({ disabled }: { disabled: boolean }) {
   );
 }
 
-function DevelopmentLoginForm() {
+function DevelopmentLoginForm({ nextPath }: Pick<LoginFormProps, "nextPath">) {
   const [developmentState, developmentAction, isDevelopmentPending] = useActionState(
     startDevelopmentSession,
     initialMagicLinkActionState,
@@ -38,6 +39,7 @@ function DevelopmentLoginForm() {
 
   return (
     <form className="login-form">
+      <input name="next" type="hidden" value={nextPath} />
       <EmailField disabled={isDevelopmentPending} />
       <div className="login-actions">
         <button formAction={developmentAction} type="submit" disabled={isDevelopmentPending}>
@@ -56,7 +58,7 @@ function DevelopmentLoginForm() {
   );
 }
 
-function MagicLinkLoginForm() {
+function MagicLinkLoginForm({ nextPath }: Pick<LoginFormProps, "nextPath">) {
   const [magicLinkState, magicLinkAction, isMagicLinkPending] = useActionState(
     requestMagicLink,
     initialMagicLinkActionState,
@@ -64,6 +66,7 @@ function MagicLinkLoginForm() {
 
   return (
     <form action={magicLinkAction} className="login-form">
+      <input name="next" type="hidden" value={nextPath} />
       <EmailField disabled={isMagicLinkPending} />
       <div className="login-actions">
         <button type="submit" disabled={isMagicLinkPending}>
@@ -82,6 +85,10 @@ function MagicLinkLoginForm() {
   );
 }
 
-export function LoginForm({ allowDevelopmentSession }: LoginFormProps) {
-  return allowDevelopmentSession ? <DevelopmentLoginForm /> : <MagicLinkLoginForm />;
+export function LoginForm({ allowDevelopmentSession, nextPath }: LoginFormProps) {
+  return allowDevelopmentSession ? (
+    <DevelopmentLoginForm nextPath={nextPath} />
+  ) : (
+    <MagicLinkLoginForm nextPath={nextPath} />
+  );
 }

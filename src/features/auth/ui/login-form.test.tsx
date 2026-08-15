@@ -12,14 +12,14 @@ import { LoginForm } from "@/features/auth/ui/login-form";
 
 describe("LoginForm", () => {
   it("uses direct sign-in for development", () => {
-    render(<LoginForm allowDevelopmentSession />);
+    render(<LoginForm allowDevelopmentSession nextPath="/trips" />);
 
     expect(screen.getByRole("button", { name: "이메일로 바로 시작하기" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "이메일 인증 링크 보내기" })).not.toBeInTheDocument();
   });
 
   it("uses email verification outside development", () => {
-    render(<LoginForm allowDevelopmentSession={false} />);
+    render(<LoginForm allowDevelopmentSession={false} nextPath="/trips" />);
 
     expect(screen.getByRole("button", { name: "이메일 인증 링크 보내기" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "이메일로 바로 시작하기" })).not.toBeInTheDocument();

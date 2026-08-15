@@ -1,5 +1,7 @@
 import { z } from "@/shared/lib/zod";
 
+import { profileDisplayNameSchema } from "@/entities/user/model/profile";
+
 export const tripMemberRoleSchema = z.enum(["owner", "editor", "viewer"]);
 export const tripInvitationRoleSchema = z.enum(["editor", "viewer"]);
 
@@ -7,6 +9,7 @@ export type TripMemberRole = z.infer<typeof tripMemberRoleSchema>;
 export type TripInvitationRole = z.infer<typeof tripInvitationRoleSchema>;
 
 export const tripMemberSchema = z.object({
+  displayName: profileDisplayNameSchema.nullable(),
   role: tripMemberRoleSchema,
   userId: z.uuid(),
 });
@@ -24,6 +27,15 @@ export const removeTripMemberSchema = z.object({
   tripId: z.uuid(),
 });
 
+export const leaveTripSchema = z.object({
+  tripId: z.uuid(),
+});
+
+export const transferTripOwnershipSchema = z.object({
+  memberId: z.uuid(),
+  tripId: z.uuid(),
+});
+
 export function parseUpdateTripMemberRoleFormData(formData: FormData) {
   return updateTripMemberRoleSchema.safeParse({
     memberId: formData.get("memberId"),
@@ -34,6 +46,19 @@ export function parseUpdateTripMemberRoleFormData(formData: FormData) {
 
 export function parseRemoveTripMemberFormData(formData: FormData) {
   return removeTripMemberSchema.safeParse({
+    memberId: formData.get("memberId"),
+    tripId: formData.get("tripId"),
+  });
+}
+
+export function parseLeaveTripFormData(formData: FormData) {
+  return leaveTripSchema.safeParse({
+    tripId: formData.get("tripId"),
+  });
+}
+
+export function parseTransferTripOwnershipFormData(formData: FormData) {
+  return transferTripOwnershipSchema.safeParse({
     memberId: formData.get("memberId"),
     tripId: formData.get("tripId"),
   });

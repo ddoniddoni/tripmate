@@ -1,6 +1,7 @@
 import { z } from "@/shared/lib/zod";
 
 import { tripInvitationRoleSchema } from "@/entities/trip/model/trip-membership";
+import { tripSchema } from "@/entities/trip/model/trip";
 
 export const tripInvitationEmailSchema = z
   .string("초대할 이메일 주소를 입력해 주세요.")
@@ -30,6 +31,14 @@ export const tripInvitationSchema = z.object({
 });
 
 export type TripInvitation = z.infer<typeof tripInvitationSchema>;
+
+export const tripInvitationPreviewSchema = z.object({
+  expiresAt: z.iso.datetime({ offset: true }),
+  role: tripInvitationRoleSchema,
+  trip: tripSchema,
+});
+
+export type TripInvitationPreview = z.infer<typeof tripInvitationPreviewSchema>;
 
 export const revokeTripInvitationSchema = z.object({
   invitationId: z.uuid(),

@@ -8,8 +8,10 @@ import {
   listSupabaseTripMembers,
 } from "@/entities/trip/api/supabase-trip-repository";
 import { getTripPermissions } from "@/entities/trip/model/trip-membership";
+import { getSupabaseUserProfile } from "@/entities/user/api/supabase-profile-repository";
 import { getAuthenticatedUser } from "@/features/auth/model/get-authenticated-user";
 import { getTripRoomId } from "@/features/collaboration/model/trip-room";
+import { getTripWorkspaceNavigation } from "@/features/collaboration/model/trip-workspace-navigation";
 import { TripHistoryControls } from "@/features/collaboration/ui/trip-history-controls";
 import { LiveblocksItineraryEditor } from "@/features/collaboration/ui/liveblocks-itinerary-editor";
 import { TripCollaborationRoom } from "@/features/collaboration/ui/trip-collaboration-room";
@@ -21,6 +23,7 @@ import { TripSharingDialog } from "@/features/trip-sharing/ui/trip-sharing-dialo
 
 type TripEditorPageProps = {
   params: Promise<{ tripId: string }>;
+  searchParams: Promise<{ day?: string; view?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -34,17 +37,43 @@ export async function generateMetadata({ params }: TripEditorPageProps): Promise
   };
 }
 
-export default async function TripEditorPage({ params }: TripEditorPageProps) {
-  const [{ tripId }, user] = await Promise.all([params, getAuthenticatedUser()]);
+export default async function TripEditorPage({ params, searchParams }: TripEditorPageProps) {
+  const [{ tripId }, user, workspaceSearchParams] = await Promise.all([
+    params,
+    getAuthenticatedUser(),
+    searchParams,
+  ]);
 
   if (!user) {
     redirect("/login");
   }
 
-  const [trip, members] = await Promise.all([
+  const [profileResult, tripResult, membersResult] = await Promise.allSettled([
+    getSupabaseUserProfile(user.id),
     getSupabaseTrip(tripId),
     listSupabaseTripMembers(tripId),
   ]);
+
+  if (profileResult.status === "rejected") {
+    throw profileResult.reason;
+  }
+
+  const profile = profileResult.value;
+
+  if (!profile?.displayName) {
+    redirect("/profile");
+  }
+
+  if (tripResult.status === "rejected") {
+    throw tripResult.reason;
+  }
+
+  if (membersResult.status === "rejected") {
+    throw membersResult.reason;
+  }
+
+  const trip = tripResult.value;
+  const members = membersResult.value;
 
   if (!trip) {
     notFound();
@@ -61,6 +90,10 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
     ? await listSupabasePendingTripInvitations(trip.id)
     : [];
   const initialTripItinerary = createEmptyTripItinerary(trip);
+  const initialWorkspaceNavigation = getTripWorkspaceNavigation(
+    workspaceSearchParams,
+    initialTripItinerary.itinerary.dayOrder,
+  );
 
   const editor = (
     <ItineraryEditorShell
@@ -71,6 +104,7 @@ export default async function TripEditorPage({ params }: TripEditorPageProps) {
         <LiveblocksItineraryEditor
           canEditItinerary={permissions.canEditItinerary}
           currentUserId={user.id}
+          initialWorkspaceNavigation={initialWorkspaceNavigation}
           members={members}
           trip={trip}
         />

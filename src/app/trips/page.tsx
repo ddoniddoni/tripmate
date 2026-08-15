@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { listSupabaseTrips } from "@/entities/trip/api/supabase-trip-repository";
 import { formatTripDateRange } from "@/entities/trip/lib/format-trip";
 import type { Trip } from "@/entities/trip/model/trip";
+import { getSupabaseUserProfile } from "@/entities/user/api/supabase-profile-repository";
 import { getAuthenticatedUser } from "@/features/auth/model/get-authenticated-user";
 import { SignOutButton } from "@/features/auth/ui/sign-out-button";
 import { NewTripForm } from "@/features/trip-management/ui/new-trip-form";
@@ -58,16 +59,41 @@ export default async function TripsPage() {
     redirect("/login");
   }
 
-  const trips = await listSupabaseTrips();
+  const [profileResult, tripsResult] = await Promise.allSettled([
+    getSupabaseUserProfile(user.id),
+    listSupabaseTrips(),
+  ]);
+
+  if (profileResult.status === "rejected") {
+    throw profileResult.reason;
+  }
+
+  const profile = profileResult.value;
+
+  if (!profile?.displayName) {
+    redirect("/profile");
+  }
+
+  if (tripsResult.status === "rejected") {
+    throw tripsResult.reason;
+  }
+
+  const trips = tripsResult.value;
+
+  const profileInitial = Array.from(profile.displayName)[0]?.toLocaleUpperCase("ko-KR") ?? "여";
 
   return (
     <main className="trips-page">
       <header className="trips-header">
         <BrandMark />
         <div className="account-actions">
-          <span className="profile-avatar" aria-label={`현재 로그인 사용자: ${user.email ?? "이메일 미확인"}`}>
-            {user.email?.slice(0, 1).toLocaleUpperCase("ko-KR") ?? "여"}
-          </span>
+          <Link
+            aria-label={`${profile.displayName} 프로필 설정`}
+            className="profile-avatar profile-avatar-link"
+            href="/profile"
+          >
+            {profileInitial}
+          </Link>
           <SignOutButton />
         </div>
       </header>

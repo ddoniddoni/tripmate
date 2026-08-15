@@ -21,14 +21,17 @@
 
 html {
   background: var(--paper);
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
+  overflow-x: hidden;
   color: var(--ink);
   background: var(--paper);
   font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: rgb(38 112 82 / 14%);
 }
 
 a {
@@ -36,11 +39,33 @@ a {
   text-decoration: none;
 }
 
+.skip-link {
+  position: fixed;
+  z-index: 60;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  padding: 10px 14px;
+  color: white;
+  background: var(--green-dark);
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  transform: translateY(-160%);
+  transition: transform 160ms ease;
+}
+
+.skip-link:focus-visible {
+  outline: 3px solid rgb(38 112 82 / 28%);
+  outline-offset: 3px;
+  transform: translateY(0);
+}
+
 button,
 input,
 select,
 textarea {
   font: inherit;
+  touch-action: manipulation;
 }
 
 .brand-mark {
@@ -137,6 +162,20 @@ textarea {
   font-weight: 700;
 }
 
+.profile-avatar-link {
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.profile-avatar-link:hover {
+  background: var(--green-dark);
+  transform: translateY(-1px);
+}
+
+.profile-avatar-link:focus-visible {
+  outline: 3px solid rgb(38 112 82 / 28%);
+  outline-offset: 3px;
+}
+
 .account-actions {
   display: flex;
   align-items: center;
@@ -217,6 +256,94 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 10px;
   outline: none;
+}
+
+/* Profile */
+
+.profile-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 80% 12%, rgb(214 234 223 / 92%), transparent 29%),
+    radial-gradient(circle at 14% 87%, rgb(249 225 214 / 72%), transparent 30%),
+    var(--paper);
+}
+
+.profile-card {
+  display: grid;
+  width: min(100%, 500px);
+  gap: 26px;
+  padding: clamp(32px, 7vw, 50px);
+  overflow: hidden;
+  background: rgb(255 255 255 / 90%);
+  border: 1px solid rgb(223 227 221 / 84%);
+  border-radius: 26px;
+  box-shadow: 0 24px 65px rgb(31 49 40 / 12%);
+}
+
+.profile-card::before {
+  width: 58px;
+  height: 5px;
+  content: "";
+  background: linear-gradient(90deg, var(--green), var(--sand));
+  border-radius: 999px;
+}
+
+.profile-card h1 {
+  margin: 9px 0 0;
+  font-size: clamp(30px, 6.7vw, 40px);
+  font-weight: 500;
+  letter-spacing: -0.048em;
+  line-height: 1.18;
+}
+
+.profile-card > div > p {
+  margin: 13px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.profile-form {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-name-field {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-name-field label {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.profile-name-field input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 14px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  outline: none;
+}
+
+.profile-name-field input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgb(38 112 82 / 13%);
+}
+
+.profile-name-field span {
+  color: #b64d3e;
+  font-size: 12px;
+}
+
+.profile-save-button {
+  min-height: 50px;
 }
 
 .login-form input:focus {
@@ -631,6 +758,7 @@ textarea {
 }
 
 .trip-heading {
+  min-width: 0;
   padding-left: 28px;
   border-left: 1px solid var(--line);
 }
@@ -643,9 +771,11 @@ textarea {
 
 .trip-heading h1 {
   margin: 2px 0 0;
+  overflow-wrap: anywhere;
   font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", system-ui, sans-serif;
   font-size: 22px;
   letter-spacing: -0.03em;
+  text-wrap: balance;
 }
 
 .date-range {
@@ -2582,7 +2712,12 @@ textarea {
   left: 50%;
   width: min(620px, calc(100vw - 32px));
   max-height: min(760px, calc(100vh - 40px));
+  max-height: min(
+    760px,
+    calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom))
+  );
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 28px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -2955,6 +3090,8 @@ textarea {
   flex: 0 0 auto;
   align-items: center;
   gap: 5px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .trip-member-controls select {
@@ -2967,6 +3104,11 @@ textarea {
   border-radius: 7px;
   font-size: 9px;
   font-weight: 700;
+}
+
+.trip-sharing-members-only {
+  display: grid;
+  gap: 16px;
 }
 
 .pending-invitations-heading {
@@ -3132,6 +3274,71 @@ textarea {
   line-height: 1.65;
 }
 
+.invitation-trip-summary {
+  display: grid;
+  gap: 0;
+  margin: 3px 0 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.invitation-trip-summary > div {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 13px 14px;
+  background: rgb(255 255 255 / 62%);
+}
+
+.invitation-trip-summary > div + div {
+  border-top: 1px solid var(--line);
+}
+
+.invitation-trip-summary dt {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.invitation-trip-summary dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.invitation-trip-summary dd > span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.invitation-role {
+  display: inline-flex;
+  width: max-content;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+}
+
+.invitation-role-editor {
+  color: var(--green-dark);
+  background: var(--green-soft);
+}
+
+.invitation-role-viewer {
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
 .invitation-accept-form {
   display: grid;
   gap: 10px;
@@ -3163,6 +3370,45 @@ textarea {
   color: #a14136;
   font-size: 12px;
   line-height: 1.5;
+}
+
+.invitation-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 8px;
+}
+
+.invitation-secondary-actions form {
+  flex: 1 1 130px;
+}
+
+.invitation-secondary-actions .sign-out-button,
+.invitation-secondary-link {
+  display: inline-flex;
+  width: 100%;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 13px;
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.invitation-secondary-link {
+  flex: 1 1 130px;
+  color: var(--muted);
+  background: #f0f2ef;
+}
+
+.invitation-secondary-actions .sign-out-button:hover,
+.invitation-secondary-link:hover {
+  background: #e2ebe4;
 }
 
 @keyframes dialog-fade-in {
@@ -3655,15 +3901,19 @@ textarea {
 
 @media (max-width: 860px) {
   .editor-shell {
-    padding-bottom: 67px;
+    --mobile-header-height: 80px;
+    padding-bottom: calc(82px + env(safe-area-inset-bottom));
     overflow: visible;
   }
 
   .editor-header {
     position: sticky;
     top: 0;
+    z-index: 30;
+    min-height: calc(var(--mobile-header-height) + env(safe-area-inset-top));
     grid-template-columns: auto 1fr auto;
-    padding: 0 18px;
+    padding: env(safe-area-inset-top) max(18px, env(safe-area-inset-right)) 0
+      max(18px, env(safe-area-inset-left));
   }
 
   .editor-header .brand-mark > span:last-child {
@@ -3688,18 +3938,43 @@ textarea {
     gap: 8px;
   }
 
+  .trip-workspace-tabs {
+    position: sticky;
+    z-index: 20;
+    top: calc(var(--mobile-header-height) + env(safe-area-inset-top));
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding: 12px max(18px, env(safe-area-inset-right)) 0
+      max(18px, env(safe-area-inset-left));
+    scroll-padding-inline: max(18px, env(safe-area-inset-left));
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    white-space: nowrap;
+  }
+
+  .trip-workspace-tabs::-webkit-scrollbar,
+  .day-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .trip-workspace-tabs button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    scroll-snap-align: start;
+  }
+
   .editor-layout {
     display: block;
   }
 
   .preparation-workspace {
     min-height: calc(100vh - 139px);
-    padding: 34px max(22px, 5vw) 86px;
+    padding: 34px max(22px, 5vw) calc(86px + env(safe-area-inset-bottom));
   }
 
   .expense-workspace {
     min-height: calc(100vh - 139px);
-    padding: 34px max(22px, 5vw) 86px;
+    padding: 34px max(22px, 5vw) calc(86px + env(safe-area-inset-bottom));
   }
 
   .expense-briefing,
@@ -3727,9 +4002,14 @@ textarea {
   .day-sidebar {
     display: block;
     overflow-x: auto;
-    padding: 16px 18px;
+    overscroll-behavior-x: contain;
+    padding: 16px max(18px, env(safe-area-inset-right)) 16px
+      max(18px, env(safe-area-inset-left));
     border-right: 0;
     border-bottom: 1px solid var(--line);
+    scroll-padding-inline: max(18px, env(safe-area-inset-left));
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
   }
 
   .month-heading,
@@ -3739,11 +4019,13 @@ textarea {
 
   .day-list {
     display: flex;
+    gap: 8px;
     width: max-content;
   }
 
   .day-list > li {
-    width: 146px;
+    width: 132px;
+    scroll-snap-align: start;
   }
 
   .day-row {
@@ -3753,17 +4035,17 @@ textarea {
   }
 
   .timeline-panel {
-    padding: 34px max(22px, 5vw) 44px;
+    padding: 34px max(22px, 5vw) calc(112px + env(safe-area-inset-bottom));
   }
 
   .map-panel {
-    padding: 28px max(22px, 5vw) 36px;
+    padding: 28px max(22px, 5vw) calc(112px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--line);
     border-left: 0;
   }
 
   .map-artwork {
-    min-height: min(600px, 70vh);
+    min-height: min(560px, 60dvh);
   }
 
   .mobile-itinerary-view .map-panel {
@@ -3782,14 +4064,17 @@ textarea {
     left: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    padding: 9px 16px 12px;
+    padding: 8px max(16px, env(safe-area-inset-right))
+      calc(8px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
     background: rgb(255 255 255 / 94%);
     border-top: 1px solid var(--line);
     backdrop-filter: blur(14px);
+    box-shadow: 0 -8px 24px rgb(31 49 40 / 6%);
   }
 
   .mobile-view-switch button {
-    padding: 9px;
+    min-height: 44px;
+    padding: 10px;
     color: var(--muted);
     background: transparent;
     border: 0;
@@ -3829,8 +4114,12 @@ textarea {
     min-height: 210px;
   }
 
+  .editor-shell {
+    --mobile-header-height: 72px;
+  }
+
   .editor-header {
-    min-height: 72px;
+    min-height: calc(var(--mobile-header-height) + env(safe-area-inset-top));
   }
 
   .trip-heading h1 {
@@ -3843,6 +4132,7 @@ textarea {
   }
 
   .timeline-header {
+    flex-direction: column;
     align-items: start;
   }
 
@@ -3851,8 +4141,8 @@ textarea {
   }
 
   .trip-workspace-tabs {
-    padding-right: 18px;
-    padding-left: 18px;
+    padding-right: max(18px, env(safe-area-inset-right));
+    padding-left: max(18px, env(safe-area-inset-left));
   }
 
   .trip-workspace-tabs button {
@@ -3918,6 +4208,29 @@ textarea {
 
   .place-card {
     padding: 15px;
+  }
+
+  .place-card-topline {
+    align-items: start;
+    gap: 8px;
+  }
+
+  .place-actions {
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 156px;
+  }
+
+  .icon-button,
+  .text-action {
+    min-width: 36px;
+    min-height: 40px;
+  }
+
+  .add-place-placeholder {
+    width: 100%;
+    min-height: 44px;
   }
 
   .timeline-end {

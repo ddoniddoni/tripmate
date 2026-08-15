@@ -12,6 +12,8 @@ vi.mock("@/shared/api/supabase/route-handler", () => ({
 
 import { GET } from "@/app/auth/confirm/route";
 
+const invitationToken = "a".repeat(43);
+
 describe("GET /auth/confirm", () => {
   beforeEach(() => {
     verifyOtp.mockReset();
@@ -46,7 +48,21 @@ describe("GET /auth/confirm", () => {
     );
 
     expect(response.headers.get("location")).toBe(
-      "http://localhost:3000/login?auth=confirmation-failed",
+      "http://localhost:3000/login?auth=confirmation-failed&next=%2Ftrips",
+    );
+  });
+
+  it("returns to the invitation after a successful confirmation", async () => {
+    verifyOtp.mockResolvedValue({ error: null });
+
+    const response = await GET(
+      new NextRequest(
+        `http://localhost:3000/auth/confirm?token_hash=opaque&type=email&next=%2Finvites%2F${invitationToken}`,
+      ),
+    );
+
+    expect(response.headers.get("location")).toBe(
+      `http://localhost:3000/invites/${invitationToken}`,
     );
   });
 });

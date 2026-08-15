@@ -9,8 +9,8 @@ import type { TripExpense } from "@/entities/expense/model/trip-expense";
 import { TripExpenseWorkspaceView } from "@/features/trip-expenses/ui/trip-expense-workspace";
 
 const members = [
-  { role: "owner" as const, userId: "user-jiwoo" },
-  { role: "editor" as const, userId: "user-minji" },
+  { displayName: "지우", role: "owner" as const, userId: "user-jiwoo" },
+  { displayName: "민지", role: "editor" as const, userId: "user-minji" },
 ];
 
 function ExpenseHarness({ canEditExpenses = true }: { canEditExpenses?: boolean }) {
@@ -55,7 +55,7 @@ describe("TripExpenseWorkspaceView", () => {
     expect(screen.getByText("공항 택시")).toBeInTheDocument();
     expect(screen.getByLabelText("현재 총 지출 ₩36,000")).toBeInTheDocument();
     expect(screen.getByText("보낼 돈")).toBeInTheDocument();
-    expect(screen.getByText(/나 결제 · 2명 정산/)).toBeInTheDocument();
+    expect(screen.getByText(/나 · 지우 결제 · 2명 정산/)).toBeInTheDocument();
     expect(screen.getAllByText("₩18,000")).toHaveLength(3);
   });
 

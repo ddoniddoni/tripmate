@@ -9,8 +9,8 @@ import type { PreparationChecklistItem } from "@/entities/preparation-checklist/
 import { TripPreparationChecklistView } from "@/features/preparation-checklist/ui/trip-preparation-checklist";
 
 const members = [
-  { role: "owner" as const, userId: "user-jiwoo" },
-  { role: "editor" as const, userId: "user-minji" },
+  { displayName: "지우", role: "owner" as const, userId: "user-jiwoo" },
+  { displayName: "민지", role: "editor" as const, userId: "user-minji" },
 ];
 
 const checklistItem: PreparationChecklistItem = {
@@ -75,6 +75,9 @@ describe("TripPreparationChecklistView", () => {
     render(<ChecklistHarness />);
 
     await user.selectOptions(screen.getByLabelText("카테고리"), "transport");
+    const assigneeSelect = screen.getByLabelText("담당자");
+    expect(within(assigneeSelect).getByRole("option", { name: "나 · 지우" })).toBeInTheDocument();
+    expect(within(assigneeSelect).getByRole("option", { name: "민지" })).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("담당자"), "user-minji");
     await user.type(screen.getByLabelText("준비할 일"), "렌터카 예약 확인하기");
     await user.click(screen.getByRole("button", { name: "추가" }));

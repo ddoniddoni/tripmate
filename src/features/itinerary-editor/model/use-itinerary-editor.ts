@@ -46,6 +46,8 @@ type UseItineraryEditorControllerOptions = {
   commitMutation: CommitItineraryMutation;
   currentUserId?: string;
   initialStatusMessage?: string;
+  onSelectedDayChange?: (dayId: string) => void;
+  selectedDayId?: string;
   tripItinerary: TripItinerary;
 };
 
@@ -54,9 +56,11 @@ export function useItineraryEditorController({
   commitMutation,
   currentUserId = "user-jiwoo",
   initialStatusMessage = "로컬 편집을 시작할 수 있습니다.",
+  onSelectedDayChange,
+  selectedDayId: controlledSelectedDayId,
   tripItinerary,
 }: UseItineraryEditorControllerOptions) {
-  const [selectedDayId, setSelectedDayId] = useState(
+  const [uncontrolledSelectedDayId, setUncontrolledSelectedDayId] = useState(
     () => tripItinerary.itinerary.dayOrder[0] ?? "",
   );
   const [dialogState, setDialogState] = useState<EditorDialogState>({ type: "closed" });
@@ -68,6 +72,7 @@ export function useItineraryEditorController({
 
   const { trip, itinerary } = tripItinerary;
   const days = selectOrderedDays(itinerary);
+  const selectedDayId = controlledSelectedDayId ?? uncontrolledSelectedDayId;
   const selectedDay = itinerary.days[selectedDayId] ?? days[0];
   const itineraryItems = selectedDay ? selectItemsForDay(itinerary, selectedDay.id) : [];
   const destinationName = trip.destination.split("·").at(-1)?.trim() ?? trip.destination;
@@ -76,6 +81,14 @@ export function useItineraryEditorController({
   const deletingItem = deleteItemId ? itinerary.items[deleteItemId] : undefined;
   const movingItem = moveItemId ? itinerary.items[moveItemId] : undefined;
   const selectedDayIndex = selectedDay ? itinerary.dayOrder.indexOf(selectedDay.id) : -1;
+
+  function setSelectedDayId(dayId: string) {
+    if (controlledSelectedDayId === undefined) {
+      setUncontrolledSelectedDayId(dayId);
+    }
+
+    onSelectedDayChange?.(dayId);
+  }
 
   function applyMutation(mutation: ItineraryEditorMutation, successMessage: string) {
     const result = commitMutation(mutation);
@@ -435,6 +448,9 @@ export function useItineraryEditor(
   canEditItinerary = true,
 ) {
   const [tripItinerary, setTripItinerary] = useState(() => initialTripItinerary);
+  const [selectedDayId, setSelectedDayId] = useState(
+    () => initialTripItinerary.itinerary.dayOrder[0] ?? "",
+  );
 
   return useItineraryEditorController({
     canEditItinerary,
@@ -447,6 +463,8 @@ export function useItineraryEditor(
 
       return result;
     },
+    onSelectedDayChange: setSelectedDayId,
+    selectedDayId,
     tripItinerary,
   });
 }

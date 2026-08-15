@@ -48,7 +48,7 @@ describe("POST /api/liveblocks-auth", () => {
     });
     mocks.authorize.mockResolvedValue({ body: "access-token", status: 200 });
     mocks.getAuthenticatedUser.mockResolvedValue({ email: "traveler@example.com", id: userId });
-    mocks.listSupabaseTripMembers.mockResolvedValue([{ role: "editor", userId }]);
+    mocks.listSupabaseTripMembers.mockResolvedValue([{ displayName: "지우", role: "editor", userId }]);
   });
 
   afterAll(() => {
@@ -86,14 +86,14 @@ describe("POST /api/liveblocks-auth", () => {
   });
 
   it("grants a viewer read-only access to only the requested trip room", async () => {
-    mocks.listSupabaseTripMembers.mockResolvedValue([{ role: "viewer", userId }]);
+    mocks.listSupabaseTripMembers.mockResolvedValue([{ displayName: "지우", role: "viewer", userId }]);
 
     const response = await POST(createRequest(`trip:${tripId}`));
 
     expect(response.status).toBe(200);
     expect(mocks.prepareSession).toHaveBeenCalledWith(userId, {
       userInfo: expect.objectContaining({
-        name: "traveler",
+        name: "지우",
         role: "viewer",
       }),
     });
@@ -106,5 +106,15 @@ describe("POST /api/liveblocks-auth", () => {
 
     expect(response.status).toBe(200);
     expect(mocks.allow).toHaveBeenCalledWith(`trip:${tripId}`, ["*:write"]);
+  });
+
+  it("falls back to the email name for a legacy profile without a nickname", async () => {
+    mocks.listSupabaseTripMembers.mockResolvedValue([{ displayName: null, role: "editor", userId }]);
+
+    await POST(createRequest(`trip:${tripId}`));
+
+    expect(mocks.prepareSession).toHaveBeenCalledWith(userId, {
+      userInfo: expect.objectContaining({ name: "traveler" }),
+    });
   });
 });

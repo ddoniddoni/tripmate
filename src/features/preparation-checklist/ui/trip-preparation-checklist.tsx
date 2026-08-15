@@ -15,6 +15,7 @@ import {
   type PreparationChecklistCategory,
   type PreparationChecklistItem,
 } from "@/entities/preparation-checklist/model/preparation-checklist";
+import { getTripMemberLabels } from "@/entities/trip/lib/get-trip-member-labels";
 import type { TripMember } from "@/entities/trip/model/trip-membership";
 import {
   applyPreparationChecklistMutationToStorage,
@@ -31,7 +32,7 @@ const preparationItemFormSchema = z.object({
 
 type PreparationItemFormValues = z.infer<typeof preparationItemFormSchema>;
 
-type PreparationChecklistMember = Pick<TripMember, "role" | "userId">;
+type PreparationChecklistMember = Pick<TripMember, "displayName" | "role" | "userId">;
 
 type TripPreparationChecklistViewProps = {
   canEditChecklist: boolean;
@@ -55,18 +56,6 @@ const categoryCopy: Record<
   transport: { description: "출발과 이동 준비", title: "이동" },
 };
 
-function getMemberLabel(
-  member: PreparationChecklistMember,
-  memberIndex: number,
-  currentUserId: string,
-) {
-  if (member.userId === currentUserId) {
-    return "나";
-  }
-
-  return `여행 멤버 ${memberIndex + 1}`;
-}
-
 function getOrderedItems(items: readonly PreparationChecklistItem[]) {
   return items.toSorted((left, right) => {
     if (Boolean(left.completedAt) !== Boolean(right.completedAt)) {
@@ -80,15 +69,15 @@ function getOrderedItems(items: readonly PreparationChecklistItem[]) {
 function PreparationChecklistItemRow({
   canEditChecklist,
   item,
+  memberLabels,
   members,
-  currentUserId,
   onAssign,
   onRemove,
   onToggleComplete,
 }: {
   canEditChecklist: boolean;
-  currentUserId: string;
   item: PreparationChecklistItem;
+  memberLabels: ReadonlyMap<string, string>;
   members: readonly PreparationChecklistMember[];
   onAssign: (itemId: string, assigneeId: string | null) => void;
   onRemove: (itemId: string) => void;
@@ -124,9 +113,9 @@ function PreparationChecklistItemRow({
           value={item.assigneeId ?? ""}
         >
           <option value="">담당자 없음</option>
-          {members.map((member, memberIndex) => (
+          {members.map((member) => (
             <option key={member.userId} value={member.userId}>
-              {getMemberLabel(member, memberIndex, currentUserId)}
+              {memberLabels.get(member.userId) ?? "여행 멤버"}
             </option>
           ))}
         </select>
@@ -157,6 +146,7 @@ export function TripPreparationChecklistView({
   statusMessage,
 }: TripPreparationChecklistViewProps) {
   const completedCount = items.filter((item) => item.completedAt !== null).length;
+  const memberLabels = getTripMemberLabels(members, currentUserId);
   const progress = items.length === 0 ? 0 : Math.round((completedCount / items.length) * 100);
   const orderedItems = getOrderedItems(items);
   const {
@@ -231,9 +221,9 @@ export function TripPreparationChecklistView({
           </label>
           <select id="preparation-item-assignee" {...register("assigneeId")}>
             <option value="">담당자 없음</option>
-            {members.map((member, memberIndex) => (
+            {members.map((member) => (
               <option key={member.userId} value={member.userId}>
-                {getMemberLabel(member, memberIndex, currentUserId)}
+                {memberLabels.get(member.userId) ?? "여행 멤버"}
               </option>
             ))}
           </select>
@@ -282,9 +272,9 @@ export function TripPreparationChecklistView({
                   {categoryItems.map((item) => (
                     <PreparationChecklistItemRow
                       canEditChecklist={canEditChecklist}
-                      currentUserId={currentUserId}
                       item={item}
                       key={item.id}
+                      memberLabels={memberLabels}
                       members={members}
                       onAssign={onAssign}
                       onRemove={onRemove}
@@ -324,6 +314,7 @@ export function TripPreparationChecklist({
   const [statusMessage, setStatusMessage] = useState("공유 준비 목록을 불러왔습니다.");
   const checklist = getLiveblocksPreparationChecklistSnapshot({ checklistItems });
   const items = checklist ? Object.values(checklist.items) : [];
+  const memberLabels = getTripMemberLabels(members, currentUserId);
 
   function ensureCanEditChecklist() {
     if (canEditChecklist) {
@@ -380,7 +371,7 @@ export function TripPreparationChecklist({
       onAssign={(itemId, assigneeId) => {
         const assignee = members.find((member) => member.userId === assigneeId);
         const assigneeName = assignee
-          ? getMemberLabel(assignee, members.indexOf(assignee), currentUserId)
+          ? memberLabels.get(assignee.userId) ?? "여행 멤버"
           : "담당자 없음";
 
         handleMutation(

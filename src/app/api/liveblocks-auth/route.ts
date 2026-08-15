@@ -17,7 +17,11 @@ const collaboratorColors = ["#d56b59", "#4f7fca", "#2f8d69", "#9b6bb5"] as const
 
 export const runtime = "nodejs";
 
-function getCollaboratorName(email: string | null, userId: string) {
+function getCollaboratorName(displayName: string | null, email: string | null, userId: string) {
+  if (displayName) {
+    return displayName;
+  }
+
   const emailName = email?.split("@")[0]?.trim();
 
   return emailName || `여행자 ${userId.slice(0, 6)}`;
@@ -78,7 +82,7 @@ export async function POST(request: Request) {
     const session = liveblocks.prepareSession(user.id, {
       userInfo: {
         color: getCollaboratorColor(user.id),
-        name: getCollaboratorName(user.email, user.id),
+        name: getCollaboratorName(membership.displayName, user.email, user.id),
         role: membership.role,
       },
     });

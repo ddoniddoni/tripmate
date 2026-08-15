@@ -4,12 +4,17 @@ import {
   tripMemberSchema,
   type TripMember,
 } from "@/entities/trip/model/trip-membership";
+import { profileDisplayNameSchema } from "@/entities/user/model/profile";
 import {
   tripInvitationSchema,
+  tripInvitationEmailSchema,
+  tripInvitationPreviewSchema,
   type TripInvitation,
+  type TripInvitationPreview,
 } from "@/entities/trip/model/trip-invitation";
 import { tripSchema, type Trip } from "@/entities/trip/model/trip";
 import { calendarDateSchema } from "@/shared/lib/calendar-date";
+import { createSupabaseAdminClient } from "@/shared/api/supabase/admin";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 
 const supabaseTripIdSchema = z.uuid();
@@ -25,6 +30,11 @@ const supabaseTripRowSchema = z.object({
 const supabaseTripRowsSchema = z.array(supabaseTripRowSchema);
 const supabaseTripMemberRowsSchema = z.array(
   z.object({
+    profiles: z
+      .object({
+        display_name: profileDisplayNameSchema.nullable(),
+      })
+      .nullable(),
     role: tripMemberSchema.shape.role,
     user_id: tripMemberSchema.shape.userId,
   }),
@@ -37,6 +47,11 @@ const supabaseTripInvitationRowsSchema = z.array(
     role: tripInvitationSchema.shape.role,
   }),
 );
+const supabaseTripInvitationPreviewRowSchema = z.object({
+  expires_at: tripInvitationSchema.shape.expiresAt,
+  role: tripInvitationSchema.shape.role,
+  trips: supabaseTripRowSchema.nullable(),
+});
 
 export class SupabaseTripRepositoryError extends Error {
   constructor() {
@@ -109,7 +124,7 @@ export async function listSupabaseTripMembers(tripId: string): Promise<TripMembe
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("trip_members")
-    .select("user_id, role")
+    .select("user_id, role, profiles(display_name)")
     .eq("trip_id", tripId);
 
   if (error) {
@@ -118,7 +133,11 @@ export async function listSupabaseTripMembers(tripId: string): Promise<TripMembe
 
   try {
     return supabaseTripMemberRowsSchema.parse(data).map((member) =>
-      tripMemberSchema.parse({ role: member.role, userId: member.user_id }),
+      tripMemberSchema.parse({
+        displayName: member.profiles?.display_name ?? null,
+        role: member.role,
+        userId: member.user_id,
+      }),
     );
   } catch {
     throw new SupabaseTripRepositoryError();
@@ -153,6 +172,56 @@ export async function listSupabasePendingTripInvitations(
         role: invitation.role,
       }),
     );
+  } catch {
+    throw new SupabaseTripRepositoryError();
+  }
+}
+
+type SupabaseTripInvitationPreviewInput = {
+  email: string;
+  tokenHash: string;
+};
+
+export async function getSupabaseTripInvitationPreview({
+  email,
+  tokenHash,
+}: SupabaseTripInvitationPreviewInput): Promise<TripInvitationPreview | null> {
+  const emailResult = tripInvitationEmailSchema.safeParse(email);
+
+  if (!emailResult.success || !/^[a-f0-9]{64}$/.test(tokenHash)) {
+    return null;
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("trip_invitations")
+    .select("role, expires_at, trips(id, title, destination, start_date, end_date, time_zone)")
+    .eq("email", emailResult.data)
+    .eq("token_hash", tokenHash)
+    .is("accepted_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  if (error) {
+    throw new SupabaseTripRepositoryError();
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  try {
+    const row = supabaseTripInvitationPreviewRowSchema.parse(data);
+
+    if (!row.trips) {
+      return null;
+    }
+
+    return tripInvitationPreviewSchema.parse({
+      expiresAt: row.expires_at,
+      role: row.role,
+      trip: toTrip(row.trips),
+    });
   } catch {
     throw new SupabaseTripRepositoryError();
   }

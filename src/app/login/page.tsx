@@ -4,16 +4,19 @@ import { isDevelopmentAuthenticationEnabled } from "@/features/auth/model/develo
 import { getAuthenticatedUser } from "@/features/auth/model/get-authenticated-user";
 import { LoginForm } from "@/features/auth/ui/login-form";
 import { BrandMark } from "@/shared/ui/brand-mark";
+import { getSafeInternalPath } from "@/shared/lib/safe-internal-path";
 
 type LoginPageProps = {
-  searchParams: Promise<{ auth?: string }>;
+  searchParams: Promise<{ auth?: string; next?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const [user, params] = await Promise.all([getAuthenticatedUser(), searchParams]);
 
+  const nextPath = getSafeInternalPath(params.next);
+
   if (user) {
-    redirect("/trips");
+    redirect(nextPath);
   }
 
   const allowDevelopmentSession = isDevelopmentAuthenticationEnabled();
@@ -36,7 +39,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             로그인 링크를 확인하지 못했습니다. 새 링크를 요청해 주세요.
           </p>
         ) : null}
-        <LoginForm allowDevelopmentSession={allowDevelopmentSession} />
+        <LoginForm allowDevelopmentSession={allowDevelopmentSession} nextPath={nextPath} />
         <p className="login-help">
           {allowDevelopmentSession
             ? "개발 환경에서는 실제 Supabase 계정으로 바로 로그인합니다. 초대와 공동 편집도 바로 사용할 수 있어요."

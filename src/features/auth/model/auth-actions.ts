@@ -10,6 +10,7 @@ import { isDevelopmentAuthenticationEnabled } from "@/features/auth/model/develo
 import { createSupabaseAdminClient } from "@/shared/api/supabase/admin";
 import { publicEnv } from "@/shared/config/public-env";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
+import { getSafeInternalPath } from "@/shared/lib/safe-internal-path";
 
 export async function requestMagicLink(
   _previousState: MagicLinkActionState,
@@ -22,10 +23,11 @@ export async function requestMagicLink(
   }
 
   const supabase = await createSupabaseServerClient();
-  const emailRedirectTo = new URL("/auth/confirm", publicEnv.NEXT_PUBLIC_APP_URL).toString();
+  const emailRedirectUrl = new URL("/auth/confirm", publicEnv.NEXT_PUBLIC_APP_URL);
+  emailRedirectUrl.searchParams.set("next", getSafeInternalPath(formData.get("next")));
   const { error } = await supabase.auth.signInWithOtp({
     email: emailResult.data,
-    options: { emailRedirectTo },
+    options: { emailRedirectTo: emailRedirectUrl.toString() },
   });
 
   if (error) {
@@ -84,12 +86,17 @@ export async function startDevelopmentSession(
     };
   }
 
-  redirect("/trips");
+  redirect(getSafeInternalPath(formData.get("next")));
 }
 
-export async function signOut() {
+export async function signOut(formData?: FormData) {
   const supabase = await createSupabaseServerClient();
 
   await supabase.auth.signOut();
-  redirect("/login");
+
+  if (!formData?.has("next")) {
+    redirect("/login");
+  }
+
+  redirect(`/login?next=${encodeURIComponent(getSafeInternalPath(formData?.get("next")))}`);
 }

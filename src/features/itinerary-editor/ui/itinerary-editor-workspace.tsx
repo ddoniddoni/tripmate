@@ -493,7 +493,11 @@ function TimelinePanel({
   const conflictedItemIds = new Set(scheduleConflicts.flatMap((conflict) => conflict.itemIds));
 
   return (
-    <section className="timeline-panel" aria-labelledby="timeline-heading">
+    <section
+      className="timeline-panel"
+      id="itinerary-timeline-panel"
+      aria-labelledby="timeline-heading"
+    >
       <div className="timeline-header">
         <div>
           <span className="section-kicker">
@@ -595,11 +599,11 @@ function MapPreviewPanel({
   const routeMessage = getRoutePreviewMessage(routePreview);
 
   return (
-    <section className="map-panel" aria-label="일정 지도">
+    <section className="map-panel" id="itinerary-map-panel" aria-labelledby="map-panel-heading">
       <div className="map-panel-header">
         <div>
           <span className="section-kicker">경로 미리보기</span>
-          <h2>오늘의 {destinationName}</h2>
+          <h2 id="map-panel-heading">오늘의 {destinationName}</h2>
         </div>
         <span className="map-placeholder-action" aria-label="지도 맞춤 기능 준비 중">
           ⌖
@@ -659,24 +663,37 @@ type MobileViewSwitchProps = {
 
 function MobileViewSwitch({ mobileView, onChange }: MobileViewSwitchProps) {
   return (
-    <div className="mobile-view-switch" role="group" aria-label="모바일 화면 전환">
-      <button
-        className={mobileView === "itinerary" ? "mobile-view-active" : undefined}
-        type="button"
-        aria-pressed={mobileView === "itinerary"}
-        onClick={() => onChange("itinerary")}
+    <>
+      <p className="sr-only" id="mobile-view-switch-description">
+        작은 화면에서는 일정과 지도를 한 화면씩 확인합니다. 지도에서 장소를 선택하면 일정으로
+        돌아갑니다.
+      </p>
+      <div
+        className="mobile-view-switch"
+        role="group"
+        aria-describedby="mobile-view-switch-description"
+        aria-label="모바일 화면 전환"
       >
-        일정
-      </button>
-      <button
-        className={mobileView === "map" ? "mobile-view-active" : undefined}
-        type="button"
-        aria-pressed={mobileView === "map"}
-        onClick={() => onChange("map")}
-      >
-        지도
-      </button>
-    </div>
+        <button
+          className={mobileView === "itinerary" ? "mobile-view-active" : undefined}
+          type="button"
+          aria-controls="itinerary-timeline-panel"
+          aria-pressed={mobileView === "itinerary"}
+          onClick={() => onChange("itinerary")}
+        >
+          일정
+        </button>
+        <button
+          className={mobileView === "map" ? "mobile-view-active" : undefined}
+          type="button"
+          aria-controls="itinerary-map-panel"
+          aria-pressed={mobileView === "map"}
+          onClick={() => onChange("map")}
+        >
+          지도
+        </button>
+      </div>
+    </>
   );
 }
 

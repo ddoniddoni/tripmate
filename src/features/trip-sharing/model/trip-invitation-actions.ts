@@ -1,6 +1,6 @@
 "use server";
 
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -16,6 +16,7 @@ import type {
   CreateTripInvitationActionState,
   RevokeTripInvitationActionResult,
 } from "@/features/trip-sharing/model/trip-invitation-action-state";
+import { getTripInvitationTokenHash } from "@/features/trip-sharing/lib/trip-invitation-token";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { publicEnv } from "@/shared/config/public-env";
 
@@ -23,10 +24,6 @@ const invitationLookupSchema = z.object({
   id: z.uuid(),
   trip_id: z.uuid(),
 });
-
-function getTokenHash(token: string) {
-  return createHash("sha256").update(token).digest("hex");
-}
 
 export async function createTripInvitation(
   _previousState: CreateTripInvitationActionState,
@@ -58,7 +55,7 @@ export async function createTripInvitation(
     email: inputResult.data.email,
     expires_at: expiresAt,
     role: inputResult.data.role,
-    token_hash: getTokenHash(token),
+    token_hash: getTripInvitationTokenHash(token),
     trip_id: inputResult.data.tripId,
   });
 
@@ -139,7 +136,7 @@ export async function acceptTripInvitation(
   const { data, error } = await supabase
     .from("trip_invitations")
     .select("id, trip_id")
-    .eq("token_hash", getTokenHash(tokenResult.data))
+    .eq("token_hash", getTripInvitationTokenHash(tokenResult.data))
     .maybeSingle();
 
   if (error) {
