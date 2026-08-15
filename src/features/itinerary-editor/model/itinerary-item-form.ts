@@ -34,8 +34,8 @@ export const itineraryItemFormSchema = z.object({
       "소요 시간은 1분에서 1440분 사이여야 합니다.",
     ),
   note: z.string("메모를 입력해 주세요.").trim().max(2_000, "메모는 2,000자 이내로 입력해 주세요."),
-  longitude: coordinateSchema("경도", -180, 180),
-  latitude: coordinateSchema("위도", -90, 90),
+  longitude: coordinateSchema("장소 검색 결과", -180, 180),
+  latitude: coordinateSchema("장소 검색 결과", -90, 90),
 });
 
 export type ItineraryItemFormValues = z.infer<typeof itineraryItemFormSchema>;

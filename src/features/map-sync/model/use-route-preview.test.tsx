@@ -10,6 +10,7 @@ import type {
   DirectionsAdapter,
   DirectionsRoute,
 } from "@/features/map-sync/model/directions-adapter";
+import { DirectionsRequestError } from "@/features/map-sync/model/directions-adapter";
 import {
   clearRoutePreviewCache,
   useRoutePreview,
@@ -34,6 +35,12 @@ const route: DirectionsRoute = {
   })),
   distanceMeters: 15_000,
   durationSeconds: 1_800,
+  legs: [
+    {
+      distanceMeters: 15_000,
+      durationSeconds: 1_800,
+    },
+  ],
 };
 
 type RoutePreviewProbeProps = {
@@ -47,7 +54,12 @@ function RoutePreviewProbe({ adapter, items }: RoutePreviewProbeProps) {
   return (
     <div>
       <span data-testid="route-status">{preview.status}</span>
-      <span data-testid="route-distance">{preview.route?.distanceMeters ?? "none"}</span>
+      <span data-testid="route-distance">
+        {preview.status === "ready" ? preview.route.distanceMeters : "none"}
+      </span>
+      <span data-testid="route-error">
+        {preview.status === "error" ? preview.errorMessage : "none"}
+      </span>
       <button type="button" onClick={preview.retry}>
         다시 시도
       </button>
@@ -100,5 +112,20 @@ describe("useRoutePreview", () => {
 
     expect(adapter.getRoute).toHaveBeenCalledTimes(2);
     expect(screen.getByTestId("route-distance")).toHaveTextContent("15000");
+  });
+
+  it("keeps a recoverable Korean message returned by the directions API", async () => {
+    const adapter: DirectionsAdapter = {
+      getRoute: vi.fn(async () => {
+        throw new DirectionsRequestError("오늘 실제 이동 경로 계산 한도에 도달했어요.");
+      }),
+    };
+
+    render(<RoutePreviewProbe adapter={adapter} items={routeItems} />);
+
+    await waitFor(() => expect(screen.getByTestId("route-status")).toHaveTextContent("error"));
+    expect(screen.getByTestId("route-error")).toHaveTextContent(
+      "오늘 실제 이동 경로 계산 한도에 도달했어요.",
+    );
   });
 });

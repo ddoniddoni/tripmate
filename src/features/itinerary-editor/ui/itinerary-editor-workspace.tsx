@@ -28,12 +28,8 @@ import { useItineraryEditor } from "@/features/itinerary-editor/model/use-itiner
 import { DeleteItineraryItemDialog } from "@/features/itinerary-editor/ui/delete-itinerary-item-dialog";
 import { ItineraryItemDialog } from "@/features/itinerary-editor/ui/itinerary-item-dialog";
 import { MoveItineraryItemDialog } from "@/features/itinerary-editor/ui/move-itinerary-item-dialog";
-import type { RouteCoordinate } from "@/features/map-sync/model/directions-adapter";
-import {
-  createMapProjection,
-  getSvgPolylinePoints,
-} from "@/features/map-sync/model/map-projection";
 import { useRoutePreview } from "@/features/map-sync/model/use-route-preview";
+import { GoogleItineraryMap } from "@/features/map-sync/ui/google-itinerary-map";
 import { formatCalendarDate } from "@/shared/lib/calendar-date";
 
 type ItineraryEditorWorkspaceProps = {
@@ -107,6 +103,13 @@ function getMarkerLabel(index: number) {
   return index < 26 ? String.fromCharCode("A".charCodeAt(0) + index) : `${index + 1}`;
 }
 
+function isCardActionTarget(target: EventTarget | null) {
+  return (
+    target instanceof Element &&
+    target.closest("button, a, input, select, textarea") !== null
+  );
+}
+
 function formatRouteDistance(distanceMeters: number) {
   return `${(distanceMeters / 1_000).toFixed(1)}km`;
 }
@@ -133,82 +136,6 @@ function GripIcon() {
       <circle cx="6" cy="14" r="1" />
       <circle cx="12" cy="14" r="1" />
     </svg>
-  );
-}
-
-type MapArtworkProps = {
-  destination: string;
-  markers: Array<{
-    coordinate: RouteCoordinate;
-    id: string;
-    isSelected: boolean;
-    name: string;
-  }>;
-  onSelect: (itemId: string) => void;
-  routeCoordinates?: readonly RouteCoordinate[];
-};
-
-function MapArtwork({ destination, markers, onSelect, routeCoordinates }: MapArtworkProps) {
-  const markerNames = markers.map((marker) => marker.name).join(", ");
-  const project = createMapProjection(markers.map((marker) => marker.coordinate));
-  const routePoints = getSvgPolylinePoints(routeCoordinates ?? [], project);
-
-  return (
-    <div
-      className="map-artwork"
-      role="region"
-      aria-label={`${destination} 선택 일정의 지도 미리보기${markerNames ? `: ${markerNames}` : ""}`}
-    >
-      <svg className="map-roads" viewBox="0 0 720 720" aria-hidden="true">
-        <path className="road road-primary" d="M-30 120C115 135 145 230 260 245S500 130 750 178" />
-        <path className="road" d="M50-20c20 150 135 220 125 410S90 610 125 760" />
-        <path className="road" d="M450-20c-20 145-125 215-100 365s155 195 190 390" />
-        <path className="road road-primary" d="M-20 590c140-115 255-70 355-120s160-190 405-185" />
-        <path className="road" d="M-20 340c170-10 225 65 335 55s210-120 425-85" />
-        {routePoints ? <polyline className="route-line" points={routePoints} /> : null}
-      </svg>
-      <span className="map-water map-water-one" aria-hidden="true" />
-      <span className="map-water map-water-two" aria-hidden="true" />
-      <span className="map-park map-park-one" aria-hidden="true" />
-      <span className="map-park map-park-two" aria-hidden="true" />
-
-      <span className="map-label label-jeju">제주시</span>
-      <span className="map-label label-jocheon">조천읍</span>
-      <span className="map-label label-gujwa">구좌읍</span>
-
-      {markers.map((marker, index) => {
-        const position = project?.(marker.coordinate);
-
-        return (
-          <button
-            className={`map-marker${marker.isSelected ? " map-marker-selected" : ""}`}
-            key={marker.id}
-            type="button"
-            aria-label={`${marker.name} 지도에서 선택`}
-            aria-pressed={marker.isSelected}
-            onClick={() => onSelect(marker.id)}
-            style={
-              position
-                ? { left: `${position.x}%`, top: `${position.y}%` }
-                : undefined
-            }
-          >
-            <span>{getMarkerLabel(index)}</span>
-          </button>
-        );
-      })}
-
-      <div className="map-controls" aria-hidden="true">
-        <span>+</span>
-        <span>−</span>
-      </div>
-      <div className="map-legend">
-        <span>
-          <i className="legend-route" />오늘의 동선
-        </span>
-        <span>선택 날짜 기준</span>
-      </div>
-    </div>
   );
 }
 
@@ -268,6 +195,11 @@ function SortableTimelineItem({
       <article
         aria-describedby={hasScheduleConflict ? `schedule-conflict-${item.id}` : undefined}
         className="place-card"
+        onClick={(event) => {
+          if (!isCardActionTarget(event.target)) {
+            onSelect(item.id);
+          }
+        }}
       >
         <div className="place-card-topline">
           <div className="place-card-labels">
@@ -605,11 +537,9 @@ function MapPreviewPanel({
           <span className="section-kicker">경로 미리보기</span>
           <h2 id="map-panel-heading">오늘의 {destinationName}</h2>
         </div>
-        <span className="map-placeholder-action" aria-label="지도 맞춤 기능 준비 중">
-          ⌖
-        </span>
+        <span className="map-live-badge">실제 지도</span>
       </div>
-      <MapArtwork
+      <GoogleItineraryMap
         destination={destinationName}
         markers={itineraryItems.map((item) => ({
           coordinate: {
@@ -621,10 +551,37 @@ function MapPreviewPanel({
           name: item.place.name,
         }))}
         onSelect={onSelectItem}
-        routeCoordinates={routePreview.route?.coordinates}
+        routeCoordinates={
+          routePreview.status === "ready" ? routePreview.route.coordinates : undefined
+        }
       />
       <div className={`map-route-status route-status-${routePreview.status}`} role="status">
-        <span>{routeMessage}</span>
+        <div>
+          <span>{routeMessage}</span>
+          {routePreview.status === "ready" && routePreview.route?.legs.length ? (
+            <ol className="map-route-legs" aria-label="장소 사이 자동차 이동 시간">
+              {routePreview.route.legs.map((leg, index) => {
+                const fromItem = itineraryItems[index];
+                const toItem = itineraryItems[index + 1];
+
+                if (!fromItem || !toItem) {
+                  return null;
+                }
+
+                return (
+                  <li key={`${fromItem.id}-${toItem.id}`}>
+                    <span>
+                      {fromItem.place.name} → {toItem.place.name}
+                    </span>
+                    <strong>
+                      {formatRouteDuration(leg.durationSeconds)} · {formatRouteDistance(leg.distanceMeters)}
+                    </strong>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : null}
+        </div>
         {routePreview.status === "error" ? (
           <button type="button" onClick={routePreview.retry}>
             경로 다시 시도
@@ -641,6 +598,8 @@ function getRoutePreviewMessage(routePreview: ReturnType<typeof useRoutePreview>
       return "경유지가 없어요.";
     case "one-point":
       return "장소를 하나 더 추가하면 경로를 보여 드려요.";
+    case "too-many-points":
+      return `실제 이동 경로는 하루 ${routePreview.maximumCoordinateCount}곳까지 계산할 수 있어요.`;
     case "missing-points":
       return "일부 장소의 좌표가 없어 경로를 계산할 수 없어요.";
     case "loading":
@@ -651,7 +610,7 @@ function getRoutePreviewMessage(routePreview: ReturnType<typeof useRoutePreview>
       return routePreview.errorMessage ?? "경로를 불러오지 못했습니다.";
     case "ready":
       return routePreview.route
-        ? `자동차 · ${formatRouteDistance(routePreview.route.distanceMeters)} · ${formatRouteDuration(routePreview.route.durationSeconds)}`
+        ? `자동차 이동 · ${formatRouteDistance(routePreview.route.distanceMeters)} · 약 ${formatRouteDuration(routePreview.route.durationSeconds)}`
         : "경로를 불러오지 못했습니다.";
   }
 }

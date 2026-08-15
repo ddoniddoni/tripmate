@@ -180,7 +180,7 @@ type TripDay = {
 };
 
 type PlaceSnapshot = {
-  provider: "mapbox";
+  provider: "google" | "mapbox";
   providerPlaceId: string;
   name: string;
   address: string;
@@ -309,7 +309,7 @@ the previous metadata and show a recoverable error.
 
 ## 8. Map and search behavior
 
-Hide Mapbox response shapes behind project-owned interfaces.
+Hide external place-provider response shapes behind project-owned interfaces.
 
 Place search:
 
@@ -454,6 +454,12 @@ Typical variables:
 ```text
 NEXT_PUBLIC_APP_URL
 NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
+GOOGLE_MAPS_API_KEY
+GOOGLE_PLACES_SEARCH_DAILY_LIMIT
+GOOGLE_PLACES_SEARCH_MONTHLY_LIMIT
+NEXT_PUBLIC_GOOGLE_MAPS_MAP_KEY
+GOOGLE_MAPS_JAVASCRIPT_DAILY_LIMIT
+GOOGLE_MAPS_JAVASCRIPT_MONTHLY_LIMIT
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 LIVEBLOCKS_SECRET_KEY
@@ -463,8 +469,10 @@ SUPABASE_SERVICE_ROLE_KEY
 - Keep an accurate `.env.example`.
 - Validate variables at startup.
 - Only safe browser values use `NEXT_PUBLIC_`.
+- Use a separate browser-restricted `NEXT_PUBLIC_GOOGLE_MAPS_MAP_KEY` for Maps JavaScript API; keep `GOOGLE_MAPS_API_KEY` server-only for Places API (New).
 - Keep secret and service-role keys server-only.
 - Restrict provider tokens by origin and least privilege where supported.
+- Enforce provider cost caps on the server before making paid requests or displaying a paid map. Keep global usage counters private and fail closed when their storage is unavailable.
 - Use synthetic demo data.
 - Do not log sensitive trip, invitation, or credential data.
 

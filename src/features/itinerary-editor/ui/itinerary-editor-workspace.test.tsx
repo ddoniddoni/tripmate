@@ -2,10 +2,46 @@
 
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { jejuTrip } from "@/entities/itinerary/mock/jeju-trip";
 import { ItineraryEditorWorkspace } from "@/features/itinerary-editor/ui/itinerary-editor-workspace";
+
+vi.mock("@/features/map-sync/ui/google-itinerary-map", () => ({
+  GoogleItineraryMap: ({
+    destination,
+    markers,
+    onSelect,
+    routeCoordinates = [],
+  }: {
+    destination: string;
+    markers: Array<{
+      coordinate: { latitude: number; longitude: number };
+      id: string;
+      isSelected: boolean;
+      name: string;
+    }>;
+    onSelect: (itemId: string) => void;
+    routeCoordinates?: Array<{ latitude: number; longitude: number }>;
+  }) => (
+    <div role="region" aria-label={`${destination} 선택 일정 지도`}>
+      <output data-testid="map-route-signature">
+        {routeCoordinates.map((coordinate) => `${coordinate.latitude}:${coordinate.longitude}`).join("|")}
+      </output>
+      {markers.map((marker) => (
+        <button
+          key={marker.id}
+          type="button"
+          aria-label={`${marker.name} 지도에서 선택`}
+          aria-pressed={marker.isSelected}
+          onClick={() => onSelect(marker.id)}
+        >
+          {marker.name}
+        </button>
+      ))}
+    </div>
+  ),
+}));
 
 function renderWorkspace(canEditItinerary = true, initialTripItinerary = jejuTrip) {
   const user = userEvent.setup();
@@ -19,6 +55,65 @@ function renderWorkspace(canEditItinerary = true, initialTripItinerary = jejuTri
 }
 
 describe("ItineraryEditorWorkspace", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (input === "/api/directions") {
+          const query: unknown = init?.body ? JSON.parse(String(init.body)) : null;
+
+          if (
+            !query ||
+            typeof query !== "object" ||
+            !("coordinates" in query) ||
+            !Array.isArray(query.coordinates)
+          ) {
+            return new Response(JSON.stringify({ message: "invalid route" }), { status: 400 });
+          }
+
+          const coordinates = query.coordinates;
+          const legs = coordinates.slice(1).map(() => ({
+            distanceMeters: 1_000,
+            durationSeconds: 300,
+          }));
+
+          return new Response(
+            JSON.stringify({
+              route: {
+                coordinates,
+                distanceMeters: legs.length * 1_000,
+                durationSeconds: legs.length * 300,
+                legs,
+              },
+            }),
+            { headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            places: [
+              {
+                address: "제주특별자치도 서귀포시 성산읍 성산리 1",
+                category: "관광 명소",
+                latitude: 33.4581,
+                longitude: 126.9425,
+                name: "성산일출봉",
+                provider: "google",
+                providerPlaceId: "google.seongsan-ilchulbong",
+              },
+            ],
+          }),
+          { headers: { "Content-Type": "application/json" } },
+        );
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("switches to an empty day and adds a validated itinerary item", async () => {
     const user = renderWorkspace();
 
@@ -29,9 +124,8 @@ describe("ItineraryEditorWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "장소 추가" }));
     const dialog = await screen.findByRole("dialog", { name: "장소를 일정에 추가" });
 
-    await user.type(within(dialog).getByLabelText("장소 이름"), "성산일출봉");
-    await user.type(within(dialog).getByLabelText("주소"), "성산읍 일출로 284-12");
-    await user.type(within(dialog).getByLabelText("카테고리"), "자연");
+    await user.type(within(dialog).getByLabelText("장소 검색"), "성산");
+    await user.click(await within(dialog).findByRole("button", { name: "성산일출봉 선택" }));
     await user.type(within(dialog).getByLabelText("시작 시간"), "08:00");
     await user.type(within(dialog).getByLabelText("소요 시간(분)"), "120");
     await user.type(within(dialog).getByLabelText("메모"), "아침 일찍 출발");
@@ -54,18 +148,20 @@ describe("ItineraryEditorWorkspace", () => {
     expect(within(dialog).getByText("주소를 입력해 주세요.")).toBeInTheDocument();
   });
 
-  it("fills the form from a debounced mock place search result", async () => {
+  it("fills the form from a Google place search result without exposing coordinates", async () => {
     const user = renderWorkspace();
 
     await user.click(screen.getByRole("button", { name: "장소 추가" }));
     const dialog = await screen.findByRole("dialog", { name: "장소를 일정에 추가" });
-    await user.type(within(dialog).getByLabelText("장소 검색"), "함덕");
-    await user.click(await within(dialog).findByRole("button", { name: "함덕해수욕장 선택" }));
+    await user.type(within(dialog).getByLabelText("장소 검색"), "성산");
+    await user.click(await within(dialog).findByRole("button", { name: "성산일출봉 선택" }));
 
-    expect(within(dialog).getByLabelText("장소 이름")).toHaveValue("함덕해수욕장");
-    expect(within(dialog).getByLabelText("주소")).toHaveValue("조천읍 조함해안로 525");
-    expect(within(dialog).getByLabelText("경도")).toHaveValue(126.6692);
-    expect(within(dialog).getByLabelText("위도")).toHaveValue(33.5431);
+    expect(within(dialog).getByLabelText("장소 이름")).toHaveValue("성산일출봉");
+    expect(within(dialog).getByLabelText("주소")).toHaveValue(
+      "제주특별자치도 서귀포시 성산읍 성산리 1",
+    );
+    expect(within(dialog).queryByLabelText("경도")).not.toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("위도")).not.toBeInTheDocument();
   });
 
   it("edits an existing item while preserving its position", async () => {
@@ -200,18 +296,33 @@ describe("ItineraryEditorWorkspace", () => {
     expect(mapMarker).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("selects a place when its card body is clicked", async () => {
+    const user = renderWorkspace();
+
+    await user.click(screen.getByText("서사로 11, 제주시"));
+
+    expect(screen.getByRole("button", { name: "우진해장국 선택" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "우진해장국 지도에서 선택" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
   it("recalculates the displayed route after a committed itinerary reorder", async () => {
     const user = renderWorkspace();
 
-    await screen.findByText(/자동차 ·/);
-    const initialRoutePoints = document.querySelector(".route-line")?.getAttribute("points");
+    await screen.findByText(/자동차 이동 ·/);
+    const initialRoutePoints = screen.getByTestId("map-route-signature").textContent;
 
     expect(initialRoutePoints).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "비자림 위로 이동" }));
 
     await waitFor(() => {
-      const updatedRoutePoints = document.querySelector(".route-line")?.getAttribute("points");
+      const updatedRoutePoints = screen.getByTestId("map-route-signature").textContent;
 
       expect(updatedRoutePoints).toBeTruthy();
       expect(updatedRoutePoints).not.toBe(initialRoutePoints);

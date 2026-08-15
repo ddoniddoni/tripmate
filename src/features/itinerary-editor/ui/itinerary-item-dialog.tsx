@@ -29,8 +29,8 @@ function getDefaultValues(item?: ItineraryItem): ItineraryItemFormValues {
     startTime: item?.startTime ?? "",
     durationMinutes: item?.durationMinutes?.toString() ?? "",
     note: item?.note ?? "",
-    longitude: item?.place.longitude.toString() ?? "126.5312",
-    latitude: item?.place.latitude.toString() ?? "33.4996",
+    longitude: item?.place.longitude.toString() ?? "",
+    latitude: item?.place.latitude.toString() ?? "",
   };
 }
 
@@ -109,7 +109,7 @@ export function ItineraryItemDialog({
                 className="dialog-description"
                 id="itinerary-dialog-description"
               >
-                장소 정보와 방문 시간을 입력해 주세요.
+                장소를 검색해 선택한 뒤 방문 시간을 입력해 주세요.
               </Dialog.Description>
             </div>
             <Dialog.Close className="dialog-close" aria-label="대화상자 닫기">
@@ -127,17 +127,15 @@ export function ItineraryItemDialog({
                 value={placeSearch.query}
                 onChange={(event) => placeSearch.setQuery(event.target.value)}
               />
-              {placeSearch.query.trim().length === 1 ? (
-                <p>두 글자 이상 입력하면 제주 mock 장소를 검색합니다.</p>
-              ) : null}
+              <p>두 글자 이상 입력하면 주소와 지도 위치를 함께 찾아 드립니다.</p>
               {placeSearch.status === "loading" ? (
                 <p role="status">장소를 검색하고 있습니다.</p>
               ) : null}
               {placeSearch.status === "error" ? (
-                <p role="alert">장소 검색을 완료하지 못했습니다. 다시 시도해 주세요.</p>
+                <p role="alert">{placeSearch.errorMessage}</p>
               ) : null}
               {placeSearch.status === "success" && placeSearch.results.length === 0 ? (
-                <p>검색 결과가 없습니다. 직접 장소 정보를 입력할 수 있습니다.</p>
+                <p>검색 결과가 없습니다. 장소명이나 주소를 바꿔 다시 검색해 주세요.</p>
               ) : null}
               {placeSearch.results.length > 0 ? (
                 <ul className="place-search-results" aria-label="장소 검색 결과">
@@ -251,41 +249,11 @@ export function ItineraryItemDialog({
               </p>
             ) : null}
 
-            <div className="form-field">
-              <label htmlFor="place-longitude">경도</label>
-              <input
-                id="place-longitude"
-                aria-describedby={errors.longitude ? "place-longitude-error" : undefined}
-                aria-invalid={Boolean(errors.longitude)}
-                inputMode="decimal"
-                step="any"
-                type="number"
-                {...register("longitude")}
-              />
-              {errors.longitude ? (
-                <span id="place-longitude-error" role="alert">
-                  {errors.longitude.message}
-                </span>
-              ) : null}
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="place-latitude">위도</label>
-              <input
-                id="place-latitude"
-                aria-describedby={errors.latitude ? "place-latitude-error" : undefined}
-                aria-invalid={Boolean(errors.latitude)}
-                inputMode="decimal"
-                step="any"
-                type="number"
-                {...register("latitude")}
-              />
-              {errors.latitude ? (
-                <span id="place-latitude-error" role="alert">
-                  {errors.latitude.message}
-                </span>
-              ) : null}
-            </div>
+            {errors.longitude || errors.latitude ? (
+              <p className="form-field-wide" role="alert">
+                장소 검색 결과에서 장소를 선택해 주세요.
+              </p>
+            ) : null}
 
             <div className="form-field form-field-wide">
               <label htmlFor="place-note">메모</label>

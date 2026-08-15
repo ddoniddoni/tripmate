@@ -4,7 +4,10 @@ import type {
   DirectionsTravelMode,
   RouteCoordinate,
 } from "@/features/map-sync/model/directions-adapter";
-import { routeCoordinateSchema } from "@/features/map-sync/model/directions-adapter";
+import {
+  maxDirectionsCoordinateCount,
+  routeCoordinateSchema,
+} from "@/features/map-sync/model/directions-adapter";
 
 type RoutePointInput = Partial<Pick<PlaceSnapshot, "latitude" | "longitude">>;
 
@@ -12,6 +15,7 @@ export type DirectionsQueryBuildResult =
   | { status: "empty" }
   | { status: "missing-points"; missingPointCount: number }
   | { status: "one-point"; coordinate: RouteCoordinate }
+  | { status: "too-many-points"; maximumCoordinateCount: number }
   | { status: "ready"; query: DirectionsQuery };
 
 function normalizeCoordinate(point: RoutePointInput): RouteCoordinate | null {
@@ -83,6 +87,13 @@ export function buildDirectionsQuery(
 
   if (validCoordinates.length === 1) {
     return { status: "one-point", coordinate: validCoordinates[0] };
+  }
+
+  if (validCoordinates.length > maxDirectionsCoordinateCount) {
+    return {
+      status: "too-many-points",
+      maximumCoordinateCount: maxDirectionsCoordinateCount,
+    };
   }
 
   return {

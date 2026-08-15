@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useEffect, useState } from "react";
 
-import { mockPlaceSearchAdapter } from "@/features/place-search/api/mock-place-search-adapter";
+import { placeSearchApiAdapter } from "@/features/place-search/api/place-search-api-adapter";
 import type { PlaceSearchAdapter } from "@/features/place-search/model/place-search-adapter";
 
 type PlaceSearchStatus = "error" | "idle" | "loading" | "success";
@@ -13,6 +13,7 @@ type UsePlaceSearchOptions = {
 };
 
 type SearchState = {
+  errorMessage?: string;
   query: string;
   results: Awaited<ReturnType<PlaceSearchAdapter["search"]>>;
   status: PlaceSearchStatus;
@@ -21,7 +22,7 @@ type SearchState = {
 const defaultDebounceMs = 250;
 
 export function usePlaceSearch({
-  adapter = mockPlaceSearchAdapter,
+  adapter = placeSearchApiAdapter,
   debounceMs = defaultDebounceMs,
 }: UsePlaceSearchOptions = {}) {
   const [query, setQuery] = useState("");
@@ -32,10 +33,16 @@ export function usePlaceSearch({
   });
   const deferredQuery = useDeferredValue(query.trim());
   const isSearchable = deferredQuery.length >= 2;
+  const pendingSearchState: SearchState = {
+    errorMessage: undefined,
+    query: deferredQuery,
+    results: [],
+    status: isSearchable ? "loading" : "idle",
+  };
   const currentSearchState =
     isSearchable && searchState.query === deferredQuery
       ? searchState
-      : { query: deferredQuery, results: [], status: isSearchable ? "loading" : "idle" };
+      : pendingSearchState;
 
   useEffect(() => {
     if (!isSearchable) {
@@ -58,7 +65,12 @@ export function usePlaceSearch({
             return;
           }
 
-          setSearchState({ query: deferredQuery, results: [], status: "error" });
+          setSearchState({
+            errorMessage: getSearchErrorMessage(error),
+            query: deferredQuery,
+            results: [],
+            status: "error",
+          });
         });
     }, debounceMs);
 
@@ -70,11 +82,20 @@ export function usePlaceSearch({
 
   return {
     clear: () => setQuery(""),
+    errorMessage: currentSearchState.errorMessage,
     query,
     results: currentSearchState.results,
     setQuery,
     status: currentSearchState.status,
   };
+}
+
+function getSearchErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return "장소 검색을 완료하지 못했습니다. 다시 시도해 주세요.";
 }
 
 function isAbortError(error: unknown) {

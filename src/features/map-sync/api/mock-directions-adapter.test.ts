@@ -16,6 +16,12 @@ describe("mockDirectionsAdapter", () => {
       coordinates: query.coordinates,
       distanceMeters: expect.any(Number),
       durationSeconds: expect.any(Number),
+      legs: [
+        {
+          distanceMeters: expect.any(Number),
+          durationSeconds: expect.any(Number),
+        },
+      ],
     });
   });
 

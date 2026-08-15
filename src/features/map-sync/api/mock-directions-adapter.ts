@@ -32,23 +32,27 @@ function getDistanceMeters(from: RouteCoordinate, to: RouteCoordinate) {
   return earthRadiusMeters * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
 }
 
-function getTotalDistanceMeters(coordinates: readonly RouteCoordinate[]) {
-  let totalDistanceMeters = 0;
-
-  for (let index = 1; index < coordinates.length; index += 1) {
-    const from = coordinates[index - 1];
-    const to = coordinates[index];
-
-    if (from && to) {
-      totalDistanceMeters += getDistanceMeters(from, to);
-    }
-  }
-
-  return Math.round(totalDistanceMeters);
-}
-
 function createRoute(query: DirectionsQuery): DirectionsRoute | null {
-  const distanceMeters = getTotalDistanceMeters(query.coordinates);
+  const legs = query.coordinates.slice(1).flatMap((to, index) => {
+    const from = query.coordinates[index];
+
+    if (!from) {
+      return [];
+    }
+
+    const distanceMeters = Math.round(getDistanceMeters(from, to));
+
+    return distanceMeters > 0
+      ? [
+          {
+            distanceMeters,
+            durationSeconds: Math.max(60, Math.round(distanceMeters / drivingMetersPerSecond)),
+          },
+        ]
+      : [];
+  });
+
+  const distanceMeters = legs.reduce((total, leg) => total + leg.distanceMeters, 0);
 
   if (distanceMeters === 0) {
     return null;
@@ -57,7 +61,8 @@ function createRoute(query: DirectionsQuery): DirectionsRoute | null {
   return parseDirectionsRoute({
     coordinates: query.coordinates,
     distanceMeters,
-    durationSeconds: Math.max(60, Math.round(distanceMeters / drivingMetersPerSecond)),
+    durationSeconds: legs.reduce((total, leg) => total + leg.durationSeconds, 0),
+    legs,
   });
 }
 

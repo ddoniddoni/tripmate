@@ -51,4 +51,16 @@ describe("buildDirectionsQuery", () => {
       missingPointCount: 1,
     });
   });
+
+  it("does not ask the provider for a route beyond the essential waypoint limit", () => {
+    const points = Array.from({ length: 13 }, (_, index) => ({
+      latitude: 33.5 + index / 100,
+      longitude: 126.5 + index / 100,
+    }));
+
+    expect(buildDirectionsQuery(points)).toEqual({
+      maximumCoordinateCount: 12,
+      status: "too-many-points",
+    });
+  });
 });

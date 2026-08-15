@@ -1,7 +1,7 @@
 import { z } from "@/shared/lib/zod";
 
 export const placeSnapshotSchema = z.object({
-  provider: z.literal("mapbox"),
+  provider: z.enum(["google", "mapbox"]),
   providerPlaceId: z.string().trim().min(1).max(240),
   name: z.string().trim().min(1).max(160),
   address: z.string().trim().min(1).max(300),

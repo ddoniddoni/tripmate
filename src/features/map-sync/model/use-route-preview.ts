@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type { ItineraryItem } from "@/entities/itinerary/model/trip-itinerary";
-import { mockDirectionsAdapter } from "@/features/map-sync/api/mock-directions-adapter";
+import { directionsApiAdapter } from "@/features/map-sync/api/directions-api-adapter";
 import type {
   DirectionsAdapter,
   DirectionsRoute,
   DirectionsTravelMode,
 } from "@/features/map-sync/model/directions-adapter";
+import { DirectionsRequestError } from "@/features/map-sync/model/directions-adapter";
 import {
   buildDirectionsQueryFromInputSignature,
   getDirectionsInputSignature,
@@ -16,13 +17,12 @@ import {
   type DirectionsQueryBuildResult,
 } from "@/features/map-sync/model/directions-query";
 
-type RoutePreviewStatus = DirectionsQueryBuildResult["status"] | "error" | "loading" | "no-route";
-
-type RoutePreview = {
-  errorMessage?: string;
-  route?: DirectionsRoute;
-  status: RoutePreviewStatus;
-};
+type RoutePreview =
+  | Exclude<DirectionsQueryBuildResult, { status: "ready" }>
+  | { errorMessage: string; status: "error" }
+  | { status: "loading" }
+  | { status: "no-route" }
+  | { route: DirectionsRoute; status: "ready" };
 
 type StoredRouteState = {
   key: string;
@@ -56,7 +56,7 @@ function isAbortError(error: unknown) {
 
 export function useRoutePreview(
   items: readonly ItineraryItem[],
-  { adapter = mockDirectionsAdapter, travelMode = "driving" }: UseRoutePreviewOptions = {},
+  { adapter = directionsApiAdapter, travelMode = "driving" }: UseRoutePreviewOptions = {},
 ) {
   const [storedRouteState, setStoredRouteState] = useState<StoredRouteState | null>(null);
   const [errorState, setErrorState] = useState<{ key: string; message: string } | null>(null);
@@ -95,7 +95,13 @@ export function useRoutePreview(
         }
 
         setStoredRouteState(null);
-        setErrorState({ key: queryKey, message: "경로를 불러오지 못했습니다." });
+        setErrorState({
+          key: queryKey,
+          message:
+            error instanceof DirectionsRequestError
+              ? error.message
+              : "경로를 불러오지 못했습니다.",
+        });
       });
 
     return () => controller.abort();
@@ -131,8 +137,12 @@ function getRoutePreview(
   storedRouteState: StoredRouteState | null,
   errorState: { key: string; message: string } | null,
 ): RoutePreview {
-  if (queryResult.status !== "ready" || !queryKey) {
+  if (queryResult.status !== "ready") {
     return queryResult;
+  }
+
+  if (!queryKey) {
+    return { errorMessage: "이동 경로 요청을 준비하지 못했습니다.", status: "error" };
   }
 
   if (errorState?.key === queryKey) {
