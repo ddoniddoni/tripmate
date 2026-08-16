@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   addPreparationChecklistItem,
   setPreparationChecklistItemCompletion,
+  setPreparationChecklistItemPriority,
   updatePreparationChecklistItem,
 } from "@/entities/preparation-checklist/model/preparation-checklist";
 import { jejuTrip } from "@/entities/itinerary/mock/jeju-trip";
@@ -25,6 +26,7 @@ const checklistItem = {
   createdBy: "user-jiwoo",
   dueDate: null,
   id: "sun-cream",
+  isPriority: false,
   title: "자외선 차단제 챙기기",
 };
 
@@ -36,6 +38,9 @@ describe("Liveblocks preparation checklist storage", () => {
     );
     const completed = applyPreparationChecklistMutationToStorage(storage, (current) =>
       setPreparationChecklistItemCompletion(current, "sun-cream", "2026-04-02T10:00:00.000Z"),
+    );
+    const prioritized = applyPreparationChecklistMutationToStorage(storage, (current) =>
+      setPreparationChecklistItemPriority(current, "sun-cream", true),
     );
     const updated = applyPreparationChecklistMutationToStorage(storage, (current) =>
       updatePreparationChecklistItem(current, {
@@ -50,6 +55,7 @@ describe("Liveblocks preparation checklist storage", () => {
 
     expect(result.success).toBe(true);
     expect(completed.success).toBe(true);
+    expect(prioritized.success).toBe(true);
     expect(updated.success).toBe(true);
     expect(getLiveblocksPreparationChecklistSnapshot(storage.toJSON())).toEqual({
       items: {
@@ -58,6 +64,7 @@ describe("Liveblocks preparation checklist storage", () => {
           category: "other",
           completedAt: "2026-04-02T10:00:00.000Z",
           dueDate: "2026-04-10",
+          isPriority: true,
           title: "여행용 상비약 챙기기",
         },
       },
@@ -90,6 +97,7 @@ describe("Liveblocks preparation checklist storage", () => {
           createdBy: "user-jiwoo",
           dueDate: null,
           id: "passport",
+          isPriority: false,
           title: "여권 유효기간 확인하기",
         },
       },

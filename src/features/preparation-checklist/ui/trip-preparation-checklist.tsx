@@ -12,6 +12,7 @@ import {
   removePreparationChecklistItem,
   setPreparationChecklistItemAssignee,
   setPreparationChecklistItemCompletion,
+  setPreparationChecklistItemPriority,
   updatePreparationChecklistItem,
   type PreparationChecklistCategory,
   type PreparationChecklistItemChanges,
@@ -49,7 +50,7 @@ type PreparationItemEditFormValues = Pick<
 >;
 
 type PreparationChecklistMember = Pick<TripMember, "displayName" | "role" | "userId">;
-type PreparationChecklistFilter = "all" | "complete" | "incomplete" | "mine";
+type PreparationChecklistFilter = "all" | "complete" | "incomplete" | "mine" | "priority";
 
 type TripPreparationChecklistViewProps = {
   canEditChecklist: boolean;
@@ -61,6 +62,7 @@ type TripPreparationChecklistViewProps = {
   onUpdate: (itemId: string, changes: PreparationChecklistItemChanges) => boolean;
   onRemove: (itemId: string) => void;
   onToggleComplete: (itemId: string) => void;
+  onTogglePriority: (itemId: string) => void;
   statusMessage: string;
 };
 
@@ -78,6 +80,7 @@ const preparationChecklistFilters: readonly PreparationChecklistFilter[] = [
   "all",
   "incomplete",
   "mine",
+  "priority",
   "complete",
 ];
 
@@ -89,6 +92,8 @@ function getPreparationChecklistFilterLabel(filter: PreparationChecklistFilter) 
       return "미완료";
     case "mine":
       return "내 담당";
+    case "priority":
+      return "우선";
     case "complete":
       return "완료";
   }
@@ -103,6 +108,7 @@ function getPreparationChecklistFilterCounts(
     complete: 0,
     incomplete: 0,
     mine: 0,
+    priority: 0,
   };
 
   for (const item of items) {
@@ -115,6 +121,10 @@ function getPreparationChecklistFilterCounts(
     if (item.assigneeId === currentUserId) {
       counts.mine += 1;
     }
+
+    if (item.isPriority) {
+      counts.priority += 1;
+    }
   }
 
   return counts;
@@ -124,6 +134,10 @@ function getOrderedItems(items: readonly PreparationChecklistItem[]) {
   return items.toSorted((left, right) => {
     if (Boolean(left.completedAt) !== Boolean(right.completedAt)) {
       return left.completedAt ? 1 : -1;
+    }
+
+    if (left.isPriority !== right.isPriority) {
+      return left.isPriority ? -1 : 1;
     }
 
     return left.createdAt.localeCompare(right.createdAt);
@@ -141,6 +155,7 @@ function PreparationChecklistItemRow({
   onEditCancel,
   onRemove,
   onToggleComplete,
+  onTogglePriority,
   onUpdate,
 }: {
   canEditChecklist: boolean;
@@ -153,6 +168,7 @@ function PreparationChecklistItemRow({
   onEditCancel: () => void;
   onRemove: (itemId: string) => void;
   onToggleComplete: (itemId: string) => void;
+  onTogglePriority: (itemId: string) => void;
   onUpdate: (itemId: string, changes: PreparationChecklistItemChanges) => boolean;
 }) {
   const isComplete = item.completedAt !== null;
@@ -160,8 +176,8 @@ function PreparationChecklistItemRow({
   return (
     <li
       className={`preparation-item${isComplete ? " preparation-item-complete" : ""}${
-        isEditing ? " preparation-item-editing" : ""
-      }`}
+        item.isPriority ? " preparation-item-priority" : ""
+      }${isEditing ? " preparation-item-editing" : ""}`}
     >
       {isEditing ? (
         <PreparationChecklistItemEditForm
@@ -184,6 +200,9 @@ function PreparationChecklistItemRow({
           <div className="preparation-item-copy">
             <strong>{item.title}</strong>
             <div className="preparation-item-meta">
+              {item.isPriority ? (
+                <span className="preparation-item-priority-badge">우선</span>
+              ) : null}
               <span>{isComplete ? "완료했어요" : "준비 중"}</span>
               {item.dueDate ? (
                 <time className="preparation-item-due-date" dateTime={item.dueDate}>
@@ -212,6 +231,19 @@ function PreparationChecklistItemRow({
             </select>
             {canEditChecklist ? (
               <>
+                <button
+                  aria-label={`${item.title} ${item.isPriority ? "우선 해제" : "우선 표시"}`}
+                  aria-pressed={item.isPriority}
+                  className={
+                    item.isPriority
+                      ? "preparation-priority-button preparation-priority-button-active"
+                      : "preparation-priority-button"
+                  }
+                  onClick={() => onTogglePriority(item.id)}
+                  type="button"
+                >
+                  우선
+                </button>
                 <button
                   aria-label={`${item.title} 수정`}
                   className="preparation-edit-button"
@@ -337,6 +369,7 @@ function TripPreparationChecklistBoard({
   onUpdate,
   onRemove,
   onToggleComplete,
+  onTogglePriority,
 }: {
   canEditChecklist: boolean;
   currentUserId: string;
@@ -347,6 +380,7 @@ function TripPreparationChecklistBoard({
   onUpdate: (itemId: string, changes: PreparationChecklistItemChanges) => boolean;
   onRemove: (itemId: string) => void;
   onToggleComplete: (itemId: string) => void;
+  onTogglePriority: (itemId: string) => void;
 }) {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [filter, setFilter] = useState<PreparationChecklistFilter>("all");
@@ -363,6 +397,10 @@ function TripPreparationChecklistBoard({
 
     if (filter === "incomplete") {
       return item.completedAt === null;
+    }
+
+    if (filter === "priority") {
+      return item.isPriority;
     }
 
     return item.assigneeId === currentUserId;
@@ -448,6 +486,7 @@ function TripPreparationChecklistBoard({
                       onEditCancel={() => setEditingItemId(null)}
                       onRemove={onRemove}
                       onToggleComplete={onToggleComplete}
+                      onTogglePriority={onTogglePriority}
                       onUpdate={onUpdate}
                     />
                   ))}
@@ -471,6 +510,7 @@ export function TripPreparationChecklistView({
   onUpdate,
   onRemove,
   onToggleComplete,
+  onTogglePriority,
   statusMessage,
 }: TripPreparationChecklistViewProps) {
   const completedCount = items.filter((item) => item.completedAt !== null).length;
@@ -592,6 +632,7 @@ export function TripPreparationChecklistView({
         onUpdate={onUpdate}
         onRemove={onRemove}
         onToggleComplete={onToggleComplete}
+        onTogglePriority={onTogglePriority}
       />
 
       <p aria-atomic="true" className="sr-only" role="status">
@@ -668,6 +709,7 @@ export function TripPreparationChecklist({
               createdBy: currentUserId,
               dueDate: values.dueDate || null,
               id: itemId,
+              isPriority: false,
               title: values.title,
             }),
           `${values.title} 준비 항목을 추가했습니다.`,
@@ -711,6 +753,17 @@ export function TripPreparationChecklist({
           item?.completedAt
             ? `${item.title} 준비 항목을 다시 진행 중으로 바꿨어요.`
             : `${item?.title ?? "준비 항목"}을 완료했어요.`,
+        );
+      }}
+      onTogglePriority={(itemId) => {
+        const item = checklist?.items[itemId];
+        const isPriority = !item?.isPriority;
+
+        handleMutation(
+          (current) => setPreparationChecklistItemPriority(current, itemId, isPriority),
+          isPriority
+            ? `${item?.title ?? "준비 항목"}을 우선 확인 항목으로 표시했습니다.`
+            : `${item?.title ?? "준비 항목"}을 일반 준비 항목으로 돌렸습니다.`,
         );
       }}
       statusMessage={statusMessage}

@@ -857,28 +857,37 @@ textarea {
 
 .history-controls {
   display: inline-flex;
-  gap: 4px;
+  gap: 5px;
+  padding: 3px;
+  background: #f1f4f0;
+  border: 1px solid #e1e6e0;
+  border-radius: 10px;
 }
 
 .history-controls button {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  min-height: 32px;
-  padding: 6px 8px;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 7px;
   color: var(--muted);
   background: white;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
+  letter-spacing: -0.01em;
+  transition: color 150ms ease, border-color 150ms ease, box-shadow 150ms ease,
+    transform 150ms ease;
 }
 
 .history-controls button:hover:not(:disabled) {
   color: var(--green-dark);
-  border-color: var(--green);
+  border-color: rgb(38 112 82 / 24%);
+  box-shadow: 0 2px 7px rgb(31 49 40 / 9%);
+  transform: translateY(-1px);
 }
 
 .history-controls button:disabled {
@@ -886,9 +895,33 @@ textarea {
   opacity: 0.45;
 }
 
-.history-controls button > span:first-child {
-  font-size: 16px;
-  line-height: 1;
+.history-control-icon {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.history-control-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.history-control-shortcut {
+  padding: 1px 3px;
+  color: #8a948e;
+  background: #f1f4f0;
+  border-radius: 3px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
 }
 
 .editor-loading-state {
@@ -998,6 +1031,7 @@ textarea {
 
 .trip-workspace-tabs button:focus-visible,
 .preparation-add-button:focus-visible,
+.preparation-priority-button:focus-visible,
 .preparation-edit-button:focus-visible,
 .preparation-remove-button:focus-visible,
 .preparation-item select:focus-visible,
@@ -1313,6 +1347,15 @@ textarea {
   background: #f4f8f4;
 }
 
+.preparation-item-priority {
+  background: linear-gradient(90deg, rgb(255 240 237 / 88%), transparent 42%);
+  box-shadow: inset 3px 0 #d56e5d;
+}
+
+.preparation-item-priority:hover {
+  background: linear-gradient(90deg, #fff0ed, #f4f8f4 64%);
+}
+
 .preparation-item-editing {
   display: block;
   padding: 10px;
@@ -1403,6 +1446,21 @@ textarea {
   margin-top: 3px;
 }
 
+.preparation-item-copy .preparation-item-priority-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin-top: 3px;
+  padding: 2px 5px;
+  color: #a14136;
+  background: #fff0ed;
+  border: 1px solid #efc2bb;
+  border-radius: 4px;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
 .preparation-item-due-date {
   display: inline-flex;
   align-items: center;
@@ -1420,6 +1478,7 @@ textarea {
 
 .preparation-item-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
 }
@@ -1444,6 +1503,25 @@ textarea {
   font: inherit;
   font-size: 9px;
   font-weight: 800;
+}
+
+.preparation-priority-button {
+  min-height: 26px;
+  padding: 0 6px;
+  color: #9a675e;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.preparation-priority-button:hover,
+.preparation-priority-button-active {
+  color: #a14136;
+  background: #fff0ed;
 }
 
 .preparation-edit-button:hover {
@@ -3661,6 +3739,113 @@ textarea {
   box-shadow: 0 0 0 3px rgb(38 112 82 / 10%);
 }
 
+.time-picker-field {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.time-picker-field legend {
+  padding: 0;
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.time-picker {
+  display: grid;
+  min-height: 42px;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  background: #fafaf8;
+  border: 1px solid #d8ddd7;
+  border-radius: 10px;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.time-picker:focus-within {
+  background: var(--surface);
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgb(38 112 82 / 10%);
+}
+
+.time-picker[aria-invalid="true"] {
+  border-color: #c96a5b;
+}
+
+.time-picker-unscheduled {
+  min-height: 30px;
+  padding: 0 7px;
+  color: #79827c;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.time-picker-unscheduled:hover:not(:disabled),
+.time-picker-unscheduled.is-active {
+  color: var(--green-dark);
+  background: var(--green-soft);
+}
+
+.time-picker-select {
+  position: relative;
+  min-width: 0;
+}
+
+.time-picker-select select {
+  width: 100%;
+  min-height: 30px;
+  padding: 0 20px 0 7px;
+  color: var(--ink);
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 750;
+  outline: none;
+}
+
+.time-picker-select select:hover:not(:disabled) {
+  background: #f0f4f0;
+}
+
+.time-picker-select select:focus-visible {
+  background: #f0f4f0;
+  box-shadow: 0 0 0 2px rgb(38 112 82 / 28%);
+}
+
+.time-picker-select svg {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  width: 12px;
+  height: 12px;
+  color: #849089;
+  fill: none;
+  pointer-events: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  transform: translateY(-50%);
+}
+
+.time-picker-separator {
+  color: #9ca59f;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .move-dialog-content {
   width: min(460px, calc(100vw - 32px));
 }
@@ -4740,6 +4925,26 @@ textarea {
 
   .trip-overview-stat {
     min-height: 127px;
+    justify-content: center;
+    padding: 18px 54px 18px 82px;
+  }
+
+  .trip-overview-stat::before {
+    top: 50%;
+    left: 19px;
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    transform: translateY(-50%);
+  }
+
+  .trip-overview-stat > strong {
+    margin-top: 5px;
+  }
+
+  .trip-overview-stat > i {
+    top: 19px;
+    right: 19px;
   }
 
   .trip-overview-flow {
@@ -4763,6 +4968,10 @@ textarea {
 
   .editor-layout {
     grid-template-columns: 175px minmax(375px, 0.95fr) minmax(360px, 1.05fr);
+  }
+
+  .history-control-shortcut {
+    display: none;
   }
 }
 
@@ -4799,6 +5008,13 @@ textarea {
 
   .history-control-label {
     display: none;
+  }
+
+  .history-controls button {
+    justify-content: center;
+    min-width: 32px;
+    padding-right: 6px;
+    padding-left: 6px;
   }
 
   .header-actions {

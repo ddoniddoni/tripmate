@@ -136,7 +136,8 @@ describe("ItineraryEditorWorkspace", () => {
 
     await user.type(within(dialog).getByLabelText("장소 검색"), "성산");
     await user.click(await within(dialog).findByRole("button", { name: "성산일출봉 선택" }));
-    await user.type(within(dialog).getByLabelText("시작 시간"), "08:00");
+    await user.selectOptions(within(dialog).getByRole("combobox", { name: "시작 시간 시" }), "08");
+    await user.selectOptions(within(dialog).getByRole("combobox", { name: "시작 시간 분" }), "00");
     await user.type(within(dialog).getByLabelText("소요 시간(분)"), "120");
     await user.type(within(dialog).getByLabelText("메모"), "아침 일찍 출발");
     await user.click(within(dialog).getByRole("button", { name: "일정 추가" }));
@@ -248,10 +249,8 @@ describe("ItineraryEditorWorkspace", () => {
 
     await user.click(screen.getByRole("button", { name: "우진해장국 수정" }));
     const dialog = await screen.findByRole("dialog", { name: "우진해장국" });
-    const startTimeInput = within(dialog).getByLabelText("시작 시간");
-
-    await user.clear(startTimeInput);
-    await user.type(startTimeInput, "11:30");
+    await user.selectOptions(within(dialog).getByRole("combobox", { name: "시작 시간 시" }), "11");
+    await user.selectOptions(within(dialog).getByRole("combobox", { name: "시작 시간 분" }), "30");
 
     expect(await within(dialog).findByText("일정 시간이 겹쳐요.")).toBeInTheDocument();
     expect(within(dialog).getByText(/함덕해수욕장 일정과 겹쳐요/)).toBeInTheDocument();

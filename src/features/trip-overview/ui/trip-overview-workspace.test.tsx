@@ -89,6 +89,7 @@ describe("TripOverviewWorkspaceView", () => {
           createdBy: "user-jiwoo",
           dueDate: null,
           id: "hotel",
+          isPriority: false,
           title: "숙소 예약 확인",
         },
       ],

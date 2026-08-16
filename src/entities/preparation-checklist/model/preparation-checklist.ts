@@ -18,6 +18,7 @@ export const preparationChecklistItemSchema = z.object({
   createdBy: stableIdSchema,
   dueDate: calendarDateSchema.nullable().default(null),
   id: stableIdSchema,
+  isPriority: z.boolean().default(false),
   title: z.string().trim().min(1, "준비할 일을 입력해 주세요.").max(160),
 });
 
@@ -143,6 +144,32 @@ export function setPreparationChecklistItemAssignee(
       items: {
         ...document.items,
         [itemId]: { ...item, assigneeId },
+      },
+    },
+    success: true,
+  };
+}
+
+export function setPreparationChecklistItemPriority(
+  document: PreparationChecklistDocument,
+  itemId: string,
+  isPriority: boolean,
+): PreparationChecklistMutationResult {
+  const item = document.items[itemId];
+
+  if (!item) {
+    return {
+      code: "item-not-found",
+      message: "변경할 준비 항목을 찾지 못했습니다.",
+      success: false,
+    };
+  }
+
+  return {
+    data: {
+      items: {
+        ...document.items,
+        [itemId]: { ...item, isPriority },
       },
     },
     success: true,

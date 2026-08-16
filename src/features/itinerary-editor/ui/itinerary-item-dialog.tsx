@@ -12,6 +12,7 @@ import {
   type ItineraryItemFormValues,
 } from "@/features/itinerary-editor/model/itinerary-item-form";
 import { usePlaceSearch } from "@/features/place-search/model/use-place-search";
+import { TimePicker } from "@/shared/ui/time-picker";
 
 type ItineraryItemDialogProps = {
   item?: ItineraryItem;
@@ -204,21 +205,22 @@ export function ItineraryItemDialog({
               ) : null}
             </div>
 
-            <div className="form-field">
-              <label htmlFor="place-start-time">시작 시간</label>
-              <input
-                id="place-start-time"
+            <fieldset className="form-field time-picker-field">
+              <legend>시작 시간</legend>
+              <TimePicker
                 aria-describedby={errors.startTime ? "place-start-time-error" : undefined}
-                aria-invalid={Boolean(errors.startTime)}
-                type="time"
-                {...register("startTime")}
+                invalid={Boolean(errors.startTime)}
+                onChange={(value) =>
+                  setValue("startTime", value, { shouldDirty: true, shouldValidate: true })
+                }
+                value={startTime}
               />
               {errors.startTime ? (
                 <span id="place-start-time-error" role="alert">
                   {errors.startTime.message}
                 </span>
               ) : null}
-            </div>
+            </fieldset>
 
             <div className="form-field">
               <label htmlFor="place-duration">소요 시간(분)</label>

@@ -21,6 +21,7 @@ const checklistItem: PreparationChecklistItem = {
   createdBy: "user-jiwoo",
   dueDate: null,
   id: "stay-reservation",
+  isPriority: false,
   title: "숙소 예약 확인하기",
 };
 
@@ -32,6 +33,7 @@ const ownPackingItem: PreparationChecklistItem = {
   createdBy: "user-jiwoo",
   dueDate: "2026-04-04",
   id: "sun-cream",
+  isPriority: true,
   title: "자외선 차단제 챙기기",
 };
 
@@ -43,6 +45,7 @@ const completedTransportItem: PreparationChecklistItem = {
   createdBy: "user-minji",
   dueDate: null,
   id: "airport-bus",
+  isPriority: false,
   title: "공항버스 시간 확인하기",
 };
 
@@ -72,6 +75,7 @@ function ChecklistHarness({
             createdBy: "user-jiwoo",
             dueDate: values.dueDate || null,
             id: "ticket-check",
+            isPriority: false,
             title: values.title,
           },
         ]);
@@ -97,6 +101,13 @@ function ChecklistHarness({
             item.id === itemId
               ? { ...item, completedAt: item.completedAt ? null : "2026-04-02T10:00:00.000Z" }
               : item,
+          ),
+        );
+      }}
+      onTogglePriority={(itemId) => {
+        setItems((currentItems) =>
+          currentItems.map((item) =>
+            item.id === itemId ? { ...item, isPriority: !item.isPriority } : item,
           ),
         );
       }}
@@ -137,6 +148,7 @@ describe("TripPreparationChecklistView", () => {
     expect(screen.getByRole("checkbox", { name: "숙소 예약 확인하기 완료" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "추가" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "숙소 예약 확인하기 수정" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "숙소 예약 확인하기 우선 표시" })).not.toBeInTheDocument();
   });
 
   it("updates a task title and category without recreating the checklist item", async () => {
@@ -170,6 +182,23 @@ describe("TripPreparationChecklistView", () => {
     expect(screen.queryByText("마감 4월 4일")).not.toBeInTheDocument();
   });
 
+  it("marks a task as priority and filters the shared priority state locally", async () => {
+    const user = userEvent.setup();
+    render(<ChecklistHarness initialItems={[checklistItem, ownPackingItem]} />);
+
+    await user.click(screen.getByRole("button", { name: "숙소 예약 확인하기 우선 표시" }));
+    expect(
+      screen.getByRole("button", { name: "숙소 예약 확인하기 우선 해제" }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(screen.getByRole("button", { name: "우선, 2개" }));
+    expect(screen.getByText("숙소 예약 확인하기")).toBeInTheDocument();
+    expect(screen.getByText("자외선 차단제 챙기기")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "숙소 예약 확인하기 우선 해제" }));
+    expect(screen.queryByText("숙소 예약 확인하기")).not.toBeInTheDocument();
+  });
+
   it("filters the local checklist without changing the shared progress", async () => {
     const user = userEvent.setup();
     render(
@@ -185,6 +214,10 @@ describe("TripPreparationChecklistView", () => {
     expect(screen.getByLabelText("준비 진행률 33%")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "내 담당, 1개" }));
+    expect(screen.getByText("자외선 차단제 챙기기")).toBeInTheDocument();
+    expect(screen.queryByText("숙소 예약 확인하기")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "우선, 1개" }));
     expect(screen.getByText("자외선 차단제 챙기기")).toBeInTheDocument();
     expect(screen.queryByText("숙소 예약 확인하기")).not.toBeInTheDocument();
 

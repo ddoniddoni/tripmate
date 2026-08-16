@@ -36,6 +36,29 @@ describe("TripHistoryControls", () => {
 
     expect(screen.getByRole("button", { name: "마지막 변경 실행 취소" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "실행 취소한 변경 다시 적용" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "마지막 변경 실행 취소" })).toHaveAttribute(
+      "title",
+      "보기 전용 권한에서는 되돌릴 수 없어요.",
+    );
+  });
+
+  it("uses clear labels, keyboard hints, and an accessible history group", () => {
+    resetMocks();
+    mocks.canRedo = true;
+    mocks.canUndo = true;
+    render(<TripHistoryControls canEditItinerary />);
+
+    expect(screen.getByRole("group", { name: "일정 변경 이력" })).toBeInTheDocument();
+    expect(screen.getByText("되돌리기")).toBeInTheDocument();
+    expect(screen.getByText("다시 실행")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "마지막 변경 실행 취소" })).toHaveAttribute(
+      "title",
+      "마지막 변경 실행 취소 (⌘ 또는 Ctrl+Z)",
+    );
+    expect(screen.getByRole("button", { name: "실행 취소한 변경 다시 적용" })).toHaveAttribute(
+      "aria-keyshortcuts",
+      "Meta+Shift+Z Control+Shift+Z",
+    );
   });
 
   it("runs the available actions and announces the result", async () => {

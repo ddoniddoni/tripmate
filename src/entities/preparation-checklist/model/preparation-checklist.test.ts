@@ -7,6 +7,7 @@ import {
   removePreparationChecklistItem,
   setPreparationChecklistItemAssignee,
   setPreparationChecklistItemCompletion,
+  setPreparationChecklistItemPriority,
   updatePreparationChecklistItem,
 } from "@/entities/preparation-checklist/model/preparation-checklist";
 
@@ -18,6 +19,7 @@ const checklistItem = {
   createdBy: "user-jiwoo",
   dueDate: null,
   id: "stay-reservation",
+  isPriority: false,
   title: "숙소 예약 확인하기",
 };
 
@@ -73,6 +75,7 @@ describe("preparation checklist mutations", () => {
       ...checklistItem,
       assigneeId: "user-minji",
       completedAt: "2026-04-02T10:00:00.000Z",
+      isPriority: true,
     });
 
     if (!added.success) {
@@ -97,8 +100,26 @@ describe("preparation checklist mutations", () => {
             category: "transport",
             completedAt: "2026-04-02T10:00:00.000Z",
             dueDate: "2026-04-10",
+            isPriority: true,
             title: "공항버스 시간 확인하기",
           },
+        },
+      },
+      success: true,
+    });
+  });
+
+  it("marks an item for priority review without changing its completion state", () => {
+    const added = addPreparationChecklistItem(createEmptyPreparationChecklist(), checklistItem);
+
+    if (!added.success) {
+      throw new Error("checklist item should be added");
+    }
+
+    expect(setPreparationChecklistItemPriority(added.data, "stay-reservation", true)).toEqual({
+      data: {
+        items: {
+          "stay-reservation": { ...checklistItem, isPriority: true },
         },
       },
       success: true,
@@ -120,6 +141,7 @@ describe("preparation checklist mutations", () => {
 
     if (result.success) {
       expect(result.data.dueDate).toBeNull();
+      expect(result.data.isPriority).toBe(false);
     }
   });
 

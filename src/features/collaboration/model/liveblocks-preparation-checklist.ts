@@ -79,6 +79,10 @@ function getItemPatch(
     patch.dueDate = nextItem.dueDate;
   }
 
+  if (currentItem.isPriority !== nextItem.isPriority) {
+    patch.isPriority = nextItem.isPriority;
+  }
+
   if (currentItem.title !== nextItem.title) {
     patch.title = nextItem.title;
   }
