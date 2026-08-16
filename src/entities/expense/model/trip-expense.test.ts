@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   addTripExpense,
+  calculateTripExpenseParticipantShares,
   calculateTripExpenseSettlement,
   createEmptyTripExpenseDocument,
   removeTripExpense,
@@ -59,6 +60,20 @@ describe("trip expense domain", () => {
     expect(settlement.transfers).toEqual([
       { amount: 33_334, fromUserId: "user-daniel", toUserId: "user-jiwoo" },
       { amount: 28_333, fromUserId: "user-minji", toUserId: "user-jiwoo" },
+    ]);
+  });
+
+  it("assigns won remainders in a stable order for each participant", () => {
+    expect(
+      calculateTripExpenseParticipantShares({
+        ...dinnerExpense,
+        amount: 10_000,
+        participantIds: ["user-minji", "user-jiwoo", "user-daniel"],
+      }),
+    ).toEqual([
+      { amount: 3_334, userId: "user-daniel" },
+      { amount: 3_333, userId: "user-jiwoo" },
+      { amount: 3_333, userId: "user-minji" },
     ]);
   });
 

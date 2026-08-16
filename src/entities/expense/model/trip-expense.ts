@@ -84,6 +84,11 @@ export type ExpenseBalance = {
   userId: string;
 };
 
+export type ExpenseParticipantShare = {
+  amount: number;
+  userId: string;
+};
+
 export type ExpenseSettlementTransfer = {
   amount: number;
   fromUserId: string;
@@ -164,7 +169,9 @@ function createBalance(userId: string): ExpenseBalance {
   return { balance: 0, owedAmount: 0, paidAmount: 0, userId };
 }
 
-function getExpenseParticipantShares(expense: TripExpense) {
+export function calculateTripExpenseParticipantShares(
+  expense: TripExpense,
+): ExpenseParticipantShare[] {
   const participantIds = expense.participantIds.toSorted();
   const baseShare = Math.floor(expense.amount / participantIds.length);
   const remainder = expense.amount % participantIds.length;
@@ -193,7 +200,7 @@ export function calculateTripExpenseSettlement(
     payer.balance += expense.amount;
     balancesByUserId.set(expense.paidBy, payer);
 
-    getExpenseParticipantShares(expense).forEach(({ amount, userId }) => {
+    calculateTripExpenseParticipantShares(expense).forEach(({ amount, userId }) => {
       const participant = balancesByUserId.get(userId) ?? createBalance(userId);
       participant.owedAmount += amount;
       participant.balance -= amount;

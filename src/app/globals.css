@@ -1700,6 +1700,105 @@ textarea {
   font-size: 9px;
 }
 
+.expense-split-details {
+  margin-top: 8px;
+}
+
+.expense-split-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  color: var(--green-dark);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 800;
+  list-style: none;
+}
+
+.expense-split-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.expense-split-details summary::before {
+  width: 14px;
+  content: "+";
+  color: var(--coral);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.expense-split-details[open] summary::before {
+  content: "−";
+}
+
+.expense-split-details summary > span {
+  flex: 1;
+  margin: 0;
+  overflow: visible;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.expense-split-details summary > strong {
+  color: var(--green-dark);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.expense-split-details summary:focus-visible {
+  outline: 3px solid rgb(38 112 82 / 27%);
+  outline-offset: 3px;
+}
+
+.expense-share-list {
+  display: grid;
+  gap: 5px;
+  margin: 9px 0 0;
+  padding: 8px 9px;
+  list-style: none;
+  background: #f4f7f3;
+  border: 1px solid #dce5de;
+  border-radius: 8px;
+}
+
+.expense-share-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.expense-share-list li > span {
+  margin: 0;
+  overflow: visible;
+  color: inherit;
+  font-size: inherit;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.expense-share-list em {
+  margin-left: 4px;
+  padding-left: 4px;
+  color: var(--coral);
+  border-left: 1px solid #c4d7c9;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.expense-share-list strong {
+  color: var(--ink);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
 .expense-row-amount {
   color: var(--ink);
   font-size: 12px;
@@ -1830,9 +1929,20 @@ textarea {
 .expense-transfer-list {
   display: grid;
   gap: 7px;
+  margin-top: 8px;
+}
+
+.expense-transfer-guidance {
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px dashed #cbd5cd;
+}
+
+.expense-transfer-guidance h4 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
 }
 
 .expense-transfer-list li {
@@ -1853,6 +1963,17 @@ textarea {
   color: var(--ink);
   font-size: 10px;
   white-space: nowrap;
+}
+
+.expense-settlement-complete {
+  margin: 18px 0 0;
+  padding: 11px 12px;
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border: 1px solid #b9d8c1;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .editor-layout {

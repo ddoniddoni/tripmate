@@ -7,10 +7,12 @@ import { useForm, useWatch } from "react-hook-form";
 
 import {
   addTripExpense,
+  calculateTripExpenseParticipantShares,
   calculateTripExpenseSettlement,
   removeTripExpense,
   tripExpenseCategories,
   tripExpenseCategorySchema,
+  type ExpenseParticipantShare,
   type TripExpense,
   type TripExpenseCategory,
 } from "@/entities/expense/model/trip-expense";
@@ -80,6 +82,18 @@ function getMemberName(userId: string, memberLabels: ReadonlyMap<string, string>
   return memberLabels.get(userId) ?? "여행 멤버";
 }
 
+function getPerPersonAmountLabel(participantShares: readonly ExpenseParticipantShare[]) {
+  const amounts = participantShares.map((participantShare) => participantShare.amount);
+  const lowestAmount = Math.min(...amounts);
+  const highestAmount = Math.max(...amounts);
+
+  if (lowestAmount === highestAmount) {
+    return `1인당 ${formatWon(lowestAmount)}`;
+  }
+
+  return `1인당 ${formatWon(lowestAmount)}~${formatWon(highestAmount)}`;
+}
+
 function TripExpenseRow({
   canEditExpenses,
   expense,
@@ -93,6 +107,7 @@ function TripExpenseRow({
 }) {
   const category = categoryCopy[expense.category];
   const payerName = getMemberName(expense.paidBy, memberLabels);
+  const participantShares = calculateTripExpenseParticipantShares(expense);
 
   return (
     <li className="expense-row">
@@ -104,6 +119,27 @@ function TripExpenseRow({
         <span>
           {category.title} · {payerName} 결제 · {expense.participantIds.length}명 정산
         </span>
+        <details className="expense-split-details">
+          <summary>
+            <span>균등 N빵</span>
+            <strong>{getPerPersonAmountLabel(participantShares)}</strong>
+          </summary>
+          <ul aria-label={`${expense.title} 참여자별 부담 금액`} className="expense-share-list">
+            {participantShares.map((participantShare) => {
+              const isPayer = participantShare.userId === expense.paidBy;
+
+              return (
+                <li key={participantShare.userId}>
+                  <span>
+                    {getMemberName(participantShare.userId, memberLabels)}
+                    {isPayer ? <em>결제</em> : null}
+                  </span>
+                  <strong>{formatWon(participantShare.amount)}</strong>
+                </li>
+              );
+            })}
+          </ul>
+        </details>
       </div>
       <strong className="expense-row-amount">{formatWon(expense.amount)}</strong>
       {canEditExpenses ? (
@@ -371,16 +407,25 @@ export function TripExpenseWorkspaceView({
                   );
                 })}
               </ol>
-              <ol className="expense-transfer-list">
-                {settlement.transfers.map((transfer) => (
-                  <li key={`${transfer.fromUserId}-${transfer.toUserId}`}>
-                    <span>{getMemberName(transfer.fromUserId, memberLabels)}</span>
-                    <i aria-hidden="true">→</i>
-                    <span>{getMemberName(transfer.toUserId, memberLabels)}</span>
-                    <strong>{formatWon(transfer.amount)}</strong>
-                  </li>
-                ))}
-              </ol>
+              {settlement.transfers.length > 0 ? (
+                <div className="expense-transfer-guidance">
+                  <h4>송금 안내</h4>
+                  <ol className="expense-transfer-list">
+                    {settlement.transfers.map((transfer) => (
+                      <li key={`${transfer.fromUserId}-${transfer.toUserId}`}>
+                        <span>{getMemberName(transfer.fromUserId, memberLabels)}</span>
+                        <i aria-hidden="true">→</i>
+                        <span>{getMemberName(transfer.toUserId, memberLabels)}</span>
+                        <strong>{formatWon(transfer.amount)}</strong>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ) : (
+                <p className="expense-settlement-complete" role="status">
+                  이미 정산이 완료됐어요.
+                </p>
+              )}
             </>
           )}
         </aside>
