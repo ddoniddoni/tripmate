@@ -12,16 +12,29 @@ import {
   removeTripExpense,
   tripExpenseCategories,
   tripExpenseCategorySchema,
+  updateTripExpense,
+  type ExpenseSettlementTransfer,
   type ExpenseParticipantShare,
   type TripExpense,
   type TripExpenseCategory,
+  type TripExpenseChanges,
 } from "@/entities/expense/model/trip-expense";
+import {
+  createEmptyTripExpenseSettlementState,
+  createTripExpenseSettlementTransferKey,
+  getTripExpenseSettlementProgress,
+  getTripExpenseSettlementTransferCompletion,
+  type TripExpenseSettlementState,
+} from "@/entities/expense/model/trip-expense-settlement-state";
 import { getTripMemberLabels } from "@/entities/trip/lib/get-trip-member-labels";
 import type { TripMember } from "@/entities/trip/model/trip-membership";
 import {
   applyTripExpenseMutationToStorage,
   getLiveblocksTripExpenseSnapshot,
+  getLiveblocksTripExpenseSettlementState,
+  toggleTripExpenseSettlementTransferCompletionInStorage,
   type TripExpenseMutation,
+  type TripExpenseSettlementCompletionInput,
 } from "@/features/collaboration/model/liveblocks-trip-expenses";
 import { z } from "@/shared/lib/zod";
 
@@ -49,6 +62,7 @@ const tripExpenseFormSchema = z
 
 type TripExpenseFormValues = z.infer<typeof tripExpenseFormSchema>;
 type TripExpenseMember = Pick<TripMember, "displayName" | "role" | "userId">;
+type TripExpenseCategoryFilter = "all" | TripExpenseCategory;
 
 type TripExpenseWorkspaceViewProps = {
   canEditExpenses: boolean;
@@ -56,7 +70,10 @@ type TripExpenseWorkspaceViewProps = {
   expenses: readonly TripExpense[];
   members: readonly TripExpenseMember[];
   onAdd: (values: TripExpenseFormValues) => boolean;
+  onUpdate: (expenseId: string, values: TripExpenseFormValues) => boolean;
   onRemove: (expenseId: string) => void;
+  onToggleTransferCompletion: (transfer: ExpenseSettlementTransfer) => void;
+  settlementState: TripExpenseSettlementState;
   statusMessage: string;
 };
 
@@ -67,6 +84,11 @@ const categoryCopy: Record<TripExpenseCategory, { icon: string; title: string }>
   stay: { icon: "⌂", title: "숙소" },
   transport: { icon: "↗", title: "교통" },
 };
+
+const expenseCategoryFilters: readonly TripExpenseCategoryFilter[] = [
+  "all",
+  ...tripExpenseCategories,
+];
 
 const wonFormatter = new Intl.NumberFormat("ko-KR", {
   currency: "KRW",
@@ -80,6 +102,10 @@ function formatWon(amount: number) {
 
 function getMemberName(userId: string, memberLabels: ReadonlyMap<string, string>) {
   return memberLabels.get(userId) ?? "여행 멤버";
+}
+
+function getExpenseCategoryFilterLabel(category: TripExpenseCategoryFilter) {
+  return category === "all" ? "전체" : categoryCopy[category].title;
 }
 
 function getPerPersonAmountLabel(participantShares: readonly ExpenseParticipantShare[]) {
@@ -98,11 +124,13 @@ function TripExpenseRow({
   canEditExpenses,
   expense,
   memberLabels,
+  onEdit,
   onRemove,
 }: {
   canEditExpenses: boolean;
   expense: TripExpense;
   memberLabels: ReadonlyMap<string, string>;
+  onEdit: (expense: TripExpense) => void;
   onRemove: (expenseId: string) => void;
 }) {
   const category = categoryCopy[expense.category];
@@ -143,16 +171,231 @@ function TripExpenseRow({
       </div>
       <strong className="expense-row-amount">{formatWon(expense.amount)}</strong>
       {canEditExpenses ? (
-        <button
-          aria-label={`${expense.title} 지출 삭제`}
-          className="expense-remove-button"
-          onClick={() => onRemove(expense.id)}
-          type="button"
-        >
-          ×
-        </button>
+        <div className="expense-row-actions">
+          <button
+            aria-label={`${expense.title} 지출 수정`}
+            className="expense-edit-button"
+            onClick={() => onEdit(expense)}
+            type="button"
+          >
+            수정
+          </button>
+          <button
+            aria-label={`${expense.title} 지출 삭제`}
+            className="expense-remove-button"
+            onClick={() => onRemove(expense.id)}
+            type="button"
+          >
+            ×
+          </button>
+        </div>
       ) : null}
     </li>
+  );
+}
+
+function TripExpenseLedger({
+  canEditExpenses,
+  expenses,
+  memberLabels,
+  onEdit,
+  onRemove,
+}: {
+  canEditExpenses: boolean;
+  expenses: readonly TripExpense[];
+  memberLabels: ReadonlyMap<string, string>;
+  onEdit: (expense: TripExpense) => void;
+  onRemove: (expenseId: string) => void;
+}) {
+  const [expenseCategoryFilter, setExpenseCategoryFilter] = useState<TripExpenseCategoryFilter>("all");
+  const orderedExpenses = expenses.toSorted((left, right) =>
+    right.createdAt.localeCompare(left.createdAt),
+  );
+  const filteredExpenses =
+    expenseCategoryFilter === "all"
+      ? orderedExpenses
+      : orderedExpenses.filter((expense) => expense.category === expenseCategoryFilter);
+  const expenseCategoryCounts = expenses.reduce<Record<TripExpenseCategory, number>>(
+    (counts, expense) => {
+      counts[expense.category] += 1;
+      return counts;
+    },
+    { activity: 0, food: 0, other: 0, stay: 0, transport: 0 },
+  );
+
+  return (
+    <section aria-labelledby="expense-list-heading" className="expense-ledger">
+      <header>
+        <div>
+          <span className="section-kicker">지출 내역</span>
+          <h3 id="expense-list-heading">함께 쓴 돈</h3>
+        </div>
+        <strong aria-label={`지출 ${filteredExpenses.length}건`}>{filteredExpenses.length}건</strong>
+      </header>
+      {orderedExpenses.length === 0 ? (
+        <div className="expense-empty-state">
+          <span aria-hidden="true">₩</span>
+          <strong>아직 기록된 지출이 없어요.</strong>
+          <p>첫 지출을 적으면 멤버별 정산 금액을 바로 계산해 드려요.</p>
+        </div>
+      ) : (
+        <>
+          <div aria-label="지출 카테고리 필터" className="expense-category-filters" role="group">
+            {expenseCategoryFilters.map((category) => {
+              const categoryExpenseCount =
+                category === "all" ? expenses.length : expenseCategoryCounts[category];
+              const isSelected = category === expenseCategoryFilter;
+
+              return (
+                <button
+                  aria-label={`${getExpenseCategoryFilterLabel(category)}, ${categoryExpenseCount}건`}
+                  aria-pressed={isSelected}
+                  className={isSelected ? "expense-category-filter-active" : undefined}
+                  key={category}
+                  onClick={() => setExpenseCategoryFilter(category)}
+                  type="button"
+                >
+                  <span>{getExpenseCategoryFilterLabel(category)}</span>
+                  <small>{categoryExpenseCount}</small>
+                </button>
+              );
+            })}
+          </div>
+          {filteredExpenses.length === 0 ? (
+            <div className="expense-filter-empty-state" role="status">
+              <strong>{getExpenseCategoryFilterLabel(expenseCategoryFilter)} 지출이 없어요.</strong>
+              <p>다른 카테고리를 선택하거나 전체 지출을 확인해 보세요.</p>
+              <button onClick={() => setExpenseCategoryFilter("all")} type="button">
+                전체 지출 보기
+              </button>
+            </div>
+          ) : (
+            <ol>
+              {filteredExpenses.map((expense) => (
+                <TripExpenseRow
+                  canEditExpenses={canEditExpenses}
+                  expense={expense}
+                  key={expense.id}
+                  memberLabels={memberLabels}
+                  onEdit={onEdit}
+                  onRemove={onRemove}
+                />
+              ))}
+            </ol>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function TripExpenseSettlementPanel({
+  canEditExpenses,
+  memberLabels,
+  onToggleTransferCompletion,
+  settlement,
+  settlementState,
+}: {
+  canEditExpenses: boolean;
+  memberLabels: ReadonlyMap<string, string>;
+  onToggleTransferCompletion: (transfer: ExpenseSettlementTransfer) => void;
+  settlement: ReturnType<typeof calculateTripExpenseSettlement>;
+  settlementState: TripExpenseSettlementState;
+}) {
+  const progress = getTripExpenseSettlementProgress(settlement.transfers, settlementState);
+
+  return (
+    <aside aria-labelledby="settlement-heading" className="expense-settlement-panel">
+      <div>
+        <span className="section-kicker">정산 결과</span>
+        <h3 id="settlement-heading">이렇게 보내면 끝나요.</h3>
+        <p>각 지출을 참여 인원수로 균등하게 나눈 결과예요.</p>
+      </div>
+      {settlement.totalAmount === 0 ? (
+        <p className="expense-settlement-empty">지출을 추가하면 정산 결과가 나타나요.</p>
+      ) : (
+        <>
+          <ol className="expense-balance-list">
+            {settlement.balances.map((balance) => {
+              const label = getMemberName(balance.userId, memberLabels);
+              const direction =
+                balance.balance > 0 ? "받을 돈" : balance.balance < 0 ? "보낼 돈" : "정산 완료";
+
+              return (
+                <li key={balance.userId}>
+                  <span>{label}</span>
+                  <div>
+                    <small>{direction}</small>
+                    <strong className={balance.balance < 0 ? "expense-balance-negative" : undefined}>
+                      {balance.balance === 0 ? "—" : formatWon(Math.abs(balance.balance))}
+                    </strong>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+          {settlement.transfers.length > 0 ? (
+            <div className="expense-transfer-guidance">
+              <div className="expense-transfer-guidance-heading">
+                <h4>송금 안내</h4>
+                <span aria-label={`정산 진행 ${progress.completedTransferCount}/${progress.totalTransferCount}건 완료`}>
+                  {progress.completedTransferCount}/{progress.totalTransferCount}건 완료
+                </span>
+              </div>
+              <ol className="expense-transfer-list">
+                {settlement.transfers.map((transfer) => {
+                  const completion = getTripExpenseSettlementTransferCompletion(settlementState, transfer);
+                  const isCompleted = completion !== null;
+                  const fromName = getMemberName(transfer.fromUserId, memberLabels);
+                  const toName = getMemberName(transfer.toUserId, memberLabels);
+                  const transferDescription = `${fromName}에서 ${toName}에게 ${formatWon(transfer.amount)} 송금`;
+
+                  return (
+                    <li
+                      className={isCompleted ? "expense-transfer-complete" : undefined}
+                      key={createTripExpenseSettlementTransferKey(transfer)}
+                    >
+                      <div className="expense-transfer-route">
+                        <span>{fromName}</span>
+                        <i aria-hidden="true">→</i>
+                        <span>{toName}</span>
+                        <strong>{formatWon(transfer.amount)}</strong>
+                      </div>
+                      <div className="expense-transfer-completion">
+                        <small>
+                          {completion
+                            ? `완료 처리: ${getMemberName(completion.completedBy, memberLabels)}`
+                            : "송금 대기"}
+                        </small>
+                        {canEditExpenses ? (
+                          <button
+                            aria-label={`${transferDescription} ${isCompleted ? "완료 취소" : "완료 처리"}`}
+                            className="expense-transfer-completion-button"
+                            onClick={() => onToggleTransferCompletion(transfer)}
+                            type="button"
+                          >
+                            {isCompleted ? "완료 취소" : "보냈어요"}
+                          </button>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          ) : (
+            <p className="expense-settlement-complete" role="status">
+              이미 정산이 완료됐어요.
+            </p>
+          )}
+          {progress.allTransfersCompleted ? (
+            <p className="expense-settlement-finished" role="status">
+              모든 송금이 완료됐어요.
+            </p>
+          ) : null}
+        </>
+      )}
+    </aside>
   );
 }
 
@@ -162,15 +405,16 @@ export function TripExpenseWorkspaceView({
   expenses,
   members,
   onAdd,
+  onUpdate,
   onRemove,
+  onToggleTransferCompletion,
+  settlementState,
   statusMessage,
 }: TripExpenseWorkspaceViewProps) {
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const memberIds = members.map((member) => member.userId);
   const memberLabels = getTripMemberLabels(members, currentUserId);
   const settlement = calculateTripExpenseSettlement(expenses, memberIds);
-  const orderedExpenses = expenses.toSorted((left, right) =>
-    right.createdAt.localeCompare(left.createdAt),
-  );
   const {
     control,
     formState: { errors },
@@ -194,16 +438,48 @@ export function TripExpenseWorkspaceView({
   const participantIdSet = new Set(participantIds);
   const paidByField = register("paidBy");
 
-  function handleAdd(values: TripExpenseFormValues) {
-    if (onAdd(values)) {
-      reset({
+  const isEditingExpense = editingExpenseId !== null;
+
+  function resetExpenseForm(values?: Partial<TripExpenseFormValues>) {
+    reset(
+      values ?? {
         amount: undefined,
-        category: values.category,
-        paidBy: values.paidBy,
-        participantIds: values.participantIds,
+        category: "food",
+        paidBy: currentUserId,
+        participantIds: memberIds,
         title: "",
-      });
+      },
+    );
+  }
+
+  function handleExpenseSubmit(values: TripExpenseFormValues) {
+    if (editingExpenseId) {
+      if (onUpdate(editingExpenseId, values)) {
+        setEditingExpenseId(null);
+        resetExpenseForm();
+      }
+      return;
     }
+
+    if (onAdd(values)) {
+      resetExpenseForm({ ...values, amount: undefined, title: "" });
+    }
+  }
+
+  function handleEdit(expense: TripExpense) {
+    setEditingExpenseId(expense.id);
+    resetExpenseForm({
+      amount: expense.amount,
+      category: expense.category,
+      paidBy: expense.paidBy,
+      participantIds: expense.participantIds,
+      title: expense.title,
+    });
+  }
+
+  function handleEditCancel() {
+    setEditingExpenseId(null);
+    resetExpenseForm();
   }
 
   return (
@@ -224,10 +500,14 @@ export function TripExpenseWorkspaceView({
       <div className="expense-layout">
         <div className="expense-main-column">
           {canEditExpenses ? (
-            <form className="expense-add-form" noValidate onSubmit={handleSubmit(handleAdd)}>
+            <form className="expense-add-form" noValidate onSubmit={handleSubmit(handleExpenseSubmit)}>
               <div className="expense-add-heading">
-                <span>새 지출</span>
-                <p>금액은 원화 기준으로 기록합니다.</p>
+                <span>{isEditingExpense ? "지출 수정" : "새 지출"}</span>
+                <p>
+                  {isEditingExpense
+                    ? "저장하면 정산 안내와 완료 상태를 새로 계산합니다."
+                    : "금액은 원화 기준으로 기록합니다."}
+                </p>
               </div>
               <div className="expense-form-grid">
                 <div className="expense-form-title-field">
@@ -339,9 +619,16 @@ export function TripExpenseWorkspaceView({
                 {errors.participantIds ? <p role="alert">{errors.participantIds.message}</p> : null}
               </fieldset>
 
-              <button className="expense-add-button" type="submit">
-                지출 기록하기
-              </button>
+              <div className="expense-form-actions">
+                <button className="expense-add-button" type="submit">
+                  {isEditingExpense ? "수정 저장" : "지출 기록하기"}
+                </button>
+                {isEditingExpense ? (
+                  <button className="expense-edit-cancel-button" onClick={handleEditCancel} type="button">
+                    취소
+                  </button>
+                ) : null}
+              </div>
             </form>
           ) : (
             <p className="expense-read-only" role="status">
@@ -349,86 +636,22 @@ export function TripExpenseWorkspaceView({
             </p>
           )}
 
-          <section aria-labelledby="expense-list-heading" className="expense-ledger">
-            <header>
-              <div>
-                <span className="section-kicker">지출 내역</span>
-                <h3 id="expense-list-heading">함께 쓴 돈</h3>
-              </div>
-              <strong>{expenses.length}건</strong>
-            </header>
-            {orderedExpenses.length === 0 ? (
-              <div className="expense-empty-state">
-                <span aria-hidden="true">₩</span>
-                <strong>아직 기록된 지출이 없어요.</strong>
-                <p>첫 지출을 적으면 멤버별 정산 금액을 바로 계산해 드려요.</p>
-              </div>
-            ) : (
-              <ol>
-                {orderedExpenses.map((expense) => (
-                  <TripExpenseRow
-                    canEditExpenses={canEditExpenses}
-                    expense={expense}
-                    key={expense.id}
-                    memberLabels={memberLabels}
-                    onRemove={onRemove}
-                  />
-                ))}
-              </ol>
-            )}
-          </section>
+          <TripExpenseLedger
+            canEditExpenses={canEditExpenses}
+            expenses={expenses}
+            memberLabels={memberLabels}
+            onEdit={handleEdit}
+            onRemove={onRemove}
+          />
         </div>
 
-        <aside aria-labelledby="settlement-heading" className="expense-settlement-panel">
-          <div>
-            <span className="section-kicker">정산 결과</span>
-            <h3 id="settlement-heading">이렇게 보내면 끝나요.</h3>
-            <p>각 지출을 참여 인원수로 균등하게 나눈 결과예요.</p>
-          </div>
-          {expenses.length === 0 ? (
-            <p className="expense-settlement-empty">지출을 추가하면 정산 결과가 나타나요.</p>
-          ) : (
-            <>
-              <ol className="expense-balance-list">
-                {settlement.balances.map((balance) => {
-                  const label = getMemberName(balance.userId, memberLabels);
-                  const direction = balance.balance > 0 ? "받을 돈" : balance.balance < 0 ? "보낼 돈" : "정산 완료";
-
-                  return (
-                    <li key={balance.userId}>
-                      <span>{label}</span>
-                      <div>
-                        <small>{direction}</small>
-                        <strong className={balance.balance < 0 ? "expense-balance-negative" : undefined}>
-                          {balance.balance === 0 ? "—" : formatWon(Math.abs(balance.balance))}
-                        </strong>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-              {settlement.transfers.length > 0 ? (
-                <div className="expense-transfer-guidance">
-                  <h4>송금 안내</h4>
-                  <ol className="expense-transfer-list">
-                    {settlement.transfers.map((transfer) => (
-                      <li key={`${transfer.fromUserId}-${transfer.toUserId}`}>
-                        <span>{getMemberName(transfer.fromUserId, memberLabels)}</span>
-                        <i aria-hidden="true">→</i>
-                        <span>{getMemberName(transfer.toUserId, memberLabels)}</span>
-                        <strong>{formatWon(transfer.amount)}</strong>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ) : (
-                <p className="expense-settlement-complete" role="status">
-                  이미 정산이 완료됐어요.
-                </p>
-              )}
-            </>
-          )}
-        </aside>
+        <TripExpenseSettlementPanel
+          canEditExpenses={canEditExpenses}
+          memberLabels={memberLabels}
+          onToggleTransferCompletion={onToggleTransferCompletion}
+          settlement={settlement}
+          settlementState={settlementState}
+        />
       </div>
 
       <p aria-atomic="true" className="sr-only" role="status">
@@ -450,12 +673,24 @@ export function TripExpenseWorkspace({
   members,
 }: TripExpenseWorkspaceProps) {
   const expenseItems = useStorage((root) => root.expenseItems);
+  const expenseSettlementCompletions = useStorage((root) => root.expenseSettlementCompletions);
+  const expenseSettlementRevision = useStorage((root) => root.expenseSettlementRevision);
   const commitMutation = useMutation(
     ({ storage }, mutation) => applyTripExpenseMutationToStorage(storage, mutation),
     [],
   );
+  const toggleTransferCompletion = useMutation(
+    ({ storage }, input: TripExpenseSettlementCompletionInput) =>
+      toggleTripExpenseSettlementTransferCompletionInStorage(storage, input),
+    [],
+  );
   const [statusMessage, setStatusMessage] = useState("공유 경비를 불러왔습니다.");
   const expenses = getLiveblocksTripExpenseSnapshot({ expenseItems });
+  const settlementState =
+    getLiveblocksTripExpenseSettlementState({
+      expenseSettlementCompletions,
+      expenseSettlementRevision,
+    }) ?? createEmptyTripExpenseSettlementState();
 
   function ensureCanEditExpenses() {
     if (canEditExpenses) {
@@ -498,7 +733,22 @@ export function TripExpenseWorkspace({
               createdBy: currentUserId,
               id: expenseId,
             }),
-          `${values.title} 지출을 기록했습니다.`,
+          `${values.title} 지출을 기록했습니다. 정산 완료 상태를 새로 계산했습니다.`,
+        );
+      }}
+      onUpdate={(expenseId, values) => {
+        const expense = expenses?.items[expenseId];
+        const changes: TripExpenseChanges = values;
+
+        return handleMutation(
+          (current) =>
+            updateTripExpense(current, {
+              changes,
+              expenseId,
+            }),
+          expense
+            ? `${expense.title} 지출을 수정했습니다. 정산 완료 상태를 새로 계산했습니다.`
+            : "지출을 수정했습니다. 정산 완료 상태를 새로 계산했습니다.",
         );
       }}
       onRemove={(expenseId) => {
@@ -506,9 +756,35 @@ export function TripExpenseWorkspace({
 
         handleMutation(
           (current) => removeTripExpense(current, expenseId),
-          expense ? `${expense.title} 지출을 삭제했습니다.` : "지출을 삭제했습니다.",
+          expense
+            ? `${expense.title} 지출을 삭제했습니다. 정산 완료 상태를 새로 계산했습니다.`
+            : "지출을 삭제했습니다. 정산 완료 상태를 새로 계산했습니다.",
         );
       }}
+      onToggleTransferCompletion={(transfer) => {
+        if (!ensureCanEditExpenses()) {
+          return;
+        }
+
+        const result = toggleTransferCompletion({
+          completedAt: new Date().toISOString(),
+          completedBy: currentUserId,
+          revision: settlementState.revision,
+          transfer,
+        });
+
+        if (!result.success) {
+          setStatusMessage(result.message);
+          return;
+        }
+
+        setStatusMessage(
+          result.completed
+            ? "송금을 완료로 표시했습니다."
+            : "송금 완료 표시를 취소했습니다.",
+        );
+      }}
+      settlementState={settlementState}
       statusMessage={statusMessage}
     />
   );

@@ -1,4 +1,8 @@
-import type { TripExpense } from "@/entities/expense/model/trip-expense";
+import { calculateTripExpenseSettlement, type TripExpense } from "@/entities/expense/model/trip-expense";
+import {
+  getTripExpenseSettlementProgress,
+  type TripExpenseSettlementState,
+} from "@/entities/expense/model/trip-expense-settlement-state";
 import type { ItineraryDocument } from "@/entities/itinerary/model/trip-itinerary";
 import type { PreparationChecklistItem } from "@/entities/preparation-checklist/model/preparation-checklist";
 
@@ -12,15 +16,43 @@ export type TripOverview = {
   nextActionCopy: { description: string; label: string; title: string };
   plannedDayCount: number;
   preparationItemCount: number;
+  settlementProgressCopy: string;
+  settlementTransferCount: number;
+  completedSettlementTransferCount: number;
   totalExpenseAmount: number;
   tripDayCount: number;
 };
+
+function getSettlementProgressCopy({
+  completedSettlementTransferCount,
+  expenseCount,
+  settlementTransferCount,
+}: Pick<
+  TripOverview,
+  "completedSettlementTransferCount" | "expenseCount" | "settlementTransferCount"
+>) {
+  if (expenseCount === 0) {
+    return "아직 기록된 지출이 없어요.";
+  }
+
+  if (settlementTransferCount === 0) {
+    return "송금이 필요 없어요.";
+  }
+
+  if (completedSettlementTransferCount === settlementTransferCount) {
+    return "모든 송금을 완료했어요.";
+  }
+
+  return `송금 ${completedSettlementTransferCount}/${settlementTransferCount}건 완료`;
+}
 
 function getNextAction(
   itineraryItemCount: number,
   preparationItemCount: number,
   completedPreparationCount: number,
   expenseCount: number,
+  completedSettlementTransferCount: number,
+  settlementTransferCount: number,
 ): Pick<TripOverview, "nextAction" | "nextActionCopy"> {
   if (itineraryItemCount === 0) {
     return {
@@ -60,6 +92,20 @@ function getNextAction(
     };
   }
 
+  if (
+    settlementTransferCount > 0 &&
+    completedSettlementTransferCount < settlementTransferCount
+  ) {
+    return {
+      nextAction: "expenses",
+      nextActionCopy: {
+        description: `아직 ${settlementTransferCount - completedSettlementTransferCount}건의 송금이 남아 있어요.`,
+        label: "정산 확인하기",
+        title: "마지막 정산을 확인해요.",
+      },
+    };
+  }
+
   return {
     nextAction: "itinerary",
     nextActionCopy: {
@@ -73,11 +119,15 @@ function getNextAction(
 export function createTripOverview({
   expenses,
   itinerary,
+  memberIds,
   preparationItems,
+  settlementState,
 }: {
   expenses: readonly TripExpense[];
   itinerary: ItineraryDocument;
+  memberIds: readonly string[];
   preparationItems: readonly PreparationChecklistItem[];
+  settlementState: TripExpenseSettlementState;
 }): TripOverview {
   const itineraryItemCount = Object.keys(itinerary.items).length;
   const plannedDayCount = itinerary.dayOrder.reduce((count, dayId) => {
@@ -87,20 +137,36 @@ export function createTripOverview({
     (item) => item.completedAt !== null,
   ).length;
   const totalExpenseAmount = expenses.reduce((total, expense) => total + expense.amount, 0);
+  const settlement = calculateTripExpenseSettlement(expenses, memberIds);
+  const settlementProgress = getTripExpenseSettlementProgress(
+    settlement.transfers,
+    settlementState,
+  );
+  const expenseCount = expenses.length;
+  const settlementProgressCopy = getSettlementProgressCopy({
+    completedSettlementTransferCount: settlementProgress.completedTransferCount,
+    expenseCount,
+    settlementTransferCount: settlementProgress.totalTransferCount,
+  });
 
   return {
     completedPreparationCount,
-    expenseCount: expenses.length,
+    completedSettlementTransferCount: settlementProgress.completedTransferCount,
+    expenseCount,
     itineraryItemCount,
     plannedDayCount,
     preparationItemCount: preparationItems.length,
+    settlementProgressCopy,
+    settlementTransferCount: settlementProgress.totalTransferCount,
     totalExpenseAmount,
     tripDayCount: itinerary.dayOrder.length,
     ...getNextAction(
       itineraryItemCount,
       preparationItems.length,
       completedPreparationCount,
-      expenses.length,
+      expenseCount,
+      settlementProgress.completedTransferCount,
+      settlementProgress.totalTransferCount,
     ),
   };
 }

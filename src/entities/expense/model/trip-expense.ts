@@ -68,6 +68,10 @@ export const tripExpenseDocumentSchema = z
 export type TripExpenseCategory = z.infer<typeof tripExpenseCategorySchema>;
 export type TripExpense = z.infer<typeof tripExpenseSchema>;
 export type TripExpenseDocument = z.infer<typeof tripExpenseDocumentSchema>;
+export type TripExpenseChanges = Pick<
+  TripExpense,
+  "amount" | "category" | "paidBy" | "participantIds" | "title"
+>;
 
 export type TripExpenseMutationResult =
   | { data: TripExpenseDocument; success: true }
@@ -163,6 +167,47 @@ export function removeTripExpense(
   );
 
   return { data: { items }, success: true };
+}
+
+export function updateTripExpense(
+  document: TripExpenseDocument,
+  {
+    changes,
+    expenseId,
+  }: {
+    changes: TripExpenseChanges;
+    expenseId: string;
+  },
+): TripExpenseMutationResult {
+  const currentExpense = document.items[expenseId];
+
+  if (!currentExpense) {
+    return {
+      code: "expense-not-found",
+      message: "수정할 지출 항목을 찾지 못했습니다.",
+      success: false,
+    };
+  }
+
+  const parsedExpense = tripExpenseSchema.safeParse({ ...currentExpense, ...changes });
+
+  if (!parsedExpense.success) {
+    return {
+      code: "invalid-expense",
+      message: "지출 정보를 확인해 주세요.",
+      success: false,
+    };
+  }
+
+  return {
+    data: {
+      items: {
+        ...document.items,
+        [expenseId]: parsedExpense.data,
+      },
+    },
+    success: true,
+  };
 }
 
 function createBalance(userId: string): ExpenseBalance {

@@ -116,7 +116,7 @@ export function TripOverviewWorkspaceView({
           />
           <TripOverviewStat
             action="expenses"
-            detail={`${numberFormatter.format(overview.expenseCount)}건 기록됨`}
+            detail={overview.settlementProgressCopy}
             label="공동 경비"
             onNavigate={onNavigate}
             value={wonFormatter.format(overview.totalExpenseAmount)}
@@ -156,7 +156,7 @@ export function TripOverviewWorkspaceView({
             <span>03</span>
             <div>
               <strong>함께 쓴 돈</strong>
-              <p>현재 {numberFormatter.format(overview.expenseCount)}건의 지출을 기록했어요.</p>
+              <p>{overview.settlementProgressCopy}</p>
             </div>
             <button aria-label="경비로 이동" onClick={() => onNavigate("expenses")} type="button">
               경비 보기

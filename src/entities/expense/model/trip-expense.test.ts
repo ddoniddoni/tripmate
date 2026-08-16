@@ -6,6 +6,7 @@ import {
   calculateTripExpenseSettlement,
   createEmptyTripExpenseDocument,
   removeTripExpense,
+  updateTripExpense,
 } from "@/entities/expense/model/trip-expense";
 
 const dinnerExpense = {
@@ -84,5 +85,39 @@ describe("trip expense domain", () => {
     });
 
     expect(result).toMatchObject({ code: "invalid-expense", success: false });
+  });
+
+  it("updates an expense without changing its stable metadata", () => {
+    const added = addTripExpense(createEmptyTripExpenseDocument(), dinnerExpense);
+
+    if (!added.success) {
+      throw new Error("expense should be added");
+    }
+
+    expect(
+      updateTripExpense(added.data, {
+        changes: {
+          amount: 120_000,
+          category: "food",
+          paidBy: "user-minji",
+          participantIds: ["user-jiwoo", "user-minji"],
+          title: "흑돼지 저녁 2차",
+        },
+        expenseId: dinnerExpense.id,
+      }),
+    ).toEqual({
+      data: {
+        items: {
+          [dinnerExpense.id]: {
+            ...dinnerExpense,
+            amount: 120_000,
+            paidBy: "user-minji",
+            participantIds: ["user-jiwoo", "user-minji"],
+            title: "흑돼지 저녁 2차",
+          },
+        },
+      },
+      success: true,
+    });
   });
 });

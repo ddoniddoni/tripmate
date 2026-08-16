@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   addPreparationChecklistItem,
   createEmptyPreparationChecklist,
+  preparationChecklistItemSchema,
   removePreparationChecklistItem,
   setPreparationChecklistItemAssignee,
   setPreparationChecklistItemCompletion,
+  updatePreparationChecklistItem,
 } from "@/entities/preparation-checklist/model/preparation-checklist";
 
 const checklistItem = {
@@ -14,6 +16,7 @@ const checklistItem = {
   completedAt: null,
   createdAt: "2026-04-01T09:00:00.000Z",
   createdBy: "user-jiwoo",
+  dueDate: null,
   id: "stay-reservation",
   title: "숙소 예약 확인하기",
 };
@@ -63,6 +66,61 @@ describe("preparation checklist mutations", () => {
       },
       success: true,
     });
+  });
+
+  it("updates the task copy while preserving its shared workflow state", () => {
+    const added = addPreparationChecklistItem(createEmptyPreparationChecklist(), {
+      ...checklistItem,
+      assigneeId: "user-minji",
+      completedAt: "2026-04-02T10:00:00.000Z",
+    });
+
+    if (!added.success) {
+      throw new Error("checklist item should be added");
+    }
+
+    const updated = updatePreparationChecklistItem(added.data, {
+      changes: {
+        category: "transport",
+        dueDate: "2026-04-10",
+        title: "공항버스 시간 확인하기",
+      },
+      itemId: "stay-reservation",
+    });
+
+    expect(updated).toEqual({
+      data: {
+        items: {
+          "stay-reservation": {
+            ...checklistItem,
+            assigneeId: "user-minji",
+            category: "transport",
+            completedAt: "2026-04-02T10:00:00.000Z",
+            dueDate: "2026-04-10",
+            title: "공항버스 시간 확인하기",
+          },
+        },
+      },
+      success: true,
+    });
+  });
+
+  it("normalizes a legacy item without a due date to no due date", () => {
+    const result = preparationChecklistItemSchema.safeParse({
+      assigneeId: null,
+      category: "packing",
+      completedAt: null,
+      createdAt: "2026-04-01T09:00:00.000Z",
+      createdBy: "user-jiwoo",
+      id: "passport",
+      title: "여권 유효기간 확인하기",
+    });
+
+    expect(result.success).toBe(true);
+
+    if (result.success) {
+      expect(result.data.dueDate).toBeNull();
+    }
   });
 
   it("removes an item and explains attempts to update a missing item", () => {

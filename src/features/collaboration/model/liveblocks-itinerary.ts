@@ -1,6 +1,7 @@
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 
 import type { TripExpense } from "@/entities/expense/model/trip-expense";
+import type { TripExpenseSettlementTransferCompletion } from "@/entities/expense/model/trip-expense-settlement-state";
 import type { PreparationChecklistItem } from "@/entities/preparation-checklist/model/preparation-checklist";
 import type { ItineraryMutationResult } from "@/entities/itinerary/model/mutations";
 import {
@@ -27,6 +28,8 @@ export type TripItineraryStorage = {
   dayOrder: LiveList<string>;
   days: LiveMap<string, LiveObject<LiveTripDay>>;
   expenseItems: LiveMap<string, LiveObject<TripExpense>>;
+  expenseSettlementCompletions: LiveMap<string, LiveObject<TripExpenseSettlementTransferCompletion>>;
+  expenseSettlementRevision: number;
   items: LiveMap<string, LiveObject<ItineraryItem>>;
   placeSuggestions: LiveMap<string, LiveObject<PlaceSuggestion>>;
 };
@@ -48,6 +51,8 @@ export function createTripItineraryStorage(
       Object.values(itinerary.days).map((day) => [day.id, createLiveTripDay(day)]),
     ),
     expenseItems: new LiveMap(),
+    expenseSettlementCompletions: new LiveMap(),
+    expenseSettlementRevision: 0,
     items: new LiveMap(
       Object.values(itinerary.items).map((item) => [item.id, new LiveObject(item)]),
     ),

@@ -11,7 +11,10 @@ import {
   getLiveblocksTripDateRange,
 } from "@/features/collaboration/model/liveblocks-itinerary";
 import { getLiveblocksPreparationChecklistSnapshot } from "@/features/collaboration/model/liveblocks-preparation-checklist";
-import { getLiveblocksTripExpenseSnapshot } from "@/features/collaboration/model/liveblocks-trip-expenses";
+import {
+  getLiveblocksTripExpenseSettlementState,
+  getLiveblocksTripExpenseSnapshot,
+} from "@/features/collaboration/model/liveblocks-trip-expenses";
 import type {
   TripWorkspaceNavigation,
   TripWorkspaceView,
@@ -28,6 +31,10 @@ import { TripPreparationChecklist } from "@/features/preparation-checklist/ui/tr
 import { TripExpenseWorkspace } from "@/features/trip-expenses/ui/trip-expense-workspace";
 import { createTripOverview } from "@/features/trip-overview/model/trip-overview";
 import { TripOverviewWorkspaceView } from "@/features/trip-overview/ui/trip-overview-workspace";
+import {
+  createEmptyTripExpenseSettlementState,
+  type TripExpenseSettlementState,
+} from "@/entities/expense/model/trip-expense-settlement-state";
 import type { TripMember } from "@/entities/trip/model/trip-membership";
 import type { Trip } from "@/entities/trip/model/trip";
 
@@ -41,6 +48,7 @@ type LiveblocksItineraryEditorProps = {
 
 type LiveblocksItineraryEditorContentProps = LiveblocksItineraryEditorProps & {
   expenses: readonly NonNullable<ReturnType<typeof getLiveblocksTripExpenseSnapshot>>["items"][string][];
+  expenseSettlementState: TripExpenseSettlementState;
   preparationItems: readonly NonNullable<
     ReturnType<typeof getLiveblocksPreparationChecklistSnapshot>
   >["items"][string][];
@@ -96,6 +104,7 @@ function LiveblocksItineraryEditorContent({
   canEditItinerary,
   currentUserId,
   expenses,
+  expenseSettlementState,
   initialWorkspaceNavigation,
   members,
   preparationItems,
@@ -147,7 +156,9 @@ function LiveblocksItineraryEditorContent({
   const overview = createTripOverview({
     expenses,
     itinerary: tripItinerary.itinerary,
+    memberIds: members.map((member) => member.userId),
     preparationItems,
+    settlementState: expenseSettlementState,
   });
 
   return (
@@ -197,6 +208,8 @@ export function LiveblocksItineraryEditor({
 }: LiveblocksItineraryEditorProps) {
   const router = useRouter();
   const storage = useStorage((root) => root);
+  const expenseSettlementCompletions = useStorage((root) => root.expenseSettlementCompletions);
+  const expenseSettlementRevision = useStorage((root) => root.expenseSettlementRevision);
   const sharedDateRange = getLiveblocksTripDateRange(storage);
   const hasUpdatedTripDates =
     sharedDateRange !== null &&
@@ -220,6 +233,11 @@ export function LiveblocksItineraryEditor({
   const tripItinerary = getLiveblocksItinerarySnapshot(sharedTrip, storage);
   const preparationChecklist = getLiveblocksPreparationChecklistSnapshot(storage);
   const expenseDocument = getLiveblocksTripExpenseSnapshot(storage);
+  const expenseSettlementState =
+    getLiveblocksTripExpenseSettlementState({
+      expenseSettlementCompletions,
+      expenseSettlementRevision,
+    }) ?? createEmptyTripExpenseSettlementState();
 
   if (!tripItinerary) {
     return (
@@ -234,6 +252,7 @@ export function LiveblocksItineraryEditor({
       canEditItinerary={canEditItinerary}
       currentUserId={currentUserId}
       expenses={expenseDocument ? Object.values(expenseDocument.items) : []}
+      expenseSettlementState={expenseSettlementState}
       initialWorkspaceNavigation={initialWorkspaceNavigation}
       members={members}
       preparationItems={preparationChecklist ? Object.values(preparationChecklist.items) : []}

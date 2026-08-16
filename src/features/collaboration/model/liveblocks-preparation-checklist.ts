@@ -75,6 +75,10 @@ function getItemPatch(
     patch.createdBy = nextItem.createdBy;
   }
 
+  if (currentItem.dueDate !== nextItem.dueDate) {
+    patch.dueDate = nextItem.dueDate;
+  }
+
   if (currentItem.title !== nextItem.title) {
     patch.title = nextItem.title;
   }
