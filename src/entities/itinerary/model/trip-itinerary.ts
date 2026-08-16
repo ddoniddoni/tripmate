@@ -14,6 +14,7 @@ export const tripDaySchema = z.object({
   tripId: stableIdSchema,
   date: calendarDateSchema,
   itemIds: z.array(stableIdSchema),
+  note: z.string().trim().max(2_000, "하루 메모는 2,000자 이내로 입력해 주세요.").optional(),
 });
 
 export const itineraryItemSchema = z.object({
@@ -32,10 +33,20 @@ export const itineraryItemSchema = z.object({
   updatedAt: z.iso.datetime({ offset: true }),
 });
 
+export const placeSuggestionSchema = z.object({
+  id: stableIdSchema,
+  dayId: stableIdSchema,
+  place: placeSnapshotSchema,
+  note: z.string().trim().max(500, "장소 제안 메모는 500자 이내로 입력해 주세요.").optional(),
+  createdAt: z.iso.datetime({ offset: true }),
+  createdBy: stableIdSchema,
+});
+
 export const itineraryDocumentSchema = z.object({
   dayOrder: z.array(stableIdSchema).min(1),
   days: z.record(stableIdSchema, tripDaySchema),
   items: z.record(stableIdSchema, itineraryItemSchema),
+  placeSuggestions: z.record(stableIdSchema, placeSuggestionSchema).default({}),
 });
 
 export const tripItinerarySchema = z
@@ -166,10 +177,31 @@ export const tripItinerarySchema = z
         });
       }
     });
+
+    Object.entries(itinerary.placeSuggestions).forEach(([suggestionKey, suggestion]) => {
+      const suggestionPath: PropertyKey[] = ["itinerary", "placeSuggestions", suggestionKey];
+
+      if (suggestion.id !== suggestionKey) {
+        context.addIssue({
+          code: "custom",
+          message: `장소 제안 키 '${suggestionKey}'와 ID '${suggestion.id}'가 일치하지 않습니다.`,
+          path: [...suggestionPath, "id"],
+        });
+      }
+
+      if (!itinerary.days[suggestion.dayId]) {
+        context.addIssue({
+          code: "custom",
+          message: `장소 제안 '${suggestionKey}'이 존재하지 않는 날짜 '${suggestion.dayId}'를 참조합니다.`,
+          path: [...suggestionPath, "dayId"],
+        });
+      }
+    });
   });
 
 export type TripDay = z.infer<typeof tripDaySchema>;
 export type ItineraryItem = z.infer<typeof itineraryItemSchema>;
+export type PlaceSuggestion = z.infer<typeof placeSuggestionSchema>;
 export type ItineraryDocument = z.infer<typeof itineraryDocumentSchema>;
 export type TripItinerary = z.infer<typeof tripItinerarySchema>;
 

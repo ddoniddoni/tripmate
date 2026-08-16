@@ -2050,6 +2050,31 @@ textarea {
   cursor: pointer;
 }
 
+.timeline-header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-by-time-button {
+  min-height: 36px;
+  padding: 0 11px;
+  color: var(--green-dark);
+  background: rgb(255 255 255 / 64%);
+  border: 1px solid rgb(38 112 82 / 24%);
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.sort-by-time-button:hover {
+  background: var(--green-soft);
+  border-color: rgb(38 112 82 / 46%);
+}
+
 .add-place-placeholder:hover,
 .primary-button:hover {
   background: var(--green-dark);
@@ -2066,9 +2091,230 @@ textarea {
   outline-offset: 2px;
 }
 
+.sort-by-time-button:focus-visible {
+  outline: 3px solid rgb(38 112 82 / 27%);
+  outline-offset: 2px;
+}
+
 .add-place-placeholder > span {
   font-size: 17px;
   font-weight: 300;
+}
+
+.day-planning-panel {
+  margin: -8px 0 30px;
+  padding: 17px;
+  background:
+    linear-gradient(135deg, rgb(232 241 236 / 88%), rgb(255 255 255 / 72%)),
+    var(--surface);
+  border: 1px solid rgb(38 112 82 / 18%);
+  border-radius: 16px;
+}
+
+.day-planning-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 1px 2px 15px;
+}
+
+.day-planning-heading h2 {
+  margin: 4px 0 0;
+  color: var(--green-dark);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.day-planning-heading p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.day-suggestion-add {
+  min-height: 34px;
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  color: var(--green-dark);
+  border-color: rgb(38 112 82 / 25%);
+  font-size: 10px;
+}
+
+.day-planning-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 10px;
+}
+
+.day-memo-card,
+.place-suggestion-card {
+  min-width: 0;
+  padding: 14px;
+  background: rgb(255 255 255 / 75%);
+  border: 1px solid rgb(221 228 220 / 92%);
+  border-radius: 12px;
+}
+
+.day-planning-label {
+  display: block;
+  color: var(--green-dark);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.day-memo-summary {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.day-memo-summary p,
+.day-memo-readonly {
+  margin: 0;
+  color: #59655e;
+  font-size: 11px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.day-memo-summary .text-action {
+  width: max-content;
+  min-height: 29px;
+  padding: 4px 0;
+  color: var(--green-dark);
+  font-size: 10px;
+}
+
+.day-memo-form {
+  display: grid;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.day-memo-form label {
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.day-memo-form textarea {
+  width: 100%;
+  min-height: 78px;
+  padding: 9px 10px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid #cad8cf;
+  border-radius: 8px;
+  outline: none;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.day-memo-form textarea:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgb(38 112 82 / 10%);
+}
+
+.day-memo-form > span[role="alert"] {
+  color: #a64339;
+  font-size: 9px;
+}
+
+.day-memo-actions {
+  display: flex;
+  justify-content: end;
+  gap: 6px;
+}
+
+.day-memo-actions .secondary-button,
+.day-memo-actions .primary-button {
+  min-height: 30px;
+  padding: 6px 9px;
+  font-size: 10px;
+}
+
+.place-suggestion-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.place-suggestion-heading > span:last-child {
+  padding: 3px 6px;
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.place-suggestion-empty {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.place-suggestion-list {
+  display: grid;
+  gap: 7px;
+  margin: 9px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.place-suggestion-list article {
+  padding: 10px;
+  background: rgb(247 250 247 / 88%);
+  border: 1px solid #e4eae4;
+  border-radius: 9px;
+}
+
+.place-suggestion-list .place-category {
+  font-size: 8px;
+}
+
+.place-suggestion-list h3 {
+  margin: 7px 0 0;
+  color: var(--ink);
+  font-size: 13px;
+  letter-spacing: -0.02em;
+}
+
+.place-suggestion-list p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.place-suggestion-list blockquote {
+  margin: 8px 0 0;
+  padding: 7px 9px;
+  color: #5b6a61;
+  background: var(--surface);
+  border-left: 2px solid var(--coral);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.place-suggestion-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.place-suggestion-actions .text-action {
+  min-height: 28px;
+  padding: 3px 0;
+  font-size: 9px;
 }
 
 .timeline-list {
@@ -2252,6 +2498,81 @@ textarea {
   font-weight: 700;
 }
 
+.travel-time-badge {
+  padding: 4px 7px;
+  color: #9b5a26;
+  background: #fff4e8;
+  border: 1px solid rgb(155 90 38 / 20%);
+  border-radius: 5px;
+  font-size: 8px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.timeline-travel-buffer {
+  display: grid;
+  grid-template-columns: 63px 27px minmax(0, 1fr);
+  min-height: 44px;
+}
+
+.timeline-travel-spacer {
+  grid-column: 1;
+}
+
+.timeline-travel-icon {
+  z-index: 1;
+  display: grid;
+  grid-column: 2;
+  width: 19px;
+  height: 19px;
+  place-self: center;
+  place-items: center;
+  color: var(--green-dark);
+  background: #e5f1e8;
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.timeline-travel-buffer p {
+  display: grid;
+  grid-column: 3;
+  gap: 2px;
+  align-content: center;
+  margin: 0 0 8px 8px;
+  padding: 8px 11px;
+  color: var(--muted);
+  background: rgb(229 241 232 / 58%);
+  border-left: 2px solid #a6c9ad;
+  border-radius: 0 8px 8px 0;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.timeline-travel-buffer strong {
+  color: var(--green-dark);
+  font-size: 9px;
+}
+
+.timeline-travel-buffer span {
+  color: #64736a;
+}
+
+.timeline-travel-buffer.has-not-enough-time .timeline-travel-icon {
+  color: #9b5a26;
+  background: #fff4e8;
+}
+
+.timeline-travel-buffer.has-not-enough-time p {
+  background: #fff8f0;
+  border-left-color: #e4b379;
+}
+
+.timeline-travel-buffer.has-not-enough-time strong {
+  color: #9b5a26;
+}
+
 .category-coral {
   color: #a34f3e;
   background: var(--coral-soft);
@@ -2287,6 +2608,35 @@ textarea {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 9px;
+}
+
+.itinerary-selection-presence {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  color: var(--green-dark);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.itinerary-selection-avatars {
+  display: flex;
+  padding-left: 2px;
+}
+
+.itinerary-selection-avatars i {
+  display: grid;
+  width: 19px;
+  height: 19px;
+  margin-left: -2px;
+  place-items: center;
+  color: white;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 800;
 }
 
 .place-note {
@@ -2827,6 +3177,28 @@ textarea {
 
 .place-search-results small {
   grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.place-suggestion-form {
+  display: grid;
+  gap: 16px;
+}
+
+.place-suggestion-selection {
+  display: grid;
+  gap: 3px;
+  margin: -4px 0 0;
+  padding: 10px 12px;
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border: 1px solid rgb(38 112 82 / 18%);
+  border-radius: 9px;
+  font-size: 10px;
+}
+
+.place-suggestion-selection span {
   color: var(--muted);
   font-size: 9px;
 }
@@ -4049,8 +4421,31 @@ textarea {
     align-items: start;
   }
 
+  .timeline-header-actions {
+    width: 100%;
+  }
+
+  .sort-by-time-button,
+  .add-place-placeholder {
+    flex: 1;
+  }
+
   .timeline-header h2 {
     font-size: 25px;
+  }
+
+  .day-planning-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .day-suggestion-add {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .day-planning-grid {
+    grid-template-columns: 1fr;
   }
 
   .trip-workspace-tabs {
@@ -4115,6 +4510,10 @@ textarea {
     grid-template-columns: 53px 24px minmax(0, 1fr);
   }
 
+  .timeline-travel-buffer {
+    grid-template-columns: 53px 24px minmax(0, 1fr);
+  }
+
   .timeline-time strong {
     font-size: 12px;
   }
@@ -4141,8 +4540,8 @@ textarea {
     min-height: 40px;
   }
 
-  .add-place-placeholder {
-    width: 100%;
+  .add-place-placeholder,
+  .sort-by-time-button {
     min-height: 44px;
   }
 

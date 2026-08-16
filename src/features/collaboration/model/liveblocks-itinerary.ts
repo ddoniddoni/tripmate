@@ -10,6 +10,7 @@ import {
 import type {
   ItineraryDocument,
   ItineraryItem,
+  PlaceSuggestion,
   TripDay,
   TripItinerary,
 } from "@/entities/itinerary/model/trip-itinerary";
@@ -27,14 +28,13 @@ export type TripItineraryStorage = {
   days: LiveMap<string, LiveObject<LiveTripDay>>;
   expenseItems: LiveMap<string, LiveObject<TripExpense>>;
   items: LiveMap<string, LiveObject<ItineraryItem>>;
+  placeSuggestions: LiveMap<string, LiveObject<PlaceSuggestion>>;
 };
 
 function createLiveTripDay(day: TripDay) {
   return new LiveObject<LiveTripDay>({
-    date: day.date,
-    id: day.id,
+    ...day,
     itemIds: new LiveList(day.itemIds),
-    tripId: day.tripId,
   });
 }
 
@@ -50,6 +50,12 @@ export function createTripItineraryStorage(
     expenseItems: new LiveMap(),
     items: new LiveMap(
       Object.values(itinerary.items).map((item) => [item.id, new LiveObject(item)]),
+    ),
+    placeSuggestions: new LiveMap(
+      Object.values(itinerary.placeSuggestions).map((suggestion) => [
+        suggestion.id,
+        new LiveObject(suggestion),
+      ]),
     ),
   };
 }
@@ -118,6 +124,10 @@ function getDayPatch(currentDay: TripDay, nextDay: TripDay): Partial<LiveTripDay
 
   if (currentDay.tripId !== nextDay.tripId) {
     patch.tripId = nextDay.tripId;
+  }
+
+  if (currentDay.note !== nextDay.note) {
+    patch.note = nextDay.note;
   }
 
   return patch;
@@ -223,6 +233,83 @@ function synchronizeItems(
   });
 }
 
+function getOrCreatePlaceSuggestions(
+  storage: LiveObject<TripItineraryStorage>,
+): LiveMap<string, LiveObject<PlaceSuggestion>> {
+  const placeSuggestions = storage.get("placeSuggestions");
+
+  if (placeSuggestions) {
+    return placeSuggestions;
+  }
+
+  const nextPlaceSuggestions = new LiveMap<string, LiveObject<PlaceSuggestion>>();
+  storage.set("placeSuggestions", nextPlaceSuggestions);
+  return nextPlaceSuggestions;
+}
+
+function getPlaceSuggestionPatch(
+  currentSuggestion: PlaceSuggestion,
+  nextSuggestion: PlaceSuggestion,
+): Partial<PlaceSuggestion> {
+  const patch: Partial<PlaceSuggestion> = {};
+
+  if (currentSuggestion.dayId !== nextSuggestion.dayId) {
+    patch.dayId = nextSuggestion.dayId;
+  }
+
+  if (currentSuggestion.note !== nextSuggestion.note) {
+    patch.note = nextSuggestion.note;
+  }
+
+  if (currentSuggestion.createdAt !== nextSuggestion.createdAt) {
+    patch.createdAt = nextSuggestion.createdAt;
+  }
+
+  if (currentSuggestion.createdBy !== nextSuggestion.createdBy) {
+    patch.createdBy = nextSuggestion.createdBy;
+  }
+
+  if (JSON.stringify(currentSuggestion.place) !== JSON.stringify(nextSuggestion.place)) {
+    patch.place = nextSuggestion.place;
+  }
+
+  return patch;
+}
+
+function synchronizePlaceSuggestions(
+  livePlaceSuggestions: LiveMap<string, LiveObject<PlaceSuggestion>>,
+  currentSuggestions: ItineraryDocument["placeSuggestions"],
+  nextSuggestions: ItineraryDocument["placeSuggestions"],
+) {
+  for (const suggestionId of livePlaceSuggestions.keys()) {
+    if (!nextSuggestions[suggestionId]) {
+      livePlaceSuggestions.delete(suggestionId);
+    }
+  }
+
+  Object.values(nextSuggestions).forEach((nextSuggestion) => {
+    const liveSuggestion = livePlaceSuggestions.get(nextSuggestion.id);
+
+    if (!liveSuggestion) {
+      livePlaceSuggestions.set(nextSuggestion.id, new LiveObject(nextSuggestion));
+      return;
+    }
+
+    const currentSuggestion = currentSuggestions[nextSuggestion.id];
+
+    if (!currentSuggestion) {
+      liveSuggestion.update(nextSuggestion);
+      return;
+    }
+
+    const patch = getPlaceSuggestionPatch(currentSuggestion, nextSuggestion);
+
+    if (Object.keys(patch).length > 0) {
+      liveSuggestion.update(patch);
+    }
+  });
+}
+
 function synchronizeItineraryStorage(
   storage: LiveObject<TripItineraryStorage>,
   current: ItineraryDocument,
@@ -231,6 +318,11 @@ function synchronizeItineraryStorage(
   synchronizeLiveList(storage.get("dayOrder"), next.dayOrder);
   synchronizeDays(storage.get("days"), current.days, next.days);
   synchronizeItems(storage.get("items"), current.items, next.items);
+  synchronizePlaceSuggestions(
+    getOrCreatePlaceSuggestions(storage),
+    current.placeSuggestions,
+    next.placeSuggestions,
+  );
 }
 
 export function applyItineraryMutationToStorage(

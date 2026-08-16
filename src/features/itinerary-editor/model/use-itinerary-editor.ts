@@ -5,15 +5,24 @@ import { isSortable } from "@dnd-kit/react/sortable";
 import { useState } from "react";
 
 import {
+  addPlaceSuggestion,
   addItineraryItem,
   duplicateItineraryItem,
   moveItineraryItem,
+  promotePlaceSuggestion,
+  removePlaceSuggestion,
   removeItineraryItem,
   reorderItineraryItem,
+  sortItineraryItemsByStartTime,
+  updateTripDayNote,
   updateItineraryItem,
   type ItineraryMutationResult,
 } from "@/entities/itinerary/model/mutations";
-import { selectItemsForDay, selectOrderedDays } from "@/entities/itinerary/model/selectors";
+import {
+  selectItemsForDay,
+  selectOrderedDays,
+  selectPlaceSuggestionsForDay,
+} from "@/entities/itinerary/model/selectors";
 import type { TripItinerary } from "@/entities/itinerary/model/trip-itinerary";
 import {
   getDayIdFromDropTarget,
@@ -21,6 +30,7 @@ import {
   getTimelineItemId,
 } from "@/features/itinerary-editor/model/dnd-targets";
 import type { ItineraryItemFormValues } from "@/features/itinerary-editor/model/itinerary-item-form";
+import type { PlaceSuggestionFormValues } from "@/features/itinerary-editor/model/place-suggestion-form";
 
 export type ItineraryEditorMutation = (
   current: TripItinerary,
@@ -68,6 +78,7 @@ export function useItineraryEditorController({
   const [moveItemId, setMoveItemId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<MobileView>("itinerary");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [isPlaceSuggestionDialogOpen, setIsPlaceSuggestionDialogOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState(initialStatusMessage);
 
   const { trip, itinerary } = tripItinerary;
@@ -75,6 +86,9 @@ export function useItineraryEditorController({
   const selectedDayId = controlledSelectedDayId ?? uncontrolledSelectedDayId;
   const selectedDay = itinerary.days[selectedDayId] ?? days[0];
   const itineraryItems = selectedDay ? selectItemsForDay(itinerary, selectedDay.id) : [];
+  const placeSuggestions = selectedDay
+    ? selectPlaceSuggestionsForDay(itinerary, selectedDay.id)
+    : [];
   const destinationName = trip.destination.split("·").at(-1)?.trim() ?? trip.destination;
   const editingItem =
     dialogState.type === "edit" ? itinerary.items[dialogState.itemId] : undefined;
@@ -201,6 +215,107 @@ export function useItineraryEditorController({
       setSelectedItemId(itemId);
       setDialogState({ type: "closed" });
     }
+  }
+
+  function handleDayNoteSubmit(note: string) {
+    if (!ensureCanEditItinerary()) {
+      return false;
+    }
+
+    if (!selectedDay) {
+      setStatusMessage("메모를 저장할 날짜를 찾을 수 없습니다.");
+      return false;
+    }
+
+    return applyMutation(
+      (current) =>
+        updateTripDayNote(current, {
+          dayId: selectedDay.id,
+          note: note || undefined,
+        }),
+      note ? "오늘의 메모를 저장했습니다." : "오늘의 메모를 지웠습니다.",
+    );
+  }
+
+  function handlePlaceSuggestionSubmit({ note, place }: PlaceSuggestionFormValues) {
+    if (!ensureCanEditItinerary()) {
+      return;
+    }
+
+    if (!selectedDay) {
+      setStatusMessage("장소를 제안할 날짜를 찾을 수 없습니다.");
+      return;
+    }
+
+    const suggestionId = crypto.randomUUID();
+
+    if (
+      applyMutation(
+        (current) =>
+          addPlaceSuggestion(current, {
+            suggestion: {
+              createdAt: new Date().toISOString(),
+              createdBy: currentUserId,
+              dayId: selectedDay.id,
+              id: suggestionId,
+              note: note || undefined,
+              place,
+            },
+          }),
+        `${place.name}을 후보 장소로 제안했습니다.`,
+      )
+    ) {
+      setIsPlaceSuggestionDialogOpen(false);
+    }
+  }
+
+  function handlePromotePlaceSuggestion(suggestionId: string) {
+    if (!ensureCanEditItinerary()) {
+      return;
+    }
+
+    const suggestion = itinerary.placeSuggestions[suggestionId];
+
+    if (!suggestion) {
+      setStatusMessage("일정에 추가할 장소 제안을 찾을 수 없습니다.");
+      return;
+    }
+
+    const newItemId = crypto.randomUUID();
+
+    if (
+      applyMutation(
+        (current) =>
+          promotePlaceSuggestion(current, {
+            createdBy: currentUserId,
+            newItemId,
+            suggestionId,
+            updatedAt: new Date().toISOString(),
+          }),
+        `${suggestion.place.name}을 정식 일정에 추가했습니다.`,
+      )
+    ) {
+      setSelectedDayId(suggestion.dayId);
+      setSelectedItemId(newItemId);
+    }
+  }
+
+  function handleRemovePlaceSuggestion(suggestionId: string) {
+    if (!ensureCanEditItinerary()) {
+      return;
+    }
+
+    const suggestion = itinerary.placeSuggestions[suggestionId];
+
+    if (!suggestion) {
+      setStatusMessage("삭제할 장소 제안을 찾을 수 없습니다.");
+      return;
+    }
+
+    applyMutation(
+      (current) => removePlaceSuggestion(current, suggestionId),
+      `${suggestion.place.name} 후보 장소를 삭제했습니다.`,
+    );
   }
 
   function handleDeleteConfirm() {
@@ -362,6 +477,22 @@ export function useItineraryEditorController({
     );
   }
 
+  function handleSortItemsByStartTime() {
+    if (!ensureCanEditItinerary()) {
+      return;
+    }
+
+    if (!selectedDay) {
+      setStatusMessage("시간순으로 정렬할 날짜를 찾을 수 없습니다.");
+      return;
+    }
+
+    applyMutation(
+      (current) => sortItineraryItemsByStartTime(current, { dayId: selectedDay.id }),
+      "입력한 시간 기준으로 일정 순서를 정렬했습니다.",
+    );
+  }
+
   function handleMoveToDay(destinationDayId: string, toIndex: number) {
     if (!ensureCanEditItinerary()) {
       return;
@@ -398,15 +529,21 @@ export function useItineraryEditorController({
     destinationName,
     editingItem,
     handleDeleteConfirm,
+    handleDayNoteSubmit,
     handleDragEnd,
     handleDuplicateItem,
     handleFormSubmit,
     handleMoveItem,
     handleMoveToDay,
+    handlePlaceSuggestionSubmit,
+    handlePromotePlaceSuggestion,
+    handleRemovePlaceSuggestion,
     handleSelectDay,
     handleSelectItem,
+    handleSortItemsByStartTime,
     itinerary,
     itineraryItems,
+    placeSuggestions,
     mobileView,
     movingItem,
     openAddItemDialog: () => {
@@ -429,6 +566,11 @@ export function useItineraryEditorController({
         setMoveItemId(itemId);
       }
     },
+    openPlaceSuggestionDialog: () => {
+      if (ensureCanEditItinerary()) {
+        setIsPlaceSuggestionDialogOpen(true);
+      }
+    },
     selectedDay,
     selectedDayIndex,
     selectedItemId,
@@ -438,7 +580,9 @@ export function useItineraryEditorController({
     closeDeleteDialog: () => setDeleteItemId(null),
     closeItemDialog: () => setDialogState({ type: "closed" }),
     closeMoveDialog: () => setMoveItemId(null),
+    closePlaceSuggestionDialog: () => setIsPlaceSuggestionDialogOpen(false),
     isItemDialogOpen: dialogState.type !== "closed",
+    isPlaceSuggestionDialogOpen,
     itemDialogKey: dialogState.type === "edit" ? dialogState.itemId : "add",
   };
 }

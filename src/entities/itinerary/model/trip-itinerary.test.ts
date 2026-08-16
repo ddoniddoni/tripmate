@@ -67,6 +67,19 @@ describe("tripItinerarySchema", () => {
     expectInvalid(input, "어떤 날짜에도 포함되지 않았습니다");
   });
 
+  it("rejects a place suggestion that does not belong to an itinerary day", () => {
+    const input = structuredClone(jejuTrip);
+    input.itinerary.placeSuggestions["orphaned-candidate"] = {
+      createdAt: "2026-01-20T10:00:00.000Z",
+      createdBy: "user-jiwoo",
+      dayId: "missing-day",
+      id: "orphaned-candidate",
+      place: input.itinerary.items["woojin-breakfast"].place,
+    };
+
+    expectInvalid(input, "존재하지 않는 날짜");
+  });
+
   it("rejects invalid schedule times and durations", () => {
     const invalidTime = structuredClone(jejuTrip);
     invalidTime.itinerary.items["woojin-breakfast"].startTime = "25:00";

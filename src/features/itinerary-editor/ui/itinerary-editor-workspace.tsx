@@ -14,10 +14,15 @@ import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 
 import type {
   ItineraryItem,
+  PlaceSuggestion,
   TripDay,
   TripItinerary,
 } from "@/entities/itinerary/model/trip-itinerary";
 import { getItineraryScheduleConflicts } from "@/entities/itinerary/model/schedule-conflicts";
+import {
+  getItineraryTravelBuffers,
+  type ItineraryTravelBuffer,
+} from "@/entities/itinerary/model/schedule-travel-buffers";
 import {
   dayDropTargetPrefix,
   getDayDropTargetId,
@@ -26,8 +31,10 @@ import {
 } from "@/features/itinerary-editor/model/dnd-targets";
 import { useItineraryEditor } from "@/features/itinerary-editor/model/use-itinerary-editor";
 import { DeleteItineraryItemDialog } from "@/features/itinerary-editor/ui/delete-itinerary-item-dialog";
+import { DayPlanningPanel } from "@/features/itinerary-editor/ui/day-planning-panel";
 import { ItineraryItemDialog } from "@/features/itinerary-editor/ui/itinerary-item-dialog";
 import { MoveItineraryItemDialog } from "@/features/itinerary-editor/ui/move-itinerary-item-dialog";
+import { PlaceSuggestionDialog } from "@/features/itinerary-editor/ui/place-suggestion-dialog";
 import { useRoutePreview } from "@/features/map-sync/model/use-route-preview";
 import { GoogleItineraryMap } from "@/features/map-sync/ui/google-itinerary-map";
 import { formatCalendarDate } from "@/shared/lib/calendar-date";
@@ -35,18 +42,28 @@ import { formatCalendarDate } from "@/shared/lib/calendar-date";
 type ItineraryEditorWorkspaceProps = {
   canEditItinerary?: boolean;
   initialTripItinerary: TripItinerary;
+  selectedItemCollaborators?: readonly ItinerarySelectionCollaborator[];
 };
 
 export type ItineraryEditorController = ReturnType<typeof useItineraryEditor>;
 
+export type ItinerarySelectionCollaborator = {
+  color: string;
+  connectionId: number;
+  name: string;
+  selectedItemId: string;
+};
+
 type ItineraryEditorWorkspaceViewProps = {
   canEditItinerary: boolean;
   editor: ItineraryEditorController;
+  selectedItemCollaborators?: readonly ItinerarySelectionCollaborator[];
 };
 
 type MobileView = "itinerary" | "map";
 
 const markerTones = ["coral", "blue", "green"] as const;
+const noItinerarySelectionCollaborators: readonly ItinerarySelectionCollaborator[] = [];
 
 const koreanAccessibility = Accessibility.configure({
   announcements: {
@@ -126,6 +143,44 @@ function formatRouteDuration(durationSeconds: number) {
   return minutes === 0 ? `약 ${hours}시간` : `약 ${hours}시간 ${minutes}분`;
 }
 
+function formatTravelBufferMessage(buffer: ItineraryTravelBuffer) {
+  if (buffer.status === "not-enough-time") {
+    return `자동차 약 ${buffer.requiredMinutes}분 필요 · ${buffer.requiredMinutes - buffer.availableMinutes}분 부족`;
+  }
+
+  return `자동차 약 ${buffer.requiredMinutes}분 · ${buffer.availableMinutes - buffer.requiredMinutes}분 여유`;
+}
+
+function hasTimeSortOpportunity(items: readonly ItineraryItem[]) {
+  let previousValue = -1;
+
+  for (const item of items) {
+    const startTimeValue = item.startTime
+      ? Number(item.startTime.slice(0, 2)) * 60 + Number(item.startTime.slice(3))
+      : Number.POSITIVE_INFINITY;
+
+    if (startTimeValue < previousValue) {
+      return true;
+    }
+
+    previousValue = startTimeValue;
+  }
+
+  return false;
+}
+
+function getItinerarySelectionCopy(collaborators: readonly ItinerarySelectionCollaborator[]) {
+  const [firstCollaborator] = collaborators;
+
+  if (!firstCollaborator) {
+    return null;
+  }
+
+  return collaborators.length === 1
+    ? `${firstCollaborator.name}님이 이 장소를 확인 중`
+    : `${firstCollaborator.name}님 외 ${collaborators.length - 1}명이 이 장소를 확인 중`;
+}
+
 function GripIcon() {
   return (
     <svg viewBox="0 0 18 18" aria-hidden="true">
@@ -143,6 +198,7 @@ type SortableTimelineItemProps = {
   canEditItinerary: boolean;
   dayId: string;
   hasScheduleConflict: boolean;
+  hasTravelTimeShortage: boolean;
   index: number;
   isSelected: boolean;
   item: ItineraryItem;
@@ -153,12 +209,14 @@ type SortableTimelineItemProps = {
   onMove: (itemId: string, toIndex: number) => void;
   onMoveToDay: (itemId: string) => void;
   onSelect: (itemId: string) => void;
+  selectedItemCollaborators: readonly ItinerarySelectionCollaborator[];
 };
 
 function SortableTimelineItem({
   canEditItinerary,
   dayId,
   hasScheduleConflict,
+  hasTravelTimeShortage,
   index,
   isSelected,
   item,
@@ -169,6 +227,7 @@ function SortableTimelineItem({
   onMove,
   onMoveToDay,
   onSelect,
+  selectedItemCollaborators,
 }: SortableTimelineItemProps) {
   const { handleRef, isDragSource, isDropTarget, ref } = useSortable({
     disabled: !canEditItinerary,
@@ -177,6 +236,14 @@ function SortableTimelineItem({
     group: dayId,
   });
   const tone = markerTones[index % markerTones.length];
+  const itinerarySelectionCopy = getItinerarySelectionCopy(selectedItemCollaborators);
+  const describedBy = [
+    hasScheduleConflict ? `schedule-conflict-${item.id}` : undefined,
+    hasTravelTimeShortage ? `travel-buffer-${item.id}` : undefined,
+    itinerarySelectionCopy ? `itinerary-selection-${item.id}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <li
@@ -193,7 +260,7 @@ function SortableTimelineItem({
         {index < itemCount - 1 ? <i /> : null}
       </div>
       <article
-        aria-describedby={hasScheduleConflict ? `schedule-conflict-${item.id}` : undefined}
+        aria-describedby={describedBy || undefined}
         className="place-card"
         onClick={(event) => {
           if (!isCardActionTarget(event.target)) {
@@ -211,6 +278,7 @@ function SortableTimelineItem({
                 시간 겹침
               </span>
             ) : null}
+            {hasTravelTimeShortage ? <span className="travel-time-badge">이동 촉박</span> : null}
           </div>
           {canEditItinerary ? (
             <div className="place-actions">
@@ -289,11 +357,47 @@ function SortableTimelineItem({
           </button>
         </h3>
         <p className="place-address">{item.place.address}</p>
+        {itinerarySelectionCopy ? (
+          <div className="itinerary-selection-presence" id={`itinerary-selection-${item.id}`}>
+            <span aria-hidden="true" className="itinerary-selection-avatars">
+              {selectedItemCollaborators.slice(0, 2).map((collaborator) => (
+                <i
+                  key={collaborator.connectionId}
+                  style={{ backgroundColor: collaborator.color }}
+                >
+                  {collaborator.name.slice(0, 1)}
+                </i>
+              ))}
+            </span>
+            <span>{itinerarySelectionCopy}</span>
+          </div>
+        ) : null}
         <div className="place-note">
           <span aria-hidden="true">⌁</span>
           {item.note ?? "메모 없음"}
         </div>
       </article>
+    </li>
+  );
+}
+
+function TimelineTravelBuffer({ buffer }: { buffer: ItineraryTravelBuffer }) {
+  const isShortage = buffer.status === "not-enough-time";
+  const followingItemId = buffer.itemIds[1];
+
+  return (
+    <li
+      className={`timeline-travel-buffer${isShortage ? " has-not-enough-time" : ""}`}
+      id={`travel-buffer-${followingItemId}`}
+    >
+      <span aria-hidden="true" className="timeline-travel-spacer" />
+      <span aria-hidden="true" className="timeline-travel-icon">
+        ↗
+      </span>
+      <p>
+        <strong>{isShortage ? "다음 일정 이동 시간이 촉박해요" : "다음 일정까지 이동"}</strong>
+        <span>{formatTravelBufferMessage(buffer)}</span>
+      </p>
     </li>
   );
 }
@@ -390,13 +494,21 @@ type TimelinePanelProps = {
   canEditItinerary: boolean;
   destinationName: string;
   itineraryItems: ItineraryItem[];
+  placeSuggestions: readonly PlaceSuggestion[];
   onAdd: () => void;
+  onAddSuggestion: () => void;
   onDelete: (itemId: string) => void;
   onDuplicate: (itemId: string) => void;
   onEdit: (itemId: string) => void;
   onMove: (itemId: string, toIndex: number) => void;
   onMoveToDay: (itemId: string) => void;
+  onPromoteSuggestion: (suggestionId: string) => void;
+  onRemoveSuggestion: (suggestionId: string) => void;
+  onSaveDayNote: (note: string) => boolean;
   onSelectItem: (itemId: string) => void;
+  onSortByStartTime: () => void;
+  routePreview: ReturnType<typeof useRoutePreview>;
+  selectedItemCollaborators: readonly ItinerarySelectionCollaborator[];
   selectedDay?: TripDay;
   selectedDayIndex: number;
   selectedItemId: string | null;
@@ -408,13 +520,21 @@ function TimelinePanel({
   canEditItinerary,
   destinationName,
   itineraryItems,
+  placeSuggestions,
   onAdd,
+  onAddSuggestion,
   onDelete,
   onDuplicate,
   onEdit,
   onMove,
   onMoveToDay,
+  onPromoteSuggestion,
+  onRemoveSuggestion,
+  onSaveDayNote,
   onSelectItem,
+  onSortByStartTime,
+  routePreview,
+  selectedItemCollaborators,
   selectedDay,
   selectedDayIndex,
   selectedItemId,
@@ -423,6 +543,26 @@ function TimelinePanel({
 }: TimelinePanelProps) {
   const scheduleConflicts = getItineraryScheduleConflicts(itineraryItems);
   const conflictedItemIds = new Set(scheduleConflicts.flatMap((conflict) => conflict.itemIds));
+  const travelBuffers =
+    routePreview.status === "ready"
+      ? getItineraryTravelBuffers(itineraryItems, routePreview.route.legs)
+      : [];
+  const travelBuffersByFollowingItemId = new Map(
+    travelBuffers.map((buffer) => [buffer.itemIds[1], buffer]),
+  );
+  const collaboratorsBySelectedItemId = new Map<string, ItinerarySelectionCollaborator[]>();
+
+  for (const collaborator of selectedItemCollaborators) {
+    const collaborators = collaboratorsBySelectedItemId.get(collaborator.selectedItemId);
+
+    if (collaborators) {
+      collaborators.push(collaborator);
+    } else {
+      collaboratorsBySelectedItemId.set(collaborator.selectedItemId, [collaborator]);
+    }
+  }
+
+  const canSortByStartTime = hasTimeSortOpportunity(itineraryItems);
 
   return (
     <section
@@ -449,10 +589,17 @@ function TimelinePanel({
           ) : null}
         </div>
         {canEditItinerary ? (
-          <button className="add-place-placeholder" type="button" onClick={onAdd}>
-            <span aria-hidden="true">+</span>
-            장소 추가
-          </button>
+          <div className="timeline-header-actions">
+            {canSortByStartTime ? (
+              <button className="sort-by-time-button" type="button" onClick={onSortByStartTime}>
+                시간순 정렬
+              </button>
+            ) : null}
+            <button className="add-place-placeholder" type="button" onClick={onAdd}>
+              <span aria-hidden="true">+</span>
+              장소 추가
+            </button>
+          </div>
         ) : null}
       </div>
 
@@ -468,6 +615,16 @@ function TimelinePanel({
         {statusMessage}
       </p>
 
+      <DayPlanningPanel
+        canEditItinerary={canEditItinerary}
+        day={selectedDay}
+        onAddSuggestion={onAddSuggestion}
+        onPromoteSuggestion={onPromoteSuggestion}
+        onRemoveSuggestion={onRemoveSuggestion}
+        onSaveDayNote={onSaveDayNote}
+        placeSuggestions={placeSuggestions}
+      />
+
       <ol className="timeline-list">
         {itineraryItems.length === 0 ? (
           <li className="empty-day-state">
@@ -480,24 +637,33 @@ function TimelinePanel({
             </p>
           </li>
         ) : (
-          itineraryItems.map((item, index) => (
-            <SortableTimelineItem
-              canEditItinerary={canEditItinerary}
-              dayId={selectedDay?.id ?? ""}
-              hasScheduleConflict={conflictedItemIds.has(item.id)}
-              index={index}
-              isSelected={item.id === selectedItemId}
-              item={item}
-              itemCount={itineraryItems.length}
-              key={item.id}
-              onDelete={onDelete}
-              onDuplicate={onDuplicate}
-              onEdit={onEdit}
-              onMove={onMove}
-              onMoveToDay={onMoveToDay}
-              onSelect={onSelectItem}
-            />
-          ))
+          itineraryItems.flatMap((item, index) => {
+            const travelBuffer = travelBuffersByFollowingItemId.get(item.id);
+
+            return [
+              travelBuffer ? <TimelineTravelBuffer buffer={travelBuffer} key={`travel-${item.id}`} /> : null,
+              <SortableTimelineItem
+                canEditItinerary={canEditItinerary}
+                dayId={selectedDay?.id ?? ""}
+                hasScheduleConflict={conflictedItemIds.has(item.id)}
+                hasTravelTimeShortage={travelBuffer?.status === "not-enough-time"}
+                index={index}
+                isSelected={item.id === selectedItemId}
+                item={item}
+                itemCount={itineraryItems.length}
+                key={item.id}
+                onDelete={onDelete}
+                onDuplicate={onDuplicate}
+                onEdit={onEdit}
+                onMove={onMove}
+                onMoveToDay={onMoveToDay}
+                onSelect={onSelectItem}
+                selectedItemCollaborators={
+                  collaboratorsBySelectedItemId.get(item.id) ?? noItinerarySelectionCollaborators
+                }
+              />,
+            ].filter(Boolean);
+          })
         )}
       </ol>
 
@@ -518,6 +684,7 @@ type MapPreviewPanelProps = {
   destinationName: string;
   itineraryItems: ItineraryItem[];
   onSelectItem: (itemId: string) => void;
+  routePreview: ReturnType<typeof useRoutePreview>;
   selectedItemId: string | null;
 };
 
@@ -525,9 +692,9 @@ function MapPreviewPanel({
   destinationName,
   itineraryItems,
   onSelectItem,
+  routePreview,
   selectedItemId,
 }: MapPreviewPanelProps) {
-  const routePreview = useRoutePreview(itineraryItems);
   const routeMessage = getRoutePreviewMessage(routePreview);
 
   return (
@@ -659,6 +826,7 @@ function MobileViewSwitch({ mobileView, onChange }: MobileViewSwitchProps) {
 export function ItineraryEditorWorkspace({
   canEditItinerary = true,
   initialTripItinerary,
+  selectedItemCollaborators = noItinerarySelectionCollaborators,
 }: ItineraryEditorWorkspaceProps) {
   const editor = useItineraryEditor(initialTripItinerary, canEditItinerary);
 
@@ -666,6 +834,7 @@ export function ItineraryEditorWorkspace({
     <ItineraryEditorWorkspaceView
       canEditItinerary={canEditItinerary}
       editor={editor}
+      selectedItemCollaborators={selectedItemCollaborators}
     />
   );
 }
@@ -673,7 +842,9 @@ export function ItineraryEditorWorkspace({
 export function ItineraryEditorWorkspaceView({
   canEditItinerary,
   editor,
+  selectedItemCollaborators = noItinerarySelectionCollaborators,
 }: ItineraryEditorWorkspaceViewProps) {
+  const routePreview = useRoutePreview(editor.itineraryItems);
 
   return (
     <>
@@ -704,17 +875,25 @@ export function ItineraryEditorWorkspaceView({
             destinationName={editor.destinationName}
             itineraryItems={editor.itineraryItems}
             onAdd={editor.openAddItemDialog}
+            onAddSuggestion={editor.openPlaceSuggestionDialog}
             onDelete={editor.openDeleteDialog}
             onDuplicate={editor.handleDuplicateItem}
             onEdit={editor.openEditItemDialog}
             onMove={editor.handleMoveItem}
             onMoveToDay={editor.openMoveDialog}
+            onPromoteSuggestion={editor.handlePromotePlaceSuggestion}
+            onRemoveSuggestion={editor.handleRemovePlaceSuggestion}
+            onSaveDayNote={editor.handleDayNoteSubmit}
             onSelectItem={editor.handleSelectItem}
+            onSortByStartTime={editor.handleSortItemsByStartTime}
+            routePreview={routePreview}
+            selectedItemCollaborators={selectedItemCollaborators}
             selectedDay={editor.selectedDay}
             selectedDayIndex={editor.selectedDayIndex}
             selectedItemId={editor.selectedItemId}
             statusMessage={editor.statusMessage}
             timeZone={editor.trip.timeZone}
+            placeSuggestions={editor.placeSuggestions}
           />
           <MapPreviewPanel
             destinationName={editor.destinationName}
@@ -723,6 +902,7 @@ export function ItineraryEditorWorkspaceView({
               editor.handleSelectItem(itemId);
               editor.setMobileView("itinerary");
             }}
+            routePreview={routePreview}
             selectedItemId={editor.selectedItemId}
           />
         </div>
@@ -778,6 +958,18 @@ export function ItineraryEditorWorkspaceView({
               editor.closeMoveDialog();
             }
           }}
+        />
+      ) : null}
+
+      {editor.isPlaceSuggestionDialogOpen ? (
+        <PlaceSuggestionDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              editor.closePlaceSuggestionDialog();
+            }
+          }}
+          onSubmit={editor.handlePlaceSuggestionSubmit}
         />
       ) : null}
     </>

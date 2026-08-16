@@ -1,6 +1,7 @@
 "use client";
 
-import { useMutation, useStorage } from "@liveblocks/react";
+import { shallow } from "@liveblocks/client";
+import { useMutation, useOthers, useStorage } from "@liveblocks/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -16,9 +17,13 @@ import type {
   TripWorkspaceView,
 } from "@/features/collaboration/model/trip-workspace-navigation";
 import { useTripWorkspaceNavigation } from "@/features/collaboration/model/use-trip-workspace-navigation";
+import { useItinerarySelectionPresence } from "@/features/collaboration/model/use-itinerary-selection-presence";
 import { useTripWorkspacePresence } from "@/features/collaboration/model/use-trip-workspace-presence";
 import { useItineraryEditorController } from "@/features/itinerary-editor/model/use-itinerary-editor";
-import { ItineraryEditorWorkspaceView } from "@/features/itinerary-editor/ui/itinerary-editor-workspace";
+import {
+  ItineraryEditorWorkspaceView,
+  type ItinerarySelectionCollaborator,
+} from "@/features/itinerary-editor/ui/itinerary-editor-workspace";
 import { TripPreparationChecklist } from "@/features/preparation-checklist/ui/trip-preparation-checklist";
 import { TripExpenseWorkspace } from "@/features/trip-expenses/ui/trip-expense-workspace";
 import { createTripOverview } from "@/features/trip-overview/model/trip-overview";
@@ -116,6 +121,29 @@ function LiveblocksItineraryEditorContent({
     selectedDayId: workspaceNavigation.navigation.selectedDayId,
     tripItinerary,
   });
+  useItinerarySelectionPresence(
+    workspaceNavigation.navigation.view === "itinerary" ? editor.selectedItemId : null,
+  );
+  const selectedItemCollaborators = useOthers(
+    (others): ItinerarySelectionCollaborator[] =>
+      others.flatMap((other) => {
+        const selectedItemId = other.presence.selectedItineraryItemId;
+
+        if (!selectedItemId) {
+          return [];
+        }
+
+        return [
+          {
+            color: other.info.color,
+            connectionId: other.connectionId,
+            name: other.info.name,
+            selectedItemId,
+          },
+        ];
+      }),
+    shallow,
+  );
   const overview = createTripOverview({
     expenses,
     itinerary: tripItinerary.itinerary,
@@ -136,7 +164,11 @@ function LiveblocksItineraryEditorContent({
         />
       ) : null}
       {workspaceNavigation.navigation.view === "itinerary" ? (
-        <ItineraryEditorWorkspaceView canEditItinerary={canEditItinerary} editor={editor} />
+        <ItineraryEditorWorkspaceView
+          canEditItinerary={canEditItinerary}
+          editor={editor}
+          selectedItemCollaborators={selectedItemCollaborators}
+        />
       ) : null}
       {workspaceNavigation.navigation.view === "preparation" ? (
         <TripPreparationChecklist

@@ -1,6 +1,7 @@
 import type {
   ItineraryDocument,
   ItineraryItem,
+  PlaceSuggestion,
   TripDay,
 } from "@/entities/itinerary/model/trip-itinerary";
 
@@ -25,4 +26,11 @@ export function selectItemsForDay(
     const item = document.items[itemId];
     return item ? [item] : [];
   });
+}
+
+export function selectPlaceSuggestionsForDay(
+  document: ItineraryDocument,
+  dayId: string,
+): PlaceSuggestion[] {
+  return Object.values(document.placeSuggestions).filter((suggestion) => suggestion.dayId === dayId);
 }

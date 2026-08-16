@@ -43,12 +43,22 @@ vi.mock("@/features/map-sync/ui/google-itinerary-map", () => ({
   ),
 }));
 
-function renderWorkspace(canEditItinerary = true, initialTripItinerary = jejuTrip) {
+function renderWorkspace(
+  canEditItinerary = true,
+  initialTripItinerary = jejuTrip,
+  selectedItemCollaborators: Array<{
+    color: string;
+    connectionId: number;
+    name: string;
+    selectedItemId: string;
+  }> = [],
+) {
   const user = userEvent.setup();
   render(
     <ItineraryEditorWorkspace
       canEditItinerary={canEditItinerary}
       initialTripItinerary={initialTripItinerary}
+      selectedItemCollaborators={selectedItemCollaborators}
     />,
   );
   return user;
@@ -164,6 +174,59 @@ describe("ItineraryEditorWorkspace", () => {
     expect(within(dialog).queryByLabelText("위도")).not.toBeInTheDocument();
   });
 
+  it("saves a day memo in the shared itinerary workspace", async () => {
+    const user = renderWorkspace();
+
+    await user.click(screen.getByRole("button", { name: "메모 작성" }));
+    await user.type(screen.getByLabelText("오늘의 메모"), "비가 오면 카페부터 들르기");
+    await user.click(screen.getByRole("button", { name: "메모 저장" }));
+
+    expect(screen.getByText("비가 오면 카페부터 들르기")).toBeInTheDocument();
+    expect(screen.getByText("오늘의 메모를 저장했습니다.")).toBeInTheDocument();
+  });
+
+  it("keeps a suggested place off the map until an editor adds it to the itinerary", async () => {
+    const user = renderWorkspace();
+
+    await user.click(screen.getByRole("button", { name: "장소 제안" }));
+    const dialog = await screen.findByRole("dialog", { name: "이런 곳도 있어요" });
+
+    await user.click(within(dialog).getByRole("button", { name: "후보 장소 저장" }));
+    expect(
+      await within(dialog).findByText("장소 검색 결과에서 장소를 선택해 주세요."),
+    ).toBeInTheDocument();
+
+    await user.type(within(dialog).getByLabelText("장소 검색"), "성산");
+    await user.click(
+      await within(dialog).findByRole("button", { name: "성산일출봉 후보 장소로 선택" }),
+    );
+    await user.type(within(dialog).getByLabelText("제안 메모"), "일출 보러 가면 좋겠어");
+    await user.click(within(dialog).getByRole("button", { name: "후보 장소 저장" }));
+
+    expect(screen.getByRole("heading", { name: "성산일출봉" })).toBeInTheDocument();
+    expect(screen.getByText("일출 보러 가면 좋겠어")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "성산일출봉 지도에서 선택" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "일정에 추가" }));
+
+    expect(screen.getByText("일정 4개 · Asia/Seoul")).toBeInTheDocument();
+    expect(screen.getByText("성산일출봉을 정식 일정에 추가했습니다.")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "성산일출봉 지도에서 선택" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "일정에 추가" })).not.toBeInTheDocument();
+  });
+
+  it("keeps day planning controls read-only for viewers", () => {
+    renderWorkspace(false);
+
+    expect(screen.queryByRole("button", { name: "메모 작성" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "장소 제안" })).not.toBeInTheDocument();
+    expect(screen.getByText("아직 공유된 후보 장소가 없어요.")).toBeInTheDocument();
+  });
+
   it("edits an existing item while preserving its position", async () => {
     const user = renderWorkspace();
 
@@ -197,6 +260,22 @@ describe("ItineraryEditorWorkspace", () => {
 
     expect(screen.getAllByText("시간 겹침")).toHaveLength(2);
     expect(screen.getByText("시간이 겹치는 일정 2개")).toBeInTheDocument();
+  });
+
+  it("shows route-aware travel buffers between schedules with enough time", async () => {
+    renderWorkspace();
+
+    expect(await screen.findByText("자동차 약 5분 · 55분 여유")).toBeInTheDocument();
+    expect(screen.getByText("자동차 약 5분 · 85분 여유")).toBeInTheDocument();
+  });
+
+  it("warns when the next schedule starts before the required travel time", async () => {
+    const tripWithTightTravelTime = structuredClone(jejuTrip);
+    tripWithTightTravelTime.itinerary.items["hamdeok-beach"].startTime = "11:02";
+    renderWorkspace(true, tripWithTightTravelTime);
+
+    expect(await screen.findByText("자동차 약 5분 필요 · 3분 부족")).toBeInTheDocument();
+    expect(screen.getByText("이동 촉박")).toBeInTheDocument();
   });
 
   it("only warns about conflicts involving the schedule being drafted", async () => {
@@ -260,6 +339,22 @@ describe("ItineraryEditorWorkspace", () => {
     expect(screen.getByText(/우진해장국을 2번째로 이동했습니다/)).toBeInTheDocument();
   });
 
+  it("sorts a day's route order by the entered start times on request", async () => {
+    const unorderedTrip = structuredClone(jejuTrip);
+    unorderedTrip.itinerary.days["jeju-day-1"].itemIds = [
+      "bijarim-forest",
+      "hamdeok-beach",
+      "woojin-breakfast",
+    ];
+    const user = renderWorkspace(true, unorderedTrip);
+
+    expect(screen.getAllByRole("heading", { level: 3 })[0]).toHaveTextContent("비자림");
+    await user.click(screen.getByRole("button", { name: "시간순 정렬" }));
+
+    expect(screen.getAllByRole("heading", { level: 3 })[0]).toHaveTextContent("우진해장국");
+    expect(screen.getByText("입력한 시간 기준으로 일정 순서를 정렬했습니다.")).toBeInTheDocument();
+  });
+
   it("moves an item to an empty day through the accessible move dialog", async () => {
     const user = renderWorkspace();
 
@@ -294,6 +389,26 @@ describe("ItineraryEditorWorkspace", () => {
       "true",
     );
     expect(mapMarker).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("shows collaborators who are currently checking the same itinerary item", () => {
+    renderWorkspace(true, jejuTrip, [
+      {
+        color: "#4f7fca",
+        connectionId: 2,
+        name: "민지",
+        selectedItemId: "hamdeok-beach",
+      },
+      {
+        color: "#d97b5d",
+        connectionId: 3,
+        name: "준호",
+        selectedItemId: "hamdeok-beach",
+      },
+    ]);
+
+    expect(screen.getByText("민지님 외 1명이 이 장소를 확인 중")).toBeInTheDocument();
+    expect(screen.queryByText("민지님이 이 장소를 확인 중")).not.toBeInTheDocument();
   });
 
   it("selects a place when its card body is clicked", async () => {

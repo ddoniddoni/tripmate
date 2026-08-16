@@ -54,6 +54,7 @@ describe("createTripOverview", () => {
         dayOrder: ["day-1"],
         days: { "day-1": { date: "2026-04-18", id: "day-1", itemIds: [], tripId: "jeju-trip" } },
         items: {},
+        placeSuggestions: {},
       },
       preparationItems: [],
     });

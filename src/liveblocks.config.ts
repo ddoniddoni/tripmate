@@ -5,6 +5,7 @@ import type { TripExpense } from "@/entities/expense/model/trip-expense";
 import type { PreparationChecklistItem } from "@/entities/preparation-checklist/model/preparation-checklist";
 import type {
   ItineraryItem,
+  PlaceSuggestion,
   TripDay,
 } from "@/entities/itinerary/model/trip-itinerary";
 import type { TripMemberRole } from "@/entities/trip/model/trip-membership";
@@ -17,6 +18,7 @@ declare global {
   interface Liveblocks {
     Presence: {
       activeWorkspace?: TripWorkspaceView;
+      selectedItineraryItemId?: string | null;
     };
     Storage: {
       checklistItems: LiveMap<string, LiveObject<PreparationChecklistItem>>;
@@ -24,6 +26,7 @@ declare global {
       days: LiveMap<string, LiveObject<LiveTripDay>>;
       expenseItems: LiveMap<string, LiveObject<TripExpense>>;
       items: LiveMap<string, LiveObject<ItineraryItem>>;
+      placeSuggestions: LiveMap<string, LiveObject<PlaceSuggestion>>;
     };
     UserMeta: {
       id: string;

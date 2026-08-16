@@ -2,12 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import { jejuTrip } from "@/entities/itinerary/mock/jeju-trip";
 import {
+  addPlaceSuggestion,
   addItineraryItem,
   duplicateItineraryItem,
   moveItineraryItem,
+  promotePlaceSuggestion,
+  removePlaceSuggestion,
   removeItineraryItem,
   reorderItineraryItem,
   resizeTripItinerary,
+  sortItineraryItemsByStartTime,
+  updateTripDayNote,
   updateItineraryItem,
 } from "@/entities/itinerary/model/mutations";
 import type { ItineraryItem } from "@/entities/itinerary/model/trip-itinerary";
@@ -109,6 +114,74 @@ describe("itinerary mutations", () => {
     });
 
     expect(result).toMatchObject({ success: false, code: "invalid-document" });
+  });
+
+  it("saves a shared memo for one day without changing the itinerary items", () => {
+    const next = expectSuccess(
+      updateTripDayNote(jejuTrip, {
+        dayId: "jeju-day-1",
+        note: "우천 시 실내 코스로 바꾸기",
+      }),
+    );
+
+    expect(next.itinerary.days["jeju-day-1"]?.note).toBe("우천 시 실내 코스로 바꾸기");
+    expect(next.itinerary.items).toEqual(jejuTrip.itinerary.items);
+  });
+
+  it("keeps candidate places outside the itinerary until one is promoted", () => {
+    const suggestion = {
+      createdAt: "2026-01-20T10:00:00.000Z",
+      createdBy: "user-minji",
+      dayId: "jeju-day-1",
+      id: "seongsan-candidate",
+      note: "해 뜨기 전에 가면 좋대요",
+      place: newItem.place,
+    };
+    const withSuggestion = expectSuccess(addPlaceSuggestion(jejuTrip, { suggestion }));
+
+    expect(withSuggestion.itinerary.placeSuggestions[suggestion.id]).toEqual(suggestion);
+    expect(withSuggestion.itinerary.days["jeju-day-1"]?.itemIds).not.toContain(suggestion.id);
+
+    const promoted = expectSuccess(
+      promotePlaceSuggestion(withSuggestion, {
+        createdBy: "user-jiwoo",
+        newItemId: "seongsan-scheduled",
+        suggestionId: suggestion.id,
+        updatedAt: "2026-01-20T11:00:00.000Z",
+      }),
+    );
+
+    expect(promoted.itinerary.placeSuggestions[suggestion.id]).toBeUndefined();
+    expect(promoted.itinerary.days["jeju-day-1"]?.itemIds).toContain("seongsan-scheduled");
+    expect(promoted.itinerary.items["seongsan-scheduled"]).toMatchObject({
+      dayId: "jeju-day-1",
+      note: suggestion.note,
+      place: suggestion.place,
+    });
+  });
+
+  it("rejects candidate places for unknown days and lets editors remove a candidate", () => {
+    const suggestion = {
+      createdAt: "2026-01-20T10:00:00.000Z",
+      createdBy: "user-minji",
+      dayId: "missing-day",
+      id: "missing-day-candidate",
+      place: newItem.place,
+    };
+
+    expect(addPlaceSuggestion(jejuTrip, { suggestion })).toMatchObject({
+      code: "day-not-found",
+      success: false,
+    });
+
+    const withSuggestion = expectSuccess(
+      addPlaceSuggestion(jejuTrip, {
+        suggestion: { ...suggestion, dayId: "jeju-day-2", id: "day-two-candidate" },
+      }),
+    );
+    const removed = expectSuccess(removePlaceSuggestion(withSuggestion, "day-two-candidate"));
+
+    expect(removed.itinerary.placeSuggestions).toEqual({});
   });
 
   it("removes an item from both the ordered day and item record", () => {
@@ -314,6 +387,38 @@ describe("itinerary mutations", () => {
         toIndex: 3,
       }),
     ).toMatchObject({ success: false, code: "invalid-position" });
+  });
+
+  it("sorts scheduled items by their start time and keeps unscheduled items in their relative order", () => {
+    const unscheduledItem: ItineraryItem = {
+      ...newItem,
+      dayId: "jeju-day-1",
+      id: "unscheduled-stop",
+      startTime: undefined,
+    };
+    const unordered = addItineraryItem(
+      structuredClone(jejuTrip),
+      { item: unscheduledItem, position: 0 },
+    );
+    const itineraryWithUnscheduledItem = expectSuccess(unordered);
+    itineraryWithUnscheduledItem.itinerary.days["jeju-day-1"].itemIds = [
+      "bijarim-forest",
+      "unscheduled-stop",
+      "hamdeok-beach",
+      "woojin-breakfast",
+    ];
+
+    const result = sortItineraryItemsByStartTime(itineraryWithUnscheduledItem, {
+      dayId: "jeju-day-1",
+    });
+    const next = expectSuccess(result);
+
+    expect(next.itinerary.days["jeju-day-1"].itemIds).toEqual([
+      "woojin-breakfast",
+      "hamdeok-beach",
+      "bijarim-forest",
+      "unscheduled-stop",
+    ]);
   });
 
   it("rejects stale source days, missing items, and invalid cross-day destinations", () => {

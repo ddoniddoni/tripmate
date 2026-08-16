@@ -33,6 +33,7 @@ export function createEmptyTripItinerary(trip: Trip): TripItinerary {
       dayOrder,
       days,
       items: {},
+      placeSuggestions: {},
     },
     trip,
   });
