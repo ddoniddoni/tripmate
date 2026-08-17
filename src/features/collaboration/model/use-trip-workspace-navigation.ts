@@ -71,6 +71,8 @@ export function useTripWorkspaceNavigation({
   return {
     navigation,
     selectDay: (selectedDayId: string) => navigate({ selectedDayId }),
+    selectItineraryDay: (selectedDayId: string) =>
+      navigate({ selectedDayId, view: "itinerary" }),
     selectView: (view: TripWorkspaceView) => navigate({ view }),
   };
 }

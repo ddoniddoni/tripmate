@@ -1,17 +1,24 @@
 "use client";
 
-import type { Trip } from "@/entities/trip/model/trip";
+import type { TripDay } from "@/entities/itinerary/model/trip-itinerary";
 import { formatTripDateRange, formatTripLength } from "@/entities/trip/lib/format-trip";
+import type { Trip } from "@/entities/trip/model/trip";
 import type {
   TripOverview,
   TripOverviewAction,
 } from "@/features/trip-overview/model/trip-overview";
+import { formatCalendarDate } from "@/shared/lib/calendar-date";
 
 type TripOverviewWorkspaceViewProps = {
+  days: readonly TripDay[];
   onNavigate: (view: TripOverviewAction) => void;
+  onSelectDay: (dayId: string) => void;
   overview: TripOverview;
+  selectedDayId: string;
   trip: Trip;
 };
+
+type OverviewIconName = "arrow" | "calendar" | "checklist" | "map" | "pin" | "wallet";
 
 const numberFormatter = new Intl.NumberFormat("ko-KR");
 const wonFormatter = new Intl.NumberFormat("ko-KR", {
@@ -19,33 +26,103 @@ const wonFormatter = new Intl.NumberFormat("ko-KR", {
   maximumFractionDigits: 0,
   style: "currency",
 });
+const overviewActionLabels: Record<TripOverviewAction, string> = {
+  expenses: "경비로 이동",
+  itinerary: "일정으로 이동",
+  preparation: "준비하기로 이동",
+};
+
+function OverviewIcon({ name }: { name: OverviewIconName }) {
+  if (name === "arrow") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M5 12h13M13 6l6 6-6 6" />
+      </svg>
+    );
+  }
+
+  if (name === "calendar") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M6.5 3.5v3M17.5 3.5v3M4 9h16M5.5 5h13A1.5 1.5 0 0 1 20 6.5v12a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-12A1.5 1.5 0 0 1 5.5 5Z" />
+      </svg>
+    );
+  }
+
+  if (name === "checklist") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="m5 7 1.5 1.5L9 5.5M12 7h7M5 13l1.5 1.5L9 11.5M12 13h7M5 19l1.5 1.5L9 17.5M12 19h7" />
+      </svg>
+    );
+  }
+
+  if (name === "map") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="m4 6 5-2 6 2 5-2v14l-5 2-6-2-5 2V6ZM9 4v14M15 6v14" />
+      </svg>
+    );
+  }
+
+  if (name === "pin") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11Z" />
+        <circle cx="12" cy="10" r="2" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <rect x="3.5" y="6" width="17" height="13" rx="2" />
+      <path d="M4 10h16M16 15h1.5M7 6V4.5h9V6" />
+    </svg>
+  );
+}
 
 function TripOverviewStat({
   action,
   detail,
+  icon,
   label,
   onNavigate,
   value,
 }: {
   action: TripOverviewAction;
   detail: string;
+  icon: OverviewIconName;
   label: string;
   onNavigate: (view: TripOverviewAction) => void;
   value: string;
 }) {
   return (
-    <button className="trip-overview-stat" onClick={() => onNavigate(action)} type="button">
-      <span>{label}</span>
+    <button
+      aria-label={overviewActionLabels[action]}
+      className="trip-overview-stat"
+      onClick={() => onNavigate(action)}
+      type="button"
+    >
+      <span className="trip-overview-stat-icon">
+        <OverviewIcon name={icon} />
+      </span>
+      <span className="trip-overview-stat-arrow">
+        <OverviewIcon name="arrow" />
+      </span>
+      <span className="trip-overview-stat-label">{label}</span>
       <strong>{value}</strong>
       <small>{detail}</small>
-      <i aria-hidden="true">↗</i>
     </button>
   );
 }
 
 export function TripOverviewWorkspaceView({
+  days,
   onNavigate,
+  onSelectDay,
   overview,
+  selectedDayId,
   trip,
 }: TripOverviewWorkspaceViewProps) {
   const tripProgress =
@@ -59,111 +136,154 @@ export function TripOverviewWorkspaceView({
 
   return (
     <section aria-label="여행 개요" className="trip-overview-workspace">
-      <header className="trip-overview-briefing">
-        <div>
-          <span className="section-kicker">여행 개요</span>
-          <h2>{trip.title}</h2>
-          <p>
-            {trip.destination} · {formatTripDateRange(trip.startDate, trip.endDate)} · {formatTripLength(
-              trip.startDate,
-              trip.endDate,
-            )}
-          </p>
-        </div>
-        <div className="trip-overview-route-card">
-          <span>여행 준비도</span>
-          <strong>{Math.round((tripProgress + preparationProgress) / 2)}%</strong>
-          <div aria-label={`일정 계획 ${tripProgress}%, 준비 완료 ${preparationProgress}%`}>
-            <i style={{ width: `${tripProgress}%` }} />
-            <i style={{ width: `${preparationProgress}%` }} />
-          </div>
-          <p>일정과 준비 항목을 기준으로 계산했어요.</p>
-        </div>
-      </header>
-
-      <div className="trip-overview-main-grid">
-        <section aria-labelledby="trip-overview-next-heading" className="trip-overview-next-card">
-          <div className="trip-overview-next-orbit" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-          <div>
-            <span className="section-kicker">다음 한 걸음</span>
-            <h3 id="trip-overview-next-heading">{overview.nextActionCopy.title}</h3>
-            <p>{overview.nextActionCopy.description}</p>
-            <button onClick={() => onNavigate(overview.nextAction)} type="button">
-              {overview.nextActionCopy.label}
-              <span aria-hidden="true">→</span>
-            </button>
-          </div>
-        </section>
-
-        <section aria-label="여행 현황" className="trip-overview-stats">
-          <TripOverviewStat
-            action="itinerary"
-            detail={`${overview.tripDayCount}일 중 ${overview.plannedDayCount}일 계획됨`}
-            label="일정"
-            onNavigate={onNavigate}
-            value={`${numberFormatter.format(overview.itineraryItemCount)}곳`}
-          />
-          <TripOverviewStat
-            action="preparation"
-            detail={`${numberFormatter.format(overview.completedPreparationCount)}개 완료`}
-            label="준비하기"
-            onNavigate={onNavigate}
-            value={`${numberFormatter.format(overview.preparationItemCount)}개`}
-          />
-          <TripOverviewStat
-            action="expenses"
-            detail={overview.settlementProgressCopy}
-            label="공동 경비"
-            onNavigate={onNavigate}
-            value={wonFormatter.format(overview.totalExpenseAmount)}
-          />
-        </section>
-      </div>
-
-      <section aria-labelledby="trip-overview-flow-heading" className="trip-overview-flow">
-        <div>
-          <span className="section-kicker">준비 흐름</span>
-          <h3 id="trip-overview-flow-heading">여행을 함께 완성하는 세 가지</h3>
+      <aside aria-label="여행 날짜 바로가기" className="trip-overview-days">
+        <div className="trip-overview-days-heading">
+          <span>여행 일정</span>
+          <strong>{formatTripDateRange(trip.startDate, trip.endDate)}</strong>
         </div>
         <ol>
-          <li>
-            <span>01</span>
+          {days.map((day, index) => {
+            const isSelected = day.id === selectedDayId;
+
+            return (
+              <li key={day.id}>
+                <button
+                  aria-current={isSelected ? "date" : undefined}
+                  aria-label={`${index + 1}일차 일정 열기`}
+                  className={isSelected ? "trip-overview-day-active" : undefined}
+                  onClick={() => onSelectDay(day.id)}
+                  type="button"
+                >
+                  <span className="trip-overview-day-icon">
+                    <OverviewIcon name="calendar" />
+                  </span>
+                  <span>
+                    <strong>{index + 1}일차</strong>
+                    <small>
+                      {formatCalendarDate(day.date, {
+                        day: "numeric",
+                        month: "short",
+                        weekday: "short",
+                      })}
+                      {day.itemIds.length > 0
+                        ? ` · ${numberFormatter.format(day.itemIds.length)}곳`
+                        : " · 비어 있음"}
+                    </small>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </aside>
+
+      <div className="trip-overview-canvas">
+        <span aria-hidden="true" className="trip-overview-ribbon" />
+        <header className="trip-overview-heading">
+          <span aria-hidden="true" className="trip-overview-marker" />
+          <span className="section-kicker">한눈에 보기</span>
+          <h2>여행 개요</h2>
+          <p>{trip.destination} 여행의 일정, 준비와 경비를 한곳에서 확인하세요.</p>
+        </header>
+
+        <div className="trip-overview-bento">
+          <article className="trip-overview-briefing-card">
+            <span className="trip-overview-destination-pill">
+              <OverviewIcon name="pin" />
+              {trip.destination}
+            </span>
             <div>
-              <strong>동선 세우기</strong>
-              <p>장소 {numberFormatter.format(overview.itineraryItemCount)}곳을 여행 날짜에 배치했어요.</p>
-            </div>
-            <button aria-label="일정으로 이동" onClick={() => onNavigate("itinerary")} type="button">
-              일정 보기
-            </button>
-          </li>
-          <li>
-            <span>02</span>
-            <div>
-              <strong>출발 준비</strong>
+              <h3>{trip.title}</h3>
               <p>
-                준비 항목 {numberFormatter.format(overview.completedPreparationCount)} / {numberFormatter.format(overview.preparationItemCount)}개를 마쳤어요.
+                <OverviewIcon name="calendar" />
+                {formatTripDateRange(trip.startDate, trip.endDate)} ·{" "}
+                {formatTripLength(trip.startDate, trip.endDate)}
               </p>
             </div>
-            <button aria-label="준비하기로 이동" onClick={() => onNavigate("preparation")} type="button">
-              준비 보기
-            </button>
-          </li>
-          <li>
-            <span>03</span>
-            <div>
-              <strong>함께 쓴 돈</strong>
-              <p>{overview.settlementProgressCopy}</p>
+          </article>
+
+          <section aria-label="준비 현황" className="trip-overview-progress-card">
+            <h3>준비 현황</h3>
+            <div className="trip-overview-progress-item">
+              <p>
+                <span>일정 계획</span>
+                <strong>{tripProgress}%</strong>
+              </p>
+              <div
+                aria-label={`일정 계획 ${tripProgress}%`}
+                aria-valuemax={100}
+                aria-valuemin={0}
+                aria-valuenow={tripProgress}
+                className="trip-overview-progress-track"
+                role="progressbar"
+              >
+                <i style={{ width: `${tripProgress}%` }} />
+              </div>
             </div>
-            <button aria-label="경비로 이동" onClick={() => onNavigate("expenses")} type="button">
-              경비 보기
-            </button>
-          </li>
-        </ol>
-      </section>
+            <div className="trip-overview-progress-item trip-overview-progress-preparation">
+              <p>
+                <span>준비 완료</span>
+                <strong>{preparationProgress}%</strong>
+              </p>
+              <div
+                aria-label={`준비 완료 ${preparationProgress}%`}
+                aria-valuemax={100}
+                aria-valuemin={0}
+                aria-valuenow={preparationProgress}
+                className="trip-overview-progress-track"
+                role="progressbar"
+              >
+                <i style={{ width: `${preparationProgress}%` }} />
+              </div>
+            </div>
+          </section>
+
+          <button
+            aria-label={overview.nextActionCopy.label}
+            className="trip-overview-next-card"
+            onClick={() => onNavigate(overview.nextAction)}
+            type="button"
+          >
+            <span aria-hidden="true" className="trip-overview-next-route" />
+            <span>
+              <small>다음 한 걸음</small>
+              <strong>{overview.nextActionCopy.title}</strong>
+              <span>{overview.nextActionCopy.description}</span>
+            </span>
+            <span className="trip-overview-next-action">
+              {overview.nextActionCopy.label}
+              <OverviewIcon name="arrow" />
+            </span>
+          </button>
+
+          <section aria-label="여행 현황" className="trip-overview-stats">
+            <TripOverviewStat
+              action="itinerary"
+              detail={`${overview.tripDayCount}일 중 ${overview.plannedDayCount}일 계획됨`}
+              icon="map"
+              label="일정"
+              onNavigate={onNavigate}
+              value={`${numberFormatter.format(overview.itineraryItemCount)}곳`}
+            />
+            <TripOverviewStat
+              action="preparation"
+              detail={`${numberFormatter.format(overview.completedPreparationCount)}개 완료`}
+              icon="checklist"
+              label="준비하기"
+              onNavigate={onNavigate}
+              value={`${numberFormatter.format(overview.preparationItemCount)}개`}
+            />
+            <TripOverviewStat
+              action="expenses"
+              detail={overview.settlementProgressCopy}
+              icon="wallet"
+              label="공동 경비"
+              onNavigate={onNavigate}
+              value={wonFormatter.format(overview.totalExpenseAmount)}
+            />
+          </section>
+        </div>
+      </div>
     </section>
   );
 }

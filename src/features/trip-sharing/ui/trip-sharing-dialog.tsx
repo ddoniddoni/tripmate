@@ -101,16 +101,19 @@ export function TripSharingDialog({
 
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className="dialog-content" aria-describedby="trip-sharing-description">
+        <Dialog.Content
+          className="dialog-content trip-sharing-dialog-content"
+          aria-describedby="trip-sharing-description"
+        >
           <div className="dialog-heading">
             <div>
               <span className="section-kicker">여행 멤버</span>
               <Dialog.Title>함께 여행을 계획해요</Dialog.Title>
               <Dialog.Description className="dialog-description" id="trip-sharing-description">
-              {canManageMembers
-                ? "초대받은 이메일의 실제 계정만 링크를 수락할 수 있어요."
-                : "함께 여행하는 멤버와 내 참여 상태를 확인할 수 있어요."}
-            </Dialog.Description>
+                {canManageMembers
+                  ? "초대받은 이메일의 실제 계정만 링크를 수락할 수 있어요."
+                  : "함께 여행하는 멤버와 내 참여 상태를 확인할 수 있어요."}
+              </Dialog.Description>
             </div>
             <Dialog.Close className="dialog-close" aria-label="대화상자 닫기" disabled={isPending}>
               ×
@@ -119,7 +122,7 @@ export function TripSharingDialog({
 
           {canManageMembers ? (
             <form className="itinerary-form" noValidate onSubmit={handleSubmit(handleInvite)}>
-              <div className="form-field form-field-wide">
+              <div className="form-field trip-sharing-email-field">
                 <label htmlFor="invite-email">초대할 이메일</label>
                 <input
                   id="invite-email"
@@ -139,7 +142,7 @@ export function TripSharingDialog({
                 ) : null}
               </div>
 
-              <div className="form-field form-field-wide">
+              <div className="form-field trip-sharing-role-field">
                 <label htmlFor="invite-role">권한</label>
                 <select
                   id="invite-role"

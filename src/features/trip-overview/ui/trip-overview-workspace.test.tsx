@@ -9,6 +9,12 @@ import { createEmptyTripExpenseSettlementState } from "@/entities/expense/model/
 import { createTripOverview } from "@/features/trip-overview/model/trip-overview";
 import { TripOverviewWorkspaceView } from "@/features/trip-overview/ui/trip-overview-workspace";
 
+const jejuDays = jejuTrip.itinerary.dayOrder.flatMap((dayId) => {
+  const day = jejuTrip.itinerary.days[dayId];
+
+  return day ? [day] : [];
+});
+
 describe("TripOverviewWorkspaceView", () => {
   it("shows combined trip progress and opens the recommended workspace", async () => {
     const onNavigate = vi.fn();
@@ -23,8 +29,11 @@ describe("TripOverviewWorkspaceView", () => {
 
     render(
       <TripOverviewWorkspaceView
+        days={jejuDays}
         onNavigate={onNavigate}
+        onSelectDay={vi.fn()}
         overview={overview}
+        selectedDayId={jejuDays[0]?.id ?? ""}
         trip={jejuTrip.trip}
       />,
     );
@@ -51,8 +60,11 @@ describe("TripOverviewWorkspaceView", () => {
 
     render(
       <TripOverviewWorkspaceView
+        days={jejuDays}
         onNavigate={onNavigate}
+        onSelectDay={vi.fn()}
         overview={overview}
+        selectedDayId={jejuDays[0]?.id ?? ""}
         trip={jejuTrip.trip}
       />,
     );
@@ -98,8 +110,11 @@ describe("TripOverviewWorkspaceView", () => {
 
     render(
       <TripOverviewWorkspaceView
+        days={jejuDays}
         onNavigate={onNavigate}
+        onSelectDay={vi.fn()}
         overview={overview}
+        selectedDayId={jejuDays[0]?.id ?? ""}
         trip={jejuTrip.trip}
       />,
     );
@@ -112,5 +127,32 @@ describe("TripOverviewWorkspaceView", () => {
     await user.click(screen.getByRole("button", { name: "정산 확인하기" }));
 
     expect(onNavigate).toHaveBeenCalledWith("expenses");
+  });
+
+  it("opens the itinerary on the selected trip day", async () => {
+    const onSelectDay = vi.fn();
+    const user = userEvent.setup();
+    const overview = createTripOverview({
+      expenses: [],
+      itinerary: jejuTrip.itinerary,
+      memberIds: ["user-jiwoo"],
+      preparationItems: [],
+      settlementState: createEmptyTripExpenseSettlementState(),
+    });
+
+    render(
+      <TripOverviewWorkspaceView
+        days={jejuDays}
+        onNavigate={vi.fn()}
+        onSelectDay={onSelectDay}
+        overview={overview}
+        selectedDayId={jejuDays[0]?.id ?? ""}
+        trip={jejuTrip.trip}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "2일차 일정 열기" }));
+
+    expect(onSelectDay).toHaveBeenCalledWith("jeju-day-2");
   });
 });

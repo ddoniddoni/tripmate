@@ -55,6 +55,41 @@ type LiveblocksItineraryEditorContentProps = LiveblocksItineraryEditorProps & {
   tripItinerary: NonNullable<ReturnType<typeof getLiveblocksItinerarySnapshot>>;
 };
 
+function WorkspaceTabIcon({ view }: { view: TripWorkspaceView }) {
+  if (view === "overview") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
+      </svg>
+    );
+  }
+
+  if (view === "itinerary") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M6 3v3M18 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+        <path d="m8 14 2 2 5-5" />
+      </svg>
+    );
+  }
+
+  if (view === "preparation") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M8 5h8M8 3h8v4H8zM6 5H5a1 1 0 0 0-1 1v14h16V6a1 1 0 0 0-1-1h-1" />
+        <path d="m8 13 2 2 5-5" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <rect height="16" rx="2" width="18" x="3" y="4" />
+      <path d="M3 9h18M7 15h4" />
+    </svg>
+  );
+}
+
 function TripWorkspaceTabs({
   activeView,
   onChange,
@@ -70,6 +105,9 @@ function TripWorkspaceTabs({
         onClick={() => onChange("overview")}
         type="button"
       >
+        <span className="workspace-tab-icon">
+          <WorkspaceTabIcon view="overview" />
+        </span>
         개요
       </button>
       <button
@@ -78,6 +116,9 @@ function TripWorkspaceTabs({
         onClick={() => onChange("itinerary")}
         type="button"
       >
+        <span className="workspace-tab-icon">
+          <WorkspaceTabIcon view="itinerary" />
+        </span>
         일정
       </button>
       <button
@@ -86,6 +127,9 @@ function TripWorkspaceTabs({
         onClick={() => onChange("preparation")}
         type="button"
       >
+        <span className="workspace-tab-icon">
+          <WorkspaceTabIcon view="preparation" />
+        </span>
         준비하기
       </button>
       <button
@@ -94,6 +138,9 @@ function TripWorkspaceTabs({
         onClick={() => onChange("expenses")}
         type="button"
       >
+        <span className="workspace-tab-icon">
+          <WorkspaceTabIcon view="expenses" />
+        </span>
         경비
       </button>
     </nav>
@@ -160,6 +207,11 @@ function LiveblocksItineraryEditorContent({
     preparationItems,
     settlementState: expenseSettlementState,
   });
+  const overviewDays = tripItinerary.itinerary.dayOrder.flatMap((dayId) => {
+    const day = tripItinerary.itinerary.days[dayId];
+
+    return day ? [day] : [];
+  });
 
   return (
     <>
@@ -169,8 +221,11 @@ function LiveblocksItineraryEditorContent({
       />
       {workspaceNavigation.navigation.view === "overview" ? (
         <TripOverviewWorkspaceView
+          days={overviewDays}
           onNavigate={workspaceNavigation.selectView}
+          onSelectDay={workspaceNavigation.selectItineraryDay}
           overview={overview}
+          selectedDayId={workspaceNavigation.navigation.selectedDayId}
           trip={trip}
         />
       ) : null}

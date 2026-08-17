@@ -10,7 +10,7 @@ import { useTripWorkspaceNavigation } from "@/features/collaboration/model/use-t
 const dayIds = ["day-one", "day-two"];
 
 function NavigationHarness({ initialNavigation }: { initialNavigation: TripWorkspaceNavigation }) {
-  const { navigation, selectDay, selectView } = useTripWorkspaceNavigation({
+  const { navigation, selectDay, selectItineraryDay, selectView } = useTripWorkspaceNavigation({
     dayIds,
     initialNavigation,
     pathname: "/trips/trip-123",
@@ -24,6 +24,9 @@ function NavigationHarness({ initialNavigation }: { initialNavigation: TripWorks
       </button>
       <button onClick={() => selectDay("day-two")} type="button">
         둘째 날
+      </button>
+      <button onClick={() => selectItineraryDay("day-two")} type="button">
+        둘째 날 일정 열기
       </button>
     </>
   );
@@ -47,5 +50,16 @@ describe("useTripWorkspaceNavigation", () => {
     });
 
     expect(screen.getByRole("status")).toHaveTextContent("itinerary:day-one");
+  });
+
+  it("opens the itinerary and selected day in one navigation update", async () => {
+    window.history.replaceState(null, "", "/trips/trip-123");
+    const user = userEvent.setup();
+    render(<NavigationHarness initialNavigation={{ selectedDayId: "day-one", view: "overview" }} />);
+
+    await user.click(screen.getByRole("button", { name: "둘째 날 일정 열기" }));
+
+    expect(window.location.search).toBe("?view=itinerary&day=day-two");
+    expect(screen.getByRole("status")).toHaveTextContent("itinerary:day-two");
   });
 });
