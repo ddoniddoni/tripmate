@@ -31,6 +31,7 @@ export async function createTrip(
   }
 
   const tripId = crypto.randomUUID();
+  const shouldOpenAiPlanner = formData.get("openAiPlanner") === "true";
   const { error } = await supabase.from("trips").insert({
     destination: inputResult.data.destination,
     end_date: inputResult.data.endDate,
@@ -49,5 +50,5 @@ export async function createTrip(
   }
 
   revalidatePath("/trips");
-  redirect(`/trips/${tripId}`);
+  redirect(`/trips/${tripId}${shouldOpenAiPlanner ? "?ai=1" : ""}`);
 }

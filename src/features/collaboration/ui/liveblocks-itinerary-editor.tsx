@@ -28,6 +28,8 @@ import {
   type ItinerarySelectionCollaborator,
 } from "@/features/itinerary-editor/ui/itinerary-editor-workspace";
 import { TripPreparationChecklist } from "@/features/preparation-checklist/ui/trip-preparation-checklist";
+import { AiItineraryPlannerDialog } from "@/features/ai-itinerary/ui/ai-itinerary-planner-dialog";
+import { TripBriefingDialog } from "@/features/trip-briefing/ui/trip-briefing-dialog";
 import { TripExpenseWorkspace } from "@/features/trip-expenses/ui/trip-expense-workspace";
 import { createTripOverview } from "@/features/trip-overview/model/trip-overview";
 import { TripOverviewWorkspaceView } from "@/features/trip-overview/ui/trip-overview-workspace";
@@ -42,6 +44,7 @@ import type { Trip } from "@/entities/trip/model/trip";
 type LiveblocksItineraryEditorProps = {
   canEditItinerary: boolean;
   currentUserId: string;
+  initialAiPlannerOpen: boolean;
   initialWorkspaceNavigation: TripWorkspaceNavigation;
   members: readonly TripMember[];
   trip: Trip;
@@ -154,6 +157,7 @@ function LiveblocksItineraryEditorContent({
   expenses,
   expenseSettlementState,
   initialWorkspaceNavigation,
+  initialAiPlannerOpen,
   members,
   preparationItems,
   trip,
@@ -224,6 +228,22 @@ function LiveblocksItineraryEditorContent({
       {workspaceNavigation.navigation.view === "overview" ? (
         <TripOverviewWorkspaceView
           days={overviewDays}
+          headerActions={
+            <>
+              {canEditItinerary ? (
+                <AiItineraryPlannerDialog initialOpen={initialAiPlannerOpen} trip={trip} />
+              ) : null}
+              <TripBriefingDialog
+                currentUserId={currentUserId}
+                expenses={expenses}
+                itinerary={tripItinerary.itinerary}
+                members={members}
+                preparationItems={preparationItems}
+                settlementState={expenseSettlementState}
+                trip={trip}
+              />
+            </>
+          }
           onNavigate={workspaceNavigation.selectView}
           onSelectDay={workspaceNavigation.selectItineraryDay}
           overview={overview}
@@ -260,6 +280,7 @@ function LiveblocksItineraryEditorContent({
 export function LiveblocksItineraryEditor({
   canEditItinerary,
   currentUserId,
+  initialAiPlannerOpen,
   initialWorkspaceNavigation,
   members,
   trip,
@@ -311,6 +332,7 @@ export function LiveblocksItineraryEditor({
       currentUserId={currentUserId}
       expenses={expenseDocument ? Object.values(expenseDocument.items) : []}
       expenseSettlementState={expenseSettlementState}
+      initialAiPlannerOpen={initialAiPlannerOpen}
       initialWorkspaceNavigation={initialWorkspaceNavigation}
       members={members}
       preparationItems={preparationChecklist ? Object.values(preparationChecklist.items) : []}

@@ -24,7 +24,7 @@ import { getSafeTripEditorPath } from "@/shared/lib/safe-internal-path";
 
 type TripEditorPageProps = {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ day?: string; view?: string }>;
+  searchParams: Promise<{ ai?: string; day?: string; view?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -96,6 +96,7 @@ export default async function TripEditorPage({ params, searchParams }: TripEdito
     workspaceSearchParams,
     initialTripItinerary.itinerary.dayOrder,
   );
+  const initialAiPlannerOpen = workspaceSearchParams.ai === "1";
 
   const editor = (
     <ItineraryEditorShell
@@ -106,6 +107,7 @@ export default async function TripEditorPage({ params, searchParams }: TripEdito
         <LiveblocksItineraryEditor
           canEditItinerary={permissions.canEditItinerary}
           currentUserId={user.id}
+          initialAiPlannerOpen={initialAiPlannerOpen}
           initialWorkspaceNavigation={initialWorkspaceNavigation}
           members={members}
           trip={trip}

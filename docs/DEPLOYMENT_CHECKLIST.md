@@ -98,6 +98,7 @@
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | 공개 가능 | 브라우저 Supabase 인증 키 |
 | `SUPABASE_SERVICE_ROLE_KEY` | 비밀 | 서버에서 사용량 제한 및 관리자 작업 수행 |
 | `LIVEBLOCKS_SECRET_KEY` | 비밀 | 서버 협업 권한 발급 |
+| `OPENAI_API_KEY` | 비밀 | 서버에서 AI 여행 동선 초안 생성 |
 | `GOOGLE_MAPS_API_KEY` | 비밀 | 서버 Places·Routes 요청 |
 | `NEXT_PUBLIC_GOOGLE_MAPS_MAP_KEY` | 공개 가능 | 브라우저 지도 표시 |
 | `GOOGLE_PLACES_SEARCH_DAILY_LIMIT` | 비밀 | 장소 검색 일일 하드 리밋 |
@@ -150,12 +151,14 @@
 - [ ] 계정 B를 viewer로 바꾼 뒤 수정이 차단되는지 확인한다.
 - [ ] 계정 A가 준비물과 경비를 변경하고 계정 B에 실시간 반영되는지 확인한다.
 - [ ] 장소 검색, 지도 표시, 이동 경로가 정상 동작하는지 확인한다.
+- [ ] owner 또는 editor가 AI 동선 초안을 만들고, viewer에게 생성 버튼이 보이지 않는지 확인한다.
 - [ ] 로그아웃·재로그인 뒤 초대와 기존 여행 접근이 유지되는지 확인한다.
 
 ### 화면·오류 시나리오
 
 - [ ] 데스크톱 Chrome에서 확인한다.
 - [ ] 모바일 Chrome 또는 Safari에서 확인한다.
+- [ ] 여행 브리핑에서 일정·준비물·정산 요약을 확인하고, 브라우저 인쇄에서 PDF 저장 결과를 점검한다.
 - [ ] 빈 여행·빈 일정·검색 결과 없음·네트워크 오류 메시지를 확인한다.
 - [ ] Vercel, Supabase, Liveblocks 로그에 오류가 없는지 확인한다.
 

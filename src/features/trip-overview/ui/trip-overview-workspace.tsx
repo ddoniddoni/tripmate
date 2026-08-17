@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import type { TripDay } from "@/entities/itinerary/model/trip-itinerary";
 import { formatTripDateRange, formatTripLength } from "@/entities/trip/lib/format-trip";
 import type { Trip } from "@/entities/trip/model/trip";
@@ -11,6 +13,7 @@ import { formatCalendarDate } from "@/shared/lib/calendar-date";
 
 type TripOverviewWorkspaceViewProps = {
   days: readonly TripDay[];
+  headerActions?: ReactNode;
   onNavigate: (view: TripOverviewAction) => void;
   onSelectDay: (dayId: string) => void;
   overview: TripOverview;
@@ -119,6 +122,7 @@ function TripOverviewStat({
 
 export function TripOverviewWorkspaceView({
   days,
+  headerActions,
   onNavigate,
   onSelectDay,
   overview,
@@ -181,9 +185,14 @@ export function TripOverviewWorkspaceView({
         <span aria-hidden="true" className="trip-overview-ribbon" />
         <header className="trip-overview-heading">
           <span aria-hidden="true" className="trip-overview-marker" />
-          <span className="section-kicker">한눈에 보기</span>
-          <h2>여행 개요</h2>
-          <p>{trip.destination} 여행의 일정, 준비와 경비를 한곳에서 확인하세요.</p>
+          <div className="trip-overview-heading-copy">
+            <span className="section-kicker">한눈에 보기</span>
+            <h2>여행 개요</h2>
+            <p>{trip.destination} 여행의 일정, 준비와 경비를 한곳에서 확인하세요.</p>
+          </div>
+          {headerActions ? (
+            <div className="trip-overview-heading-actions">{headerActions}</div>
+          ) : null}
         </header>
 
         <div className="trip-overview-bento">

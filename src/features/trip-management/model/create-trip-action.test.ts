@@ -24,13 +24,14 @@ import { createTrip } from "@/features/trip-management/model/create-trip-action"
 import { initialCreateTripActionState } from "@/features/trip-management/model/create-trip-action-state";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 
-function createTripFormData() {
+function createTripFormData({ openAiPlanner = false }: { openAiPlanner?: boolean } = {}) {
   const formData = new FormData();
   formData.set("title", "가을의 부산");
   formData.set("destination", "대한민국 · 부산");
   formData.set("startDate", "2026-10-01");
   formData.set("endDate", "2026-10-04");
   formData.set("timeZone", "Asia/Seoul");
+  formData.set("openAiPlanner", String(openAiPlanner));
   return formData;
 }
 
@@ -76,5 +77,15 @@ describe("createTrip", () => {
       status: "error",
     });
     expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("opens the AI route draft after a user explicitly asks for it during trip creation", async () => {
+    await expect(
+      createTrip(initialCreateTripActionState, createTripFormData({ openAiPlanner: true })),
+    ).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      "/trips/550e8400-e29b-41d4-a716-446655440000?ai=1",
+    );
   });
 });

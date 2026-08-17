@@ -31,6 +31,7 @@ function toFormData(values: CreateTripInput) {
 }
 
 export function NewTripForm() {
+  const [openAiPlanner, setOpenAiPlanner] = useState(true);
   const [open, setOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(
     createTrip,
@@ -47,7 +48,9 @@ export function NewTripForm() {
 
   function handleCreateTrip(values: CreateTripInput) {
     startTransition(() => {
-      formAction(toFormData(values));
+      const formData = toFormData(values);
+      formData.set("openAiPlanner", String(openAiPlanner));
+      formAction(formData);
     });
   }
 
@@ -169,6 +172,22 @@ export function NewTripForm() {
                 </span>
               ) : null}
             </div>
+
+            <label className="new-trip-ai-option">
+              <input
+                checked={openAiPlanner}
+                disabled={isPending}
+                onChange={(event) => setOpenAiPlanner(event.target.checked)}
+                type="checkbox"
+              />
+              <span aria-hidden="true" className="new-trip-ai-option-mark">
+                ✦
+              </span>
+              <span>
+                <strong>여행을 만든 뒤 AI 동선 초안 열기</strong>
+                <small>실제 장소를 저장하지 않는 지역별 추천부터 볼 수 있어요.</small>
+              </span>
+            </label>
 
             {state.status !== "idle" ? (
               <p
