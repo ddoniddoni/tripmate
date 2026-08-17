@@ -4,9 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-import type {
-  PlaceSuggestion,
-  TripDay,
+import {
+  placeSuggestionCommentSchema,
+  type PlaceSuggestion,
+  type TripDay,
 } from "@/entities/itinerary/model/trip-itinerary";
 import { z } from "@/shared/lib/zod";
 
@@ -16,15 +17,150 @@ const dayMemoFormSchema = z.object({
 
 type DayMemoFormValues = z.infer<typeof dayMemoFormSchema>;
 
+const placeSuggestionCommentFormSchema = placeSuggestionCommentSchema.pick({ body: true });
+
+type PlaceSuggestionCommentFormValues = z.infer<typeof placeSuggestionCommentFormSchema>;
+
 type DayPlanningPanelProps = {
   canEditItinerary: boolean;
+  currentUserId: string;
   day?: TripDay;
+  memberLabels: ReadonlyMap<string, string>;
+  onAddSuggestionComment: (suggestionId: string, body: string) => boolean;
   onAddSuggestion: () => void;
   onPromoteSuggestion: (suggestionId: string) => void;
   onRemoveSuggestion: (suggestionId: string) => void;
   onSaveDayNote: (note: string) => boolean;
+  onToggleSuggestionVote: (suggestionId: string) => void;
   placeSuggestions: readonly PlaceSuggestion[];
 };
+
+function HeartIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20">
+      <path d="M10 17s-6.5-3.7-6.5-8.4A3.6 3.6 0 0 1 10 6.5a3.6 3.6 0 0 1 6.5 2.1C16.5 13.3 10 17 10 17Z" />
+    </svg>
+  );
+}
+
+function getMemberLabel(
+  memberId: string,
+  currentUserId: string,
+  memberLabels: ReadonlyMap<string, string>,
+) {
+  if (memberId === currentUserId) {
+    return "나";
+  }
+
+  return memberLabels.get(memberId) ?? "여행 멤버";
+}
+
+function getVoterSummary(
+  suggestion: PlaceSuggestion,
+  currentUserId: string,
+  memberLabels: ReadonlyMap<string, string>,
+) {
+  const voterIds = Object.keys(suggestion.votes);
+
+  if (voterIds.length === 0) {
+    return "첫 투표를 기다리고 있어요.";
+  }
+
+  const voterNames = voterIds.map((memberId) =>
+    getMemberLabel(memberId, currentUserId, memberLabels),
+  );
+
+  if (voterNames.length <= 3) {
+    return `${voterNames.join(", ")} · 가고 싶어요`;
+  }
+
+  return `${voterNames.slice(0, 2).join(", ")} 외 ${voterNames.length - 2}명 · 가고 싶어요`;
+}
+
+function PlaceSuggestionDiscussion({
+  canEditItinerary,
+  currentUserId,
+  memberLabels,
+  onAddComment,
+  suggestion,
+}: {
+  canEditItinerary: boolean;
+  currentUserId: string;
+  memberLabels: ReadonlyMap<string, string>;
+  onAddComment: (suggestionId: string, body: string) => boolean;
+  suggestion: PlaceSuggestion;
+}) {
+  const comments = Object.values(suggestion.comments).sort((left, right) =>
+    left.createdAt.localeCompare(right.createdAt),
+  );
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+    reset,
+  } = useForm<PlaceSuggestionCommentFormValues>({
+    defaultValues: { body: "" },
+    resolver: zodResolver(placeSuggestionCommentFormSchema),
+  });
+  const inputId = `place-suggestion-comment-${suggestion.id}`;
+
+  return (
+    <details className="place-suggestion-discussion">
+      <summary>
+        <span>의견</span>
+        <strong>{comments.length}</strong>
+        <i aria-hidden="true">⌄</i>
+      </summary>
+      <div className="place-suggestion-discussion-body">
+        {comments.length === 0 ? (
+          <p className="place-suggestion-comment-empty">
+            아직 의견이 없어요. 이 장소에서 하고 싶은 일을 나눠 보세요.
+          </p>
+        ) : (
+          <ol className="place-suggestion-comments">
+            {comments.map((comment) => (
+              <li key={comment.id}>
+                <strong>
+                  {getMemberLabel(comment.createdBy, currentUserId, memberLabels)}
+                </strong>
+                <p>{comment.body}</p>
+              </li>
+            ))}
+          </ol>
+        )}
+        {canEditItinerary ? (
+          <form
+            className="place-suggestion-comment-form"
+            noValidate
+            onSubmit={handleSubmit((values) => {
+              if (onAddComment(suggestion.id, values.body)) {
+                reset();
+              }
+            })}
+          >
+            <label htmlFor={inputId}>{suggestion.place.name}에 의견 남기기</label>
+            <div>
+              <input
+                id={inputId}
+                aria-describedby={errors.body ? `${inputId}-error` : undefined}
+                aria-invalid={Boolean(errors.body)}
+                maxLength={300}
+                placeholder="예: 아침 일찍 가면 좋겠어"
+                {...register("body")}
+              />
+              <button type="submit">의견 등록</button>
+            </div>
+            {errors.body ? (
+              <span id={`${inputId}-error`} role="alert">
+                {errors.body.message}
+              </span>
+            ) : null}
+          </form>
+        ) : null}
+      </div>
+    </details>
+  );
+}
 
 function DayMemoForm({
   dayId,
@@ -102,11 +238,15 @@ function DayMemoForm({
 
 export function DayPlanningPanel({
   canEditItinerary,
+  currentUserId,
   day,
+  memberLabels,
+  onAddSuggestionComment,
   onAddSuggestion,
   onPromoteSuggestion,
   onRemoveSuggestion,
   onSaveDayNote,
+  onToggleSuggestionVote,
   placeSuggestions,
 }: DayPlanningPanelProps) {
   if (!day) {
@@ -153,36 +293,78 @@ export function DayPlanningPanel({
             </p>
           ) : (
             <ul className="place-suggestion-list">
-              {placeSuggestions.map((suggestion) => (
-                <li key={suggestion.id}>
-                  <article>
-                    <span className="place-category category-blue">
-                      {suggestion.place.category ?? "장소"}
-                    </span>
-                    <h3>{suggestion.place.name}</h3>
-                    <p>{suggestion.place.address}</p>
-                    {suggestion.note ? <blockquote>{suggestion.note}</blockquote> : null}
-                    {canEditItinerary ? (
-                      <div className="place-suggestion-actions">
-                        <button
-                          className="text-action"
-                          type="button"
-                          onClick={() => onPromoteSuggestion(suggestion.id)}
-                        >
-                          일정에 추가
-                        </button>
-                        <button
-                          className="text-action text-action-danger"
-                          type="button"
-                          onClick={() => onRemoveSuggestion(suggestion.id)}
-                        >
-                          제안 삭제
-                        </button>
+              {placeSuggestions.map((suggestion, suggestionIndex) => {
+                const hasVoted = Boolean(suggestion.votes[currentUserId]);
+                const voteCount = Object.keys(suggestion.votes).length;
+
+                return (
+                  <li key={suggestion.id}>
+                    <article>
+                      <div className="place-suggestion-topline">
+                        <div className="place-suggestion-labels">
+                          <span className="place-category category-blue">
+                            {suggestion.place.category ?? "장소"}
+                          </span>
+                          {suggestionIndex === 0 && voteCount > 0 ? (
+                            <span className="place-suggestion-popular">인기 후보</span>
+                          ) : null}
+                        </div>
+                        {canEditItinerary ? (
+                          <button
+                            aria-label={`${suggestion.place.name} 좋아요 ${hasVoted ? "취소" : "추가"}`}
+                            aria-pressed={hasVoted}
+                            className={`place-suggestion-vote${hasVoted ? " is-voted" : ""}`}
+                            type="button"
+                            onClick={() => onToggleSuggestionVote(suggestion.id)}
+                          >
+                            <HeartIcon />
+                            <span>{voteCount}</span>
+                          </button>
+                        ) : (
+                          <span
+                            aria-label={`좋아요 ${voteCount}개`}
+                            className="place-suggestion-vote is-readonly"
+                          >
+                            <HeartIcon />
+                            <span>{voteCount}</span>
+                          </span>
+                        )}
                       </div>
-                    ) : null}
-                  </article>
-                </li>
-              ))}
+                      <h3>{suggestion.place.name}</h3>
+                      <p>{suggestion.place.address}</p>
+                      {suggestion.note ? <blockquote>{suggestion.note}</blockquote> : null}
+                      <p className="place-suggestion-voters">
+                        {getVoterSummary(suggestion, currentUserId, memberLabels)}
+                      </p>
+                      <PlaceSuggestionDiscussion
+                        canEditItinerary={canEditItinerary}
+                        currentUserId={currentUserId}
+                        memberLabels={memberLabels}
+                        onAddComment={onAddSuggestionComment}
+                        suggestion={suggestion}
+                      />
+                      {canEditItinerary ? (
+                        <div className="place-suggestion-actions">
+                          <button
+                            className="text-action"
+                            type="button"
+                            onClick={() => onPromoteSuggestion(suggestion.id)}
+                          >
+                            일정에 추가
+                          </button>
+                          <button
+                            className="text-action text-action-danger"
+                            type="button"
+                            onClick={() => onRemoveSuggestion(suggestion.id)}
+                          >
+                            제안 삭제
+                          </button>
+                        </div>
+                      ) : null}
+                    </article>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

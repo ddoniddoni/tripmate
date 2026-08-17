@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { jejuTrip } from "@/entities/itinerary/mock/jeju-trip";
+import type { TripItinerary } from "@/entities/itinerary/model/trip-itinerary";
 import { ItineraryEditorWorkspace } from "@/features/itinerary-editor/ui/itinerary-editor-workspace";
 
 vi.mock("@/features/map-sync/ui/google-itinerary-map", () => ({
@@ -52,16 +53,65 @@ function renderWorkspace(
     name: string;
     selectedItemId: string;
   }> = [],
+  memberLabels: ReadonlyMap<string, string> = new Map(),
 ) {
   const user = userEvent.setup();
   render(
     <ItineraryEditorWorkspace
       canEditItinerary={canEditItinerary}
       initialTripItinerary={initialTripItinerary}
+      memberLabels={memberLabels}
       selectedItemCollaborators={selectedItemCollaborators}
     />,
   );
   return user;
+}
+
+function createTripWithSuggestion(): TripItinerary {
+  const tripItinerary = structuredClone(jejuTrip);
+
+  tripItinerary.itinerary.placeSuggestions["seongsan-suggestion"] = {
+    comments: {
+      "seongsan-comment": {
+        body: "일출 시간부터 같이 확인해 봐요.",
+        createdAt: "2026-08-17T01:05:00.000Z",
+        createdBy: "user-minji",
+        id: "seongsan-comment",
+      },
+    },
+    createdAt: "2026-08-17T01:00:00.000Z",
+    createdBy: "user-minji",
+    dayId: "jeju-day-1",
+    id: "seongsan-suggestion",
+    note: "아침 일찍 출발하면 좋겠어",
+    place: {
+      address: "제주특별자치도 서귀포시 성산읍 성산리 1",
+      category: "관광 명소",
+      latitude: 33.4581,
+      longitude: 126.9425,
+      name: "성산일출봉",
+      provider: "google",
+      providerPlaceId: "google.seongsan-ilchulbong",
+    },
+    votes: {
+      "user-jiwoo": "2026-08-17T01:03:00.000Z",
+    },
+  };
+
+  return tripItinerary;
+}
+
+function createTripWithSecondDayItem(): TripItinerary {
+  const tripItinerary = structuredClone(jejuTrip);
+  const secondDayItemId = "bijarim-forest";
+
+  tripItinerary.itinerary.days["jeju-day-1"].itemIds = tripItinerary.itinerary.days[
+    "jeju-day-1"
+  ].itemIds.filter((itemId) => itemId !== secondDayItemId);
+  tripItinerary.itinerary.days["jeju-day-2"].itemIds = [secondDayItemId];
+  tripItinerary.itinerary.items[secondDayItemId].dayId = "jeju-day-2";
+
+  return tripItinerary;
 }
 
 describe("ItineraryEditorWorkspace", () => {
@@ -210,6 +260,29 @@ describe("ItineraryEditorWorkspace", () => {
       screen.queryByRole("button", { name: "성산일출봉 지도에서 선택" }),
     ).not.toBeInTheDocument();
 
+    const voteButton = screen.getByRole("button", { name: "성산일출봉 좋아요 추가" });
+    await user.click(voteButton);
+
+    expect(voteButton).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "성산일출봉 좋아요 취소" })).toHaveTextContent(
+      "1",
+    );
+    expect(screen.getByText("인기 후보")).toBeInTheDocument();
+    expect(screen.getByText("나 · 가고 싶어요")).toBeInTheDocument();
+
+    await user.click(screen.getByText("의견"));
+    await user.click(screen.getByRole("button", { name: "의견 등록" }));
+    expect(await screen.findByText("의견을 입력해 주세요.")).toBeInTheDocument();
+
+    await user.type(
+      screen.getByLabelText("성산일출봉에 의견 남기기"),
+      "근처 아침 식당도 같이 찾아보자",
+    );
+    await user.click(screen.getByRole("button", { name: "의견 등록" }));
+
+    expect(screen.getByText("근처 아침 식당도 같이 찾아보자")).toBeInTheDocument();
+    expect(screen.getByText(/의견을 남겼습니다/)).toBeInTheDocument();
+
     await user.click(screen.getByRole("button", { name: "일정에 추가" }));
 
     expect(screen.getByText("일정 4개 · Asia/Seoul")).toBeInTheDocument();
@@ -223,9 +296,33 @@ describe("ItineraryEditorWorkspace", () => {
   it("keeps day planning controls read-only for viewers", () => {
     renderWorkspace(false);
 
+    expect(screen.queryByRole("button", { name: "하루 복사" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "메모 작성" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "장소 제안" })).not.toBeInTheDocument();
     expect(screen.getByText("아직 공유된 후보 장소가 없어요.")).toBeInTheDocument();
+  });
+
+  it("lets viewers read candidate votes and comments without collaboration controls", async () => {
+    const user = renderWorkspace(
+      false,
+      createTripWithSuggestion(),
+      [],
+      new Map([
+        ["user-jiwoo", "나 · 지우"],
+        ["user-minji", "민지"],
+      ]),
+    );
+
+    expect(screen.getByLabelText("좋아요 1개")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /성산일출봉 좋아요/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "일정에 추가" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "제안 삭제" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByText("의견"));
+
+    expect(screen.getByText("민지")).toBeInTheDocument();
+    expect(screen.getByText("일출 시간부터 같이 확인해 봐요.")).toBeInTheDocument();
+    expect(screen.queryByLabelText("성산일출봉에 의견 남기기")).not.toBeInTheDocument();
   });
 
   it("edits an existing item while preserving its position", async () => {
@@ -315,6 +412,48 @@ describe("ItineraryEditorWorkspace", () => {
     );
   });
 
+  it("copies one complete day to another date and selects the first copied item", async () => {
+    const user = renderWorkspace();
+
+    await user.click(screen.getByRole("button", { name: "하루 복사" }));
+    const dialog = await screen.findByRole("dialog", {
+      name: "1일차 일정을 복사할까요?",
+    });
+
+    expect(within(dialog).getByText("일정 3개를 복사해요")).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("우진해장국 · 함덕해수욕장 · 비자림"),
+    ).toBeInTheDocument();
+    const destinationRadios = within(dialog).getAllByRole("radio");
+
+    expect(destinationRadios[0]).toBeChecked();
+    await user.click(destinationRadios[1]);
+    expect(destinationRadios[1]).toBeChecked();
+
+    await user.click(within(dialog).getByRole("button", { name: "3개 일정 복사" }));
+
+    expect(
+      screen.queryByRole("dialog", { name: "1일차 일정을 복사할까요?" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("일정 3개 · Asia/Seoul")).toBeInTheDocument();
+    expect(screen.getByText("3일차에 일정 3개를 복사했습니다.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "우진해장국 선택" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "우진해장국 지도에서 선택" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /첫째 날/ }));
+    expect(screen.getByText("일정 3개 · Asia/Seoul")).toBeInTheDocument();
+  });
+
+  it("disables day copy for an empty day", async () => {
+    const user = renderWorkspace();
+
+    await user.click(screen.getByRole("button", { name: /둘째 날/ }));
+    expect(screen.getByRole("button", { name: "하루 복사" })).toBeDisabled();
+  });
+
   it("exposes keyboard instructions from every drag handle", () => {
     renderWorkspace();
 
@@ -388,6 +527,36 @@ describe("ItineraryEditorWorkspace", () => {
       "true",
     );
     expect(mapMarker).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("searches the complete trip and moves viewers to an itinerary on another day", async () => {
+    const user = renderWorkspace(false, createTripWithSecondDayItem());
+
+    await user.click(screen.getByRole("button", { name: "일정 찾기" }));
+    const dialog = await screen.findByRole("dialog", { name: "일정 찾기" });
+    const searchInput = within(dialog).getByRole("searchbox", { name: "전체 일정 검색" });
+
+    expect(within(dialog).getByText("3곳")).toBeInTheDocument();
+
+    await user.type(searchInput, "서울 야경");
+    expect(await within(dialog).findByText("일치하는 일정이 없어요")).toBeInTheDocument();
+
+    await user.clear(searchInput);
+    await user.type(searchInput, "비자림");
+    await user.click(
+      await within(dialog).findByRole("button", {
+        name: "비자림, 2일차 일정으로 이동",
+      }),
+    );
+
+    expect(screen.queryByRole("dialog", { name: "일정 찾기" })).not.toBeInTheDocument();
+    expect(screen.getByText("일정 1개 · Asia/Seoul")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "비자림 선택" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByText("비자림이 있는 2일차로 이동했습니다.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "장소 추가" })).not.toBeInTheDocument();
   });
 
   it("shows collaborators who are currently checking the same itinerary item", () => {

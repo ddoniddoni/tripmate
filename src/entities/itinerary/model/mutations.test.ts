@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { jejuTrip } from "@/entities/itinerary/mock/jeju-trip";
 import {
   addPlaceSuggestion,
+  addPlaceSuggestionComment,
   addItineraryItem,
+  duplicateItineraryDayItems,
   duplicateItineraryItem,
   moveItineraryItem,
   promotePlaceSuggestion,
@@ -12,6 +14,7 @@ import {
   reorderItineraryItem,
   resizeTripItinerary,
   sortItineraryItemsByStartTime,
+  togglePlaceSuggestionVote,
   updateTripDayNote,
   updateItineraryItem,
 } from "@/entities/itinerary/model/mutations";
@@ -130,12 +133,14 @@ describe("itinerary mutations", () => {
 
   it("keeps candidate places outside the itinerary until one is promoted", () => {
     const suggestion = {
+      comments: {},
       createdAt: "2026-01-20T10:00:00.000Z",
       createdBy: "user-minji",
       dayId: "jeju-day-1",
       id: "seongsan-candidate",
       note: "해 뜨기 전에 가면 좋대요",
       place: newItem.place,
+      votes: {},
     };
     const withSuggestion = expectSuccess(addPlaceSuggestion(jejuTrip, { suggestion }));
 
@@ -162,11 +167,13 @@ describe("itinerary mutations", () => {
 
   it("rejects candidate places for unknown days and lets editors remove a candidate", () => {
     const suggestion = {
+      comments: {},
       createdAt: "2026-01-20T10:00:00.000Z",
       createdBy: "user-minji",
       dayId: "missing-day",
       id: "missing-day-candidate",
       place: newItem.place,
+      votes: {},
     };
 
     expect(addPlaceSuggestion(jejuTrip, { suggestion })).toMatchObject({
@@ -182,6 +189,65 @@ describe("itinerary mutations", () => {
     const removed = expectSuccess(removePlaceSuggestion(withSuggestion, "day-two-candidate"));
 
     expect(removed.itinerary.placeSuggestions).toEqual({});
+  });
+
+  it("toggles one vote per member and keeps candidate comments in the shared document", () => {
+    const withSuggestion = expectSuccess(
+      addPlaceSuggestion(jejuTrip, {
+        suggestion: {
+          comments: {},
+          createdAt: "2026-01-20T10:00:00.000Z",
+          createdBy: "user-minji",
+          dayId: "jeju-day-1",
+          id: "vote-candidate",
+          place: newItem.place,
+          votes: {},
+        },
+      }),
+    );
+    const voted = expectSuccess(
+      togglePlaceSuggestionVote(withSuggestion, {
+        suggestionId: "vote-candidate",
+        userId: "user-jiwoo",
+        votedAt: "2026-01-20T10:10:00.000Z",
+      }),
+    );
+
+    expect(voted.itinerary.placeSuggestions["vote-candidate"]?.votes).toEqual({
+      "user-jiwoo": "2026-01-20T10:10:00.000Z",
+    });
+
+    const commented = expectSuccess(
+      addPlaceSuggestionComment(voted, {
+        comment: {
+          body: "오전에 가면 덜 붐빈대요.",
+          createdAt: "2026-01-20T10:12:00.000Z",
+          createdBy: "user-jiwoo",
+          id: "vote-candidate-comment-1",
+        },
+        suggestionId: "vote-candidate",
+      }),
+    );
+
+    expect(commented.itinerary.placeSuggestions["vote-candidate"]?.comments).toMatchObject({
+      "vote-candidate-comment-1": {
+        body: "오전에 가면 덜 붐빈대요.",
+        createdBy: "user-jiwoo",
+      },
+    });
+
+    const unvoted = expectSuccess(
+      togglePlaceSuggestionVote(commented, {
+        suggestionId: "vote-candidate",
+        userId: "user-jiwoo",
+        votedAt: "2026-01-20T10:15:00.000Z",
+      }),
+    );
+
+    expect(unvoted.itinerary.placeSuggestions["vote-candidate"]?.votes).toEqual({});
+    expect(unvoted.itinerary.placeSuggestions["vote-candidate"]?.comments).toEqual(
+      commented.itinerary.placeSuggestions["vote-candidate"]?.comments,
+    );
   });
 
   it("removes an item from both the ordered day and item record", () => {
@@ -247,6 +313,84 @@ describe("itinerary mutations", () => {
         updatedAt: "2026-01-20T10:00:00.000Z",
       }),
     ).toMatchObject({ success: false, code: "item-already-exists" });
+  });
+
+  it("copies one complete day to the end of another day as one immutable mutation", () => {
+    const withDestinationItem = expectSuccess(addItineraryItem(jejuTrip, { item: newItem }));
+    const before = structuredClone(withDestinationItem);
+    const newItemIds = [
+      "woojin-breakfast-day-copy",
+      "hamdeok-beach-day-copy",
+      "bijarim-forest-day-copy",
+    ];
+    const next = expectSuccess(
+      duplicateItineraryDayItems(withDestinationItem, {
+        createdBy: "user-minji",
+        destinationDayId: "jeju-day-2",
+        newItemIds,
+        sourceDayId: "jeju-day-1",
+        updatedAt: "2026-01-20T12:00:00.000Z",
+      }),
+    );
+
+    expect(next.itinerary.days["jeju-day-1"].itemIds).toEqual(
+      jejuTrip.itinerary.days["jeju-day-1"].itemIds,
+    );
+    expect(next.itinerary.days["jeju-day-2"].itemIds).toEqual([
+      newItem.id,
+      ...newItemIds,
+    ]);
+    expect(next.itinerary.days["jeju-day-2"].note).toBeUndefined();
+    expect(next.itinerary.items[newItemIds[0]]).toMatchObject({
+      ...jejuTrip.itinerary.items["woojin-breakfast"],
+      createdBy: "user-minji",
+      dayId: "jeju-day-2",
+      id: newItemIds[0],
+      updatedAt: "2026-01-20T12:00:00.000Z",
+    });
+    expect(next.itinerary.items[newItemIds[0]]?.place).not.toBe(
+      next.itinerary.items["woojin-breakfast"]?.place,
+    );
+    expect(withDestinationItem).toEqual(before);
+  });
+
+  it("rejects invalid day-copy targets, empty sources, stale counts, and reused IDs", () => {
+    expect(
+      duplicateItineraryDayItems(jejuTrip, {
+        createdBy: "user-minji",
+        destinationDayId: "jeju-day-1",
+        newItemIds: ["copy-1", "copy-2", "copy-3"],
+        sourceDayId: "jeju-day-1",
+        updatedAt: "2026-01-20T12:00:00.000Z",
+      }),
+    ).toMatchObject({ code: "same-day-copy", success: false });
+    expect(
+      duplicateItineraryDayItems(jejuTrip, {
+        createdBy: "user-minji",
+        destinationDayId: "jeju-day-1",
+        newItemIds: [],
+        sourceDayId: "jeju-day-2",
+        updatedAt: "2026-01-20T12:00:00.000Z",
+      }),
+    ).toMatchObject({ code: "day-has-no-items", success: false });
+    expect(
+      duplicateItineraryDayItems(jejuTrip, {
+        createdBy: "user-minji",
+        destinationDayId: "jeju-day-2",
+        newItemIds: ["copy-1"],
+        sourceDayId: "jeju-day-1",
+        updatedAt: "2026-01-20T12:00:00.000Z",
+      }),
+    ).toMatchObject({ code: "source-item-count-changed", success: false });
+    expect(
+      duplicateItineraryDayItems(jejuTrip, {
+        createdBy: "user-minji",
+        destinationDayId: "jeju-day-2",
+        newItemIds: ["woojin-breakfast", "copy-2", "copy-3"],
+        sourceDayId: "jeju-day-1",
+        updatedAt: "2026-01-20T12:00:00.000Z",
+      }),
+    ).toMatchObject({ code: "item-already-exists", success: false });
   });
 
   it("reorders an item forward and backward within one day", () => {

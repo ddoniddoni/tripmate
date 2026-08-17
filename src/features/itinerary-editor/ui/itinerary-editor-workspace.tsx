@@ -32,6 +32,8 @@ import {
 import { useItineraryEditor } from "@/features/itinerary-editor/model/use-itinerary-editor";
 import { DeleteItineraryItemDialog } from "@/features/itinerary-editor/ui/delete-itinerary-item-dialog";
 import { DayPlanningPanel } from "@/features/itinerary-editor/ui/day-planning-panel";
+import { DuplicateItineraryDayDialog } from "@/features/itinerary-editor/ui/duplicate-itinerary-day-dialog";
+import { ItinerarySearchDialog } from "@/features/itinerary-editor/ui/itinerary-search-dialog";
 import { ItineraryItemDialog } from "@/features/itinerary-editor/ui/itinerary-item-dialog";
 import { MoveItineraryItemDialog } from "@/features/itinerary-editor/ui/move-itinerary-item-dialog";
 import { PlaceSuggestionDialog } from "@/features/itinerary-editor/ui/place-suggestion-dialog";
@@ -42,6 +44,7 @@ import { formatCalendarDate } from "@/shared/lib/calendar-date";
 type ItineraryEditorWorkspaceProps = {
   canEditItinerary?: boolean;
   initialTripItinerary: TripItinerary;
+  memberLabels?: ReadonlyMap<string, string>;
   selectedItemCollaborators?: readonly ItinerarySelectionCollaborator[];
 };
 
@@ -57,6 +60,7 @@ export type ItinerarySelectionCollaborator = {
 type ItineraryEditorWorkspaceViewProps = {
   canEditItinerary: boolean;
   editor: ItineraryEditorController;
+  memberLabels?: ReadonlyMap<string, string>;
   selectedItemCollaborators?: readonly ItinerarySelectionCollaborator[];
 };
 
@@ -64,6 +68,7 @@ type MobileView = "itinerary" | "map";
 
 const markerTones = ["coral", "blue", "green"] as const;
 const noItinerarySelectionCollaborators: readonly ItinerarySelectionCollaborator[] = [];
+const noMemberLabels: ReadonlyMap<string, string> = new Map();
 
 const koreanAccessibility = Accessibility.configure({
   announcements: {
@@ -190,6 +195,15 @@ function GripIcon() {
       <circle cx="12" cy="9" r="1" />
       <circle cx="6" cy="14" r="1" />
       <circle cx="12" cy="14" r="1" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20">
+      <circle cx="8.5" cy="8.5" r="5.5" />
+      <path d="m12.5 12.5 4 4" />
     </svg>
   );
 }
@@ -491,22 +505,29 @@ function DaySidebar({ days, onSelect, selectedDayId, startDate }: DaySidebarProp
 }
 
 type TimelinePanelProps = {
+  canDuplicateDay: boolean;
   canEditItinerary: boolean;
+  currentUserId: string;
   destinationName: string;
   itineraryItems: ItineraryItem[];
+  memberLabels: ReadonlyMap<string, string>;
   placeSuggestions: readonly PlaceSuggestion[];
   onAdd: () => void;
+  onAddSuggestionComment: (suggestionId: string, body: string) => boolean;
   onAddSuggestion: () => void;
   onDelete: (itemId: string) => void;
   onDuplicate: (itemId: string) => void;
   onEdit: (itemId: string) => void;
   onMove: (itemId: string, toIndex: number) => void;
   onMoveToDay: (itemId: string) => void;
+  onOpenDuplicateDay: () => void;
+  onOpenSearch: () => void;
   onPromoteSuggestion: (suggestionId: string) => void;
   onRemoveSuggestion: (suggestionId: string) => void;
   onSaveDayNote: (note: string) => boolean;
   onSelectItem: (itemId: string) => void;
   onSortByStartTime: () => void;
+  onToggleSuggestionVote: (suggestionId: string) => void;
   routePreview: ReturnType<typeof useRoutePreview>;
   selectedItemCollaborators: readonly ItinerarySelectionCollaborator[];
   selectedDay?: TripDay;
@@ -517,22 +538,29 @@ type TimelinePanelProps = {
 };
 
 function TimelinePanel({
+  canDuplicateDay,
   canEditItinerary,
+  currentUserId,
   destinationName,
   itineraryItems,
+  memberLabels,
   placeSuggestions,
   onAdd,
+  onAddSuggestionComment,
   onAddSuggestion,
   onDelete,
   onDuplicate,
   onEdit,
   onMove,
   onMoveToDay,
+  onOpenDuplicateDay,
+  onOpenSearch,
   onPromoteSuggestion,
   onRemoveSuggestion,
   onSaveDayNote,
   onSelectItem,
   onSortByStartTime,
+  onToggleSuggestionVote,
   routePreview,
   selectedItemCollaborators,
   selectedDay,
@@ -588,19 +616,38 @@ function TimelinePanel({
             </p>
           ) : null}
         </div>
-        {canEditItinerary ? (
-          <div className="timeline-header-actions">
-            {canSortByStartTime ? (
-              <button className="sort-by-time-button" type="button" onClick={onSortByStartTime}>
-                시간순 정렬
+        <div className="timeline-header-actions">
+          <button className="itinerary-search-trigger" type="button" onClick={onOpenSearch}>
+            <SearchIcon />
+            일정 찾기
+          </button>
+          {canEditItinerary ? (
+            <>
+              <button
+                className="duplicate-day-trigger"
+                disabled={!canDuplicateDay}
+                onClick={onOpenDuplicateDay}
+                title={
+                  canDuplicateDay
+                    ? "선택한 날짜의 일정을 다른 날짜로 복사"
+                    : "복사할 일정이나 다른 날짜가 없습니다."
+                }
+                type="button"
+              >
+                하루 복사
               </button>
-            ) : null}
-            <button className="add-place-placeholder" type="button" onClick={onAdd}>
-              <span aria-hidden="true">+</span>
-              장소 추가
-            </button>
-          </div>
-        ) : null}
+              {canSortByStartTime ? (
+                <button className="sort-by-time-button" type="button" onClick={onSortByStartTime}>
+                  시간순 정렬
+                </button>
+              ) : null}
+              <button className="add-place-placeholder" type="button" onClick={onAdd}>
+                <span aria-hidden="true">+</span>
+                장소 추가
+              </button>
+            </>
+          ) : null}
+        </div>
       </div>
 
       {canEditItinerary ? (
@@ -617,11 +664,15 @@ function TimelinePanel({
 
       <DayPlanningPanel
         canEditItinerary={canEditItinerary}
+        currentUserId={currentUserId}
         day={selectedDay}
+        memberLabels={memberLabels}
+        onAddSuggestionComment={onAddSuggestionComment}
         onAddSuggestion={onAddSuggestion}
         onPromoteSuggestion={onPromoteSuggestion}
         onRemoveSuggestion={onRemoveSuggestion}
         onSaveDayNote={onSaveDayNote}
+        onToggleSuggestionVote={onToggleSuggestionVote}
         placeSuggestions={placeSuggestions}
       />
 
@@ -826,6 +877,7 @@ function MobileViewSwitch({ mobileView, onChange }: MobileViewSwitchProps) {
 export function ItineraryEditorWorkspace({
   canEditItinerary = true,
   initialTripItinerary,
+  memberLabels = noMemberLabels,
   selectedItemCollaborators = noItinerarySelectionCollaborators,
 }: ItineraryEditorWorkspaceProps) {
   const editor = useItineraryEditor(initialTripItinerary, canEditItinerary);
@@ -834,6 +886,7 @@ export function ItineraryEditorWorkspace({
     <ItineraryEditorWorkspaceView
       canEditItinerary={canEditItinerary}
       editor={editor}
+      memberLabels={memberLabels}
       selectedItemCollaborators={selectedItemCollaborators}
     />
   );
@@ -842,6 +895,7 @@ export function ItineraryEditorWorkspace({
 export function ItineraryEditorWorkspaceView({
   canEditItinerary,
   editor,
+  memberLabels = noMemberLabels,
   selectedItemCollaborators = noItinerarySelectionCollaborators,
 }: ItineraryEditorWorkspaceViewProps) {
   const routePreview = useRoutePreview(editor.itineraryItems);
@@ -871,21 +925,30 @@ export function ItineraryEditorWorkspaceView({
             startDate={editor.trip.startDate}
           />
           <TimelinePanel
+            canDuplicateDay={
+              Boolean(editor.selectedDay?.itemIds.length) && editor.days.length > 1
+            }
             canEditItinerary={canEditItinerary}
+            currentUserId={editor.currentUserId}
             destinationName={editor.destinationName}
             itineraryItems={editor.itineraryItems}
+            memberLabels={memberLabels}
             onAdd={editor.openAddItemDialog}
+            onAddSuggestionComment={editor.handleAddPlaceSuggestionComment}
             onAddSuggestion={editor.openPlaceSuggestionDialog}
             onDelete={editor.openDeleteDialog}
             onDuplicate={editor.handleDuplicateItem}
             onEdit={editor.openEditItemDialog}
             onMove={editor.handleMoveItem}
             onMoveToDay={editor.openMoveDialog}
+            onOpenDuplicateDay={editor.openDuplicateDayDialog}
+            onOpenSearch={editor.openItinerarySearch}
             onPromoteSuggestion={editor.handlePromotePlaceSuggestion}
             onRemoveSuggestion={editor.handleRemovePlaceSuggestion}
             onSaveDayNote={editor.handleDayNoteSubmit}
             onSelectItem={editor.handleSelectItem}
             onSortByStartTime={editor.handleSortItemsByStartTime}
+            onToggleSuggestionVote={editor.handleTogglePlaceSuggestionVote}
             routePreview={routePreview}
             selectedItemCollaborators={selectedItemCollaborators}
             selectedDay={editor.selectedDay}
@@ -929,6 +992,35 @@ export function ItineraryEditorWorkspaceView({
           }}
           onSubmit={editor.handleFormSubmit}
           scheduledItems={editor.itineraryItems}
+        />
+      ) : null}
+
+      {editor.isDuplicateDayDialogOpen && editor.selectedDay ? (
+        <DuplicateItineraryDayDialog
+          days={editor.days}
+          key={editor.selectedDay.id}
+          onDuplicate={editor.handleDuplicateDayItems}
+          onOpenChange={(open) => {
+            if (!open) {
+              editor.closeDuplicateDayDialog();
+            }
+          }}
+          open
+          sourceDay={editor.selectedDay}
+          sourceItems={editor.itineraryItems}
+        />
+      ) : null}
+
+      {editor.isItinerarySearchOpen ? (
+        <ItinerarySearchDialog
+          itinerary={editor.itinerary}
+          onOpenChange={(open) => {
+            if (!open) {
+              editor.closeItinerarySearch();
+            }
+          }}
+          onSelectItem={editor.handleFindItem}
+          open
         />
       ) : null}
 

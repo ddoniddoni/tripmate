@@ -35,6 +35,7 @@ import {
   createEmptyTripExpenseSettlementState,
   type TripExpenseSettlementState,
 } from "@/entities/expense/model/trip-expense-settlement-state";
+import { getTripMemberLabels } from "@/entities/trip/lib/get-trip-member-labels";
 import type { TripMember } from "@/entities/trip/model/trip-membership";
 import type { Trip } from "@/entities/trip/model/trip";
 
@@ -212,6 +213,7 @@ function LiveblocksItineraryEditorContent({
 
     return day ? [day] : [];
   });
+  const memberLabels = getTripMemberLabels(members, currentUserId);
 
   return (
     <>
@@ -233,6 +235,7 @@ function LiveblocksItineraryEditorContent({
         <ItineraryEditorWorkspaceView
           canEditItinerary={canEditItinerary}
           editor={editor}
+          memberLabels={memberLabels}
           selectedItemCollaborators={selectedItemCollaborators}
         />
       ) : null}

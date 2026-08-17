@@ -2,11 +2,13 @@
 
 import { type DragEndEvent } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   addPlaceSuggestion,
+  addPlaceSuggestionComment,
   addItineraryItem,
+  duplicateItineraryDayItems,
   duplicateItineraryItem,
   moveItineraryItem,
   promotePlaceSuggestion,
@@ -14,6 +16,7 @@ import {
   removeItineraryItem,
   reorderItineraryItem,
   sortItineraryItemsByStartTime,
+  togglePlaceSuggestionVote,
   updateTripDayNote,
   updateItineraryItem,
   type ItineraryMutationResult,
@@ -78,6 +81,9 @@ export function useItineraryEditorController({
   const [moveItemId, setMoveItemId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<MobileView>("itinerary");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const scrollTargetItemIdRef = useRef<string | null>(null);
+  const [isDuplicateDayDialogOpen, setIsDuplicateDayDialogOpen] = useState(false);
+  const [isItinerarySearchOpen, setIsItinerarySearchOpen] = useState(false);
   const [isPlaceSuggestionDialogOpen, setIsPlaceSuggestionDialogOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState(initialStatusMessage);
 
@@ -95,6 +101,23 @@ export function useItineraryEditorController({
   const deletingItem = deleteItemId ? itinerary.items[deleteItemId] : undefined;
   const movingItem = moveItemId ? itinerary.items[moveItemId] : undefined;
   const selectedDayIndex = selectedDay ? itinerary.dayOrder.indexOf(selectedDay.id) : -1;
+
+  useEffect(() => {
+    const scrollTargetItemId = scrollTargetItemIdRef.current;
+
+    if (!scrollTargetItemId) {
+      return;
+    }
+
+    const target = document.getElementById(getTimelineItemId(scrollTargetItemId));
+
+    if (!target) {
+      return;
+    }
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    scrollTargetItemIdRef.current = null;
+  }, [selectedDayId]);
 
   function setSelectedDayId(dayId: string) {
     if (controlledSelectedDayId === undefined) {
@@ -145,6 +168,36 @@ export function useItineraryEditorController({
       behavior: "smooth",
       block: "nearest",
     });
+  }
+
+  function handleFindItem(itemId: string) {
+    const item = itinerary.items[itemId];
+
+    if (!item) {
+      setStatusMessage("찾은 일정 아이템을 불러올 수 없습니다.");
+      return;
+    }
+
+    const dayIndex = itinerary.dayOrder.indexOf(item.dayId);
+
+    if (dayIndex < 0) {
+      setStatusMessage("찾은 일정의 날짜를 불러올 수 없습니다.");
+      return;
+    }
+
+    if (item.dayId === selectedDayId) {
+      document.getElementById(getTimelineItemId(item.id))?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    } else {
+      scrollTargetItemIdRef.current = item.id;
+      setSelectedDayId(item.dayId);
+    }
+
+    setSelectedItemId(item.id);
+    setMobileView("itinerary");
+    setStatusMessage(`${item.place.name}이 있는 ${dayIndex + 1}일차로 이동했습니다.`);
   }
 
   function handleFormSubmit(values: ItineraryItemFormValues) {
@@ -254,12 +307,14 @@ export function useItineraryEditorController({
         (current) =>
           addPlaceSuggestion(current, {
             suggestion: {
+              comments: {},
               createdAt: new Date().toISOString(),
               createdBy: currentUserId,
               dayId: selectedDay.id,
               id: suggestionId,
               note: note || undefined,
               place,
+              votes: {},
             },
           }),
         `${place.name}을 후보 장소로 제안했습니다.`,
@@ -318,6 +373,60 @@ export function useItineraryEditorController({
     );
   }
 
+  function handleTogglePlaceSuggestionVote(suggestionId: string) {
+    if (!ensureCanEditItinerary()) {
+      return;
+    }
+
+    const suggestion = itinerary.placeSuggestions[suggestionId];
+
+    if (!suggestion) {
+      setStatusMessage("투표할 장소 제안을 찾을 수 없습니다.");
+      return;
+    }
+
+    const hasVoted = Boolean(suggestion.votes[currentUserId]);
+
+    applyMutation(
+      (current) =>
+        togglePlaceSuggestionVote(current, {
+          suggestionId,
+          userId: currentUserId,
+          votedAt: new Date().toISOString(),
+        }),
+      hasVoted
+        ? `${suggestion.place.name} 후보에서 투표를 취소했습니다.`
+        : `${suggestion.place.name} 후보에 투표했습니다.`,
+    );
+  }
+
+  function handleAddPlaceSuggestionComment(suggestionId: string, body: string) {
+    if (!ensureCanEditItinerary()) {
+      return false;
+    }
+
+    const suggestion = itinerary.placeSuggestions[suggestionId];
+
+    if (!suggestion) {
+      setStatusMessage("의견을 남길 장소 제안을 찾을 수 없습니다.");
+      return false;
+    }
+
+    return applyMutation(
+      (current) =>
+        addPlaceSuggestionComment(current, {
+          comment: {
+            body,
+            createdAt: new Date().toISOString(),
+            createdBy: currentUserId,
+            id: crypto.randomUUID(),
+          },
+          suggestionId,
+        }),
+      `${suggestion.place.name} 후보에 의견을 남겼습니다.`,
+    );
+  }
+
   function handleDeleteConfirm() {
     if (!ensureCanEditItinerary()) {
       return;
@@ -369,6 +478,48 @@ export function useItineraryEditorController({
     ) {
       setSelectedItemId(duplicateItemId);
     }
+  }
+
+  function handleDuplicateDayItems(destinationDayId: string) {
+    if (!ensureCanEditItinerary()) {
+      return false;
+    }
+
+    if (!selectedDay || selectedDay.itemIds.length === 0) {
+      setStatusMessage("복사할 일정이 있는 날짜를 선택해 주세요.");
+      return false;
+    }
+
+    const destinationDayIndex = itinerary.dayOrder.indexOf(destinationDayId);
+
+    if (destinationDayIndex < 0) {
+      setStatusMessage("일정을 복사할 날짜를 찾을 수 없습니다.");
+      return false;
+    }
+
+    const newItemIds = selectedDay.itemIds.map(() => crypto.randomUUID());
+    const firstNewItemId = newItemIds[0];
+    const success = applyMutation(
+      (current) =>
+        duplicateItineraryDayItems(current, {
+          createdBy: currentUserId,
+          destinationDayId,
+          newItemIds,
+          sourceDayId: selectedDay.id,
+          updatedAt: new Date().toISOString(),
+        }),
+      `${destinationDayIndex + 1}일차에 일정 ${newItemIds.length}개를 복사했습니다.`,
+    );
+
+    if (!success || !firstNewItemId) {
+      return false;
+    }
+
+    scrollTargetItemIdRef.current = firstNewItemId;
+    setSelectedDayId(destinationDayId);
+    setSelectedItemId(firstNewItemId);
+    setMobileView("itinerary");
+    return true;
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -525,24 +676,31 @@ export function useItineraryEditorController({
 
   return {
     days,
+    currentUserId,
     deletingItem,
     destinationName,
     editingItem,
     handleDeleteConfirm,
     handleDayNoteSubmit,
     handleDragEnd,
+    handleDuplicateDayItems,
     handleDuplicateItem,
     handleFormSubmit,
+    handleFindItem,
     handleMoveItem,
     handleMoveToDay,
     handlePlaceSuggestionSubmit,
+    handleAddPlaceSuggestionComment,
     handlePromotePlaceSuggestion,
     handleRemovePlaceSuggestion,
+    handleTogglePlaceSuggestionVote,
     handleSelectDay,
     handleSelectItem,
     handleSortItemsByStartTime,
     itinerary,
     itineraryItems,
+    isDuplicateDayDialogOpen,
+    isItinerarySearchOpen,
     placeSuggestions,
     mobileView,
     movingItem,
@@ -556,6 +714,18 @@ export function useItineraryEditorController({
         setDeleteItemId(itemId);
       }
     },
+    openDuplicateDayDialog: () => {
+      if (!ensureCanEditItinerary()) {
+        return;
+      }
+
+      if (!selectedDay || selectedDay.itemIds.length === 0) {
+        setStatusMessage("복사할 일정이 있는 날짜를 선택해 주세요.");
+        return;
+      }
+
+      setIsDuplicateDayDialogOpen(true);
+    },
     openEditItemDialog: (itemId: string) => {
       if (ensureCanEditItinerary()) {
         setDialogState({ type: "edit", itemId });
@@ -566,6 +736,7 @@ export function useItineraryEditorController({
         setMoveItemId(itemId);
       }
     },
+    openItinerarySearch: () => setIsItinerarySearchOpen(true),
     openPlaceSuggestionDialog: () => {
       if (ensureCanEditItinerary()) {
         setIsPlaceSuggestionDialogOpen(true);
@@ -578,8 +749,10 @@ export function useItineraryEditorController({
     statusMessage,
     trip,
     closeDeleteDialog: () => setDeleteItemId(null),
+    closeDuplicateDayDialog: () => setIsDuplicateDayDialogOpen(false),
     closeItemDialog: () => setDialogState({ type: "closed" }),
     closeMoveDialog: () => setMoveItemId(null),
+    closeItinerarySearch: () => setIsItinerarySearchOpen(false),
     closePlaceSuggestionDialog: () => setIsPlaceSuggestionDialogOpen(false),
     isItemDialogOpen: dialogState.type !== "closed",
     isPlaceSuggestionDialogOpen,

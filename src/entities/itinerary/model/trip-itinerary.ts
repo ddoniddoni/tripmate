@@ -33,6 +33,17 @@ export const itineraryItemSchema = z.object({
   updatedAt: z.iso.datetime({ offset: true }),
 });
 
+export const placeSuggestionCommentSchema = z.object({
+  id: stableIdSchema,
+  body: z
+    .string("의견을 입력해 주세요.")
+    .trim()
+    .min(1, "의견을 입력해 주세요.")
+    .max(300, "의견은 300자 이내로 입력해 주세요."),
+  createdAt: z.iso.datetime({ offset: true }),
+  createdBy: stableIdSchema,
+});
+
 export const placeSuggestionSchema = z.object({
   id: stableIdSchema,
   dayId: stableIdSchema,
@@ -40,6 +51,8 @@ export const placeSuggestionSchema = z.object({
   note: z.string().trim().max(500, "장소 제안 메모는 500자 이내로 입력해 주세요.").optional(),
   createdAt: z.iso.datetime({ offset: true }),
   createdBy: stableIdSchema,
+  votes: z.record(stableIdSchema, z.iso.datetime({ offset: true })).default({}),
+  comments: z.record(stableIdSchema, placeSuggestionCommentSchema).default({}),
 });
 
 export const itineraryDocumentSchema = z.object({
@@ -196,11 +209,22 @@ export const tripItinerarySchema = z
           path: [...suggestionPath, "dayId"],
         });
       }
+
+      Object.entries(suggestion.comments).forEach(([commentKey, comment]) => {
+        if (comment.id !== commentKey) {
+          context.addIssue({
+            code: "custom",
+            message: `장소 제안 의견 키 '${commentKey}'와 ID '${comment.id}'가 일치하지 않습니다.`,
+            path: [...suggestionPath, "comments", commentKey, "id"],
+          });
+        }
+      });
     });
   });
 
 export type TripDay = z.infer<typeof tripDaySchema>;
 export type ItineraryItem = z.infer<typeof itineraryItemSchema>;
+export type PlaceSuggestionComment = z.infer<typeof placeSuggestionCommentSchema>;
 export type PlaceSuggestion = z.infer<typeof placeSuggestionSchema>;
 export type ItineraryDocument = z.infer<typeof itineraryDocumentSchema>;
 export type TripItinerary = z.infer<typeof tripItinerarySchema>;

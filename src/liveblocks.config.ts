@@ -6,9 +6,9 @@ import type { TripExpenseSettlementTransferCompletion } from "@/entities/expense
 import type { PreparationChecklistItem } from "@/entities/preparation-checklist/model/preparation-checklist";
 import type {
   ItineraryItem,
-  PlaceSuggestion,
   TripDay,
 } from "@/entities/itinerary/model/trip-itinerary";
+import type { LivePlaceSuggestion } from "@/features/collaboration/model/liveblocks-itinerary";
 import type { TripMemberRole } from "@/entities/trip/model/trip-membership";
 
 type LiveTripDay = Omit<TripDay, "itemIds"> & {
@@ -29,7 +29,7 @@ declare global {
       expenseSettlementCompletions: LiveMap<string, LiveObject<TripExpenseSettlementTransferCompletion>>;
       expenseSettlementRevision: number;
       items: LiveMap<string, LiveObject<ItineraryItem>>;
-      placeSuggestions: LiveMap<string, LiveObject<PlaceSuggestion>>;
+      placeSuggestions: LiveMap<string, LiveObject<LivePlaceSuggestion>>;
     };
     UserMeta: {
       id: string;

@@ -12,6 +12,7 @@ import type {
   ItineraryDocument,
   ItineraryItem,
   PlaceSuggestion,
+  PlaceSuggestionComment,
   TripDay,
   TripItinerary,
 } from "@/entities/itinerary/model/trip-itinerary";
@@ -23,6 +24,11 @@ export type LiveTripDay = Omit<TripDay, "itemIds"> & {
   itemIds: LiveList<string>;
 };
 
+export type LivePlaceSuggestion = Omit<PlaceSuggestion, "comments" | "votes"> & {
+  comments: LiveMap<string, LiveObject<PlaceSuggestionComment>>;
+  votes: LiveMap<string, string>;
+};
+
 export type TripItineraryStorage = {
   checklistItems: LiveMap<string, LiveObject<PreparationChecklistItem>>;
   dayOrder: LiveList<string>;
@@ -31,13 +37,25 @@ export type TripItineraryStorage = {
   expenseSettlementCompletions: LiveMap<string, LiveObject<TripExpenseSettlementTransferCompletion>>;
   expenseSettlementRevision: number;
   items: LiveMap<string, LiveObject<ItineraryItem>>;
-  placeSuggestions: LiveMap<string, LiveObject<PlaceSuggestion>>;
+  placeSuggestions: LiveMap<string, LiveObject<LivePlaceSuggestion>>;
 };
 
 function createLiveTripDay(day: TripDay) {
   return new LiveObject<LiveTripDay>({
     ...day,
     itemIds: new LiveList(day.itemIds),
+  });
+}
+
+function createLivePlaceSuggestion(suggestion: PlaceSuggestion) {
+  const { comments, votes, ...suggestionFields } = suggestion;
+
+  return new LiveObject<LivePlaceSuggestion>({
+    ...suggestionFields,
+    comments: new LiveMap(
+      Object.values(comments).map((comment) => [comment.id, new LiveObject(comment)]),
+    ),
+    votes: new LiveMap(Object.entries(votes)),
   });
 }
 
@@ -59,7 +77,7 @@ export function createTripItineraryStorage(
     placeSuggestions: new LiveMap(
       Object.values(itinerary.placeSuggestions).map((suggestion) => [
         suggestion.id,
-        new LiveObject(suggestion),
+        createLivePlaceSuggestion(suggestion),
       ]),
     ),
   };
@@ -240,14 +258,14 @@ function synchronizeItems(
 
 function getOrCreatePlaceSuggestions(
   storage: LiveObject<TripItineraryStorage>,
-): LiveMap<string, LiveObject<PlaceSuggestion>> {
+): LiveMap<string, LiveObject<LivePlaceSuggestion>> {
   const placeSuggestions = storage.get("placeSuggestions");
 
   if (placeSuggestions) {
     return placeSuggestions;
   }
 
-  const nextPlaceSuggestions = new LiveMap<string, LiveObject<PlaceSuggestion>>();
+  const nextPlaceSuggestions = new LiveMap<string, LiveObject<LivePlaceSuggestion>>();
   storage.set("placeSuggestions", nextPlaceSuggestions);
   return nextPlaceSuggestions;
 }
@@ -255,8 +273,8 @@ function getOrCreatePlaceSuggestions(
 function getPlaceSuggestionPatch(
   currentSuggestion: PlaceSuggestion,
   nextSuggestion: PlaceSuggestion,
-): Partial<PlaceSuggestion> {
-  const patch: Partial<PlaceSuggestion> = {};
+): Partial<Omit<PlaceSuggestion, "comments" | "votes">> {
+  const patch: Partial<Omit<PlaceSuggestion, "comments" | "votes">> = {};
 
   if (currentSuggestion.dayId !== nextSuggestion.dayId) {
     patch.dayId = nextSuggestion.dayId;
@@ -281,8 +299,79 @@ function getPlaceSuggestionPatch(
   return patch;
 }
 
+function getOrCreatePlaceSuggestionVotes(
+  liveSuggestion: LiveObject<LivePlaceSuggestion>,
+): LiveMap<string, string> {
+  const votes = liveSuggestion.get("votes");
+
+  if (votes) {
+    return votes;
+  }
+
+  const nextVotes = new LiveMap<string, string>();
+  liveSuggestion.set("votes", nextVotes);
+  return nextVotes;
+}
+
+function getOrCreatePlaceSuggestionComments(
+  liveSuggestion: LiveObject<LivePlaceSuggestion>,
+): LiveMap<string, LiveObject<PlaceSuggestionComment>> {
+  const comments = liveSuggestion.get("comments");
+
+  if (comments) {
+    return comments;
+  }
+
+  const nextComments = new LiveMap<string, LiveObject<PlaceSuggestionComment>>();
+  liveSuggestion.set("comments", nextComments);
+  return nextComments;
+}
+
+function synchronizePlaceSuggestionVotes(
+  liveVotes: LiveMap<string, string>,
+  currentVotes: PlaceSuggestion["votes"],
+  nextVotes: PlaceSuggestion["votes"],
+) {
+  for (const userId of Object.keys(currentVotes)) {
+    if (!nextVotes[userId]) {
+      liveVotes.delete(userId);
+    }
+  }
+
+  for (const [userId, votedAt] of Object.entries(nextVotes)) {
+    if (currentVotes[userId] !== votedAt) {
+      liveVotes.set(userId, votedAt);
+    }
+  }
+}
+
+function synchronizePlaceSuggestionComments(
+  liveComments: LiveMap<string, LiveObject<PlaceSuggestionComment>>,
+  currentComments: PlaceSuggestion["comments"],
+  nextComments: PlaceSuggestion["comments"],
+) {
+  for (const commentId of Object.keys(currentComments)) {
+    if (!nextComments[commentId]) {
+      liveComments.delete(commentId);
+    }
+  }
+
+  for (const [commentId, nextComment] of Object.entries(nextComments)) {
+    const currentComment = currentComments[commentId];
+
+    if (!currentComment) {
+      liveComments.set(commentId, new LiveObject(nextComment));
+      continue;
+    }
+
+    if (JSON.stringify(currentComment) !== JSON.stringify(nextComment)) {
+      liveComments.get(commentId)?.update(nextComment);
+    }
+  }
+}
+
 function synchronizePlaceSuggestions(
-  livePlaceSuggestions: LiveMap<string, LiveObject<PlaceSuggestion>>,
+  livePlaceSuggestions: LiveMap<string, LiveObject<LivePlaceSuggestion>>,
   currentSuggestions: ItineraryDocument["placeSuggestions"],
   nextSuggestions: ItineraryDocument["placeSuggestions"],
 ) {
@@ -296,14 +385,14 @@ function synchronizePlaceSuggestions(
     const liveSuggestion = livePlaceSuggestions.get(nextSuggestion.id);
 
     if (!liveSuggestion) {
-      livePlaceSuggestions.set(nextSuggestion.id, new LiveObject(nextSuggestion));
+      livePlaceSuggestions.set(nextSuggestion.id, createLivePlaceSuggestion(nextSuggestion));
       return;
     }
 
     const currentSuggestion = currentSuggestions[nextSuggestion.id];
 
     if (!currentSuggestion) {
-      liveSuggestion.update(nextSuggestion);
+      livePlaceSuggestions.set(nextSuggestion.id, createLivePlaceSuggestion(nextSuggestion));
       return;
     }
 
@@ -312,6 +401,17 @@ function synchronizePlaceSuggestions(
     if (Object.keys(patch).length > 0) {
       liveSuggestion.update(patch);
     }
+
+    synchronizePlaceSuggestionVotes(
+      getOrCreatePlaceSuggestionVotes(liveSuggestion),
+      currentSuggestion.votes,
+      nextSuggestion.votes,
+    );
+    synchronizePlaceSuggestionComments(
+      getOrCreatePlaceSuggestionComments(liveSuggestion),
+      currentSuggestion.comments,
+      nextSuggestion.comments,
+    );
   });
 }
 

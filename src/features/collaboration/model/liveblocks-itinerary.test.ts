@@ -3,9 +3,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   addPlaceSuggestion,
+  addPlaceSuggestionComment,
+  duplicateItineraryDayItems,
   duplicateItineraryItem,
   moveItineraryItem,
   promotePlaceSuggestion,
+  togglePlaceSuggestionVote,
   updateTripDayNote,
   updateItineraryItem,
 } from "@/entities/itinerary/model/mutations";
@@ -39,11 +42,13 @@ describe("Liveblocks itinerary storage", () => {
     const result = applyItineraryMutationToStorage(storage, jejuTrip.trip, (current) =>
       addPlaceSuggestion(current, {
         suggestion: {
+          comments: {},
           createdAt: "2026-01-20T10:00:00.000Z",
           createdBy: "user-minji",
           dayId: "jeju-day-1",
           id: "legacy-room-candidate",
           place: jejuTrip.itinerary.items["hamdeok-beach"].place,
+          votes: {},
         },
       }),
     );
@@ -109,11 +114,13 @@ describe("Liveblocks itinerary storage", () => {
 
       return addPlaceSuggestion(withMemo.data, {
         suggestion: {
+          comments: {},
           createdAt: "2026-01-20T10:00:00.000Z",
           createdBy: "user-minji",
           dayId: "jeju-day-2",
           id: "osulloc-candidate",
           place: jejuTrip.itinerary.items["bijarim-forest"].place,
+          votes: {},
         },
       });
     });
@@ -136,6 +143,54 @@ describe("Liveblocks itinerary storage", () => {
     expect(promoted.success).toBe(true);
     expect(promotedSnapshot?.itinerary.placeSuggestions["osulloc-candidate"]).toBeUndefined();
     expect(promotedSnapshot?.itinerary.items["osulloc-scheduled"]?.dayId).toBe("jeju-day-2");
+  });
+
+  it("persists candidate votes and comments in nested collaborative maps", () => {
+    const storage = createStorageRoot();
+    const suggestionId = "collaborative-candidate";
+
+    applyItineraryMutationToStorage(storage, jejuTrip.trip, (current) =>
+      addPlaceSuggestion(current, {
+        suggestion: {
+          comments: {},
+          createdAt: "2026-01-20T10:00:00.000Z",
+          createdBy: "user-minji",
+          dayId: "jeju-day-1",
+          id: suggestionId,
+          place: jejuTrip.itinerary.items["hamdeok-beach"].place,
+          votes: {},
+        },
+      }),
+    );
+    applyItineraryMutationToStorage(storage, jejuTrip.trip, (current) =>
+      togglePlaceSuggestionVote(current, {
+        suggestionId,
+        userId: "user-jiwoo",
+        votedAt: "2026-01-20T10:05:00.000Z",
+      }),
+    );
+    const commented = applyItineraryMutationToStorage(storage, jejuTrip.trip, (current) =>
+      addPlaceSuggestionComment(current, {
+        comment: {
+          body: "산책 코스로 좋아 보여요.",
+          createdAt: "2026-01-20T10:06:00.000Z",
+          createdBy: "user-jiwoo",
+          id: "collaborative-comment",
+        },
+        suggestionId,
+      }),
+    );
+    const snapshot = getLiveblocksItinerarySnapshot(jejuTrip.trip, storage.toJSON());
+
+    expect(commented.success).toBe(true);
+    expect(snapshot?.itinerary.placeSuggestions[suggestionId]?.votes).toEqual({
+      "user-jiwoo": "2026-01-20T10:05:00.000Z",
+    });
+    expect(snapshot?.itinerary.placeSuggestions[suggestionId]?.comments).toMatchObject({
+      "collaborative-comment": {
+        body: "산책 코스로 좋아 보여요.",
+      },
+    });
   });
 
   it("persists a duplicated item immediately after its source", () => {
@@ -162,6 +217,33 @@ describe("Liveblocks itinerary storage", () => {
       createdBy: "user-minji",
       id: "woojin-breakfast-copy",
     });
+  });
+
+  it("persists a complete day copy as one collaborative document update", () => {
+    const storage = createStorageRoot();
+    const newItemIds = ["day-copy-1", "day-copy-2", "day-copy-3"];
+
+    const result = applyItineraryMutationToStorage(storage, jejuTrip.trip, (current) =>
+      duplicateItineraryDayItems(current, {
+        createdBy: "user-minji",
+        destinationDayId: "jeju-day-2",
+        newItemIds,
+        sourceDayId: "jeju-day-1",
+        updatedAt: "2026-01-20T12:00:00.000Z",
+      }),
+    );
+    const snapshot = getLiveblocksItinerarySnapshot(jejuTrip.trip, storage.toJSON());
+
+    expect(result.success).toBe(true);
+    expect(snapshot?.itinerary.days["jeju-day-2"]?.itemIds).toEqual(newItemIds);
+    expect(snapshot?.itinerary.items["day-copy-1"]).toMatchObject({
+      createdBy: "user-minji",
+      dayId: "jeju-day-2",
+      place: jejuTrip.itinerary.items["woojin-breakfast"].place,
+    });
+    expect(snapshot?.itinerary.days["jeju-day-1"]?.itemIds).toEqual(
+      jejuTrip.itinerary.days["jeju-day-1"].itemIds,
+    );
   });
 
   it("derives the active trip date range from shared itinerary days", () => {

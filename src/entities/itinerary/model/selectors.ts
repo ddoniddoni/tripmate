@@ -32,5 +32,11 @@ export function selectPlaceSuggestionsForDay(
   document: ItineraryDocument,
   dayId: string,
 ): PlaceSuggestion[] {
-  return Object.values(document.placeSuggestions).filter((suggestion) => suggestion.dayId === dayId);
+  return Object.values(document.placeSuggestions)
+    .filter((suggestion) => suggestion.dayId === dayId)
+    .toSorted((left, right) => {
+      const voteDifference = Object.keys(right.votes).length - Object.keys(left.votes).length;
+
+      return voteDifference || left.createdAt.localeCompare(right.createdAt);
+    });
 }

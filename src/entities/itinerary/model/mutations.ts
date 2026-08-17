@@ -1,6 +1,7 @@
 import type {
   ItineraryItem,
   PlaceSuggestion,
+  PlaceSuggestionComment,
   TripDay,
   TripItinerary,
 } from "@/entities/itinerary/model/trip-itinerary";
@@ -9,13 +10,18 @@ import { calendarDateToUtcDate } from "@/shared/lib/calendar-date";
 
 export type ItineraryMutationErrorCode =
   | "day-not-found"
+  | "day-has-no-items"
   | "item-already-exists"
   | "item-not-found"
   | "item-not-in-day"
   | "invalid-position"
   | "invalid-document"
   | "place-suggestion-already-exists"
+  | "place-suggestion-comment-already-exists"
+  | "place-suggestion-comment-limit-reached"
   | "place-suggestion-not-found"
+  | "same-day-copy"
+  | "source-item-count-changed"
   | "scheduled-day-outside-range";
 
 export type ItineraryMutationResult =
@@ -51,6 +57,14 @@ type DuplicateItineraryItemInput = {
   updatedAt: string;
 };
 
+type DuplicateItineraryDayItemsInput = {
+  createdBy: string;
+  destinationDayId: string;
+  newItemIds: readonly string[];
+  sourceDayId: string;
+  updatedAt: string;
+};
+
 type MoveItineraryItemInput = {
   destinationDayId: string;
   itemId: string;
@@ -77,6 +91,17 @@ type PromotePlaceSuggestionInput = {
   newItemId: string;
   suggestionId: string;
   updatedAt: string;
+};
+
+type TogglePlaceSuggestionVoteInput = {
+  suggestionId: string;
+  userId: string;
+  votedAt: string;
+};
+
+type AddPlaceSuggestionCommentInput = {
+  comment: PlaceSuggestionComment;
+  suggestionId: string;
 };
 
 function mutationError(
@@ -236,6 +261,81 @@ export function addPlaceSuggestion(
   });
 }
 
+export function togglePlaceSuggestionVote(
+  current: TripItinerary,
+  { suggestionId, userId, votedAt }: TogglePlaceSuggestionVoteInput,
+): ItineraryMutationResult {
+  const suggestion = current.itinerary.placeSuggestions[suggestionId];
+
+  if (!suggestion) {
+    return mutationError("place-suggestion-not-found", "투표할 장소 제안을 찾을 수 없습니다.");
+  }
+
+  const votes = { ...suggestion.votes };
+
+  if (votes[userId]) {
+    delete votes[userId];
+  } else {
+    votes[userId] = votedAt;
+  }
+
+  return validateMutation({
+    trip: current.trip,
+    itinerary: {
+      ...current.itinerary,
+      placeSuggestions: {
+        ...current.itinerary.placeSuggestions,
+        [suggestionId]: { ...suggestion, votes },
+      },
+    },
+  });
+}
+
+export function addPlaceSuggestionComment(
+  current: TripItinerary,
+  { comment, suggestionId }: AddPlaceSuggestionCommentInput,
+): ItineraryMutationResult {
+  const suggestion = current.itinerary.placeSuggestions[suggestionId];
+
+  if (!suggestion) {
+    return mutationError(
+      "place-suggestion-not-found",
+      "의견을 남길 장소 제안을 찾을 수 없습니다.",
+    );
+  }
+
+  if (suggestion.comments[comment.id]) {
+    return mutationError(
+      "place-suggestion-comment-already-exists",
+      "같은 ID의 장소 제안 의견이 이미 있습니다.",
+    );
+  }
+
+  if (Object.keys(suggestion.comments).length >= 100) {
+    return mutationError(
+      "place-suggestion-comment-limit-reached",
+      "한 후보 장소에는 의견을 100개까지 남길 수 있습니다.",
+    );
+  }
+
+  return validateMutation({
+    trip: current.trip,
+    itinerary: {
+      ...current.itinerary,
+      placeSuggestions: {
+        ...current.itinerary.placeSuggestions,
+        [suggestionId]: {
+          ...suggestion,
+          comments: {
+            ...suggestion.comments,
+            [comment.id]: comment,
+          },
+        },
+      },
+    },
+  });
+}
+
 export function removePlaceSuggestion(
   current: TripItinerary,
   suggestionId: string,
@@ -363,6 +463,83 @@ export function duplicateItineraryItem(
       updatedAt,
     },
     position: sourceIndex + 1,
+  });
+}
+
+export function duplicateItineraryDayItems(
+  current: TripItinerary,
+  {
+    createdBy,
+    destinationDayId,
+    newItemIds,
+    sourceDayId,
+    updatedAt,
+  }: DuplicateItineraryDayItemsInput,
+): ItineraryMutationResult {
+  const sourceDay = current.itinerary.days[sourceDayId];
+  const destinationDay = current.itinerary.days[destinationDayId];
+
+  if (!sourceDay || !destinationDay) {
+    return mutationError("day-not-found", "복사할 날짜를 찾을 수 없습니다.");
+  }
+
+  if (sourceDay.id === destinationDay.id) {
+    return mutationError("same-day-copy", "같은 날짜로는 하루 일정을 복사할 수 없습니다.");
+  }
+
+  if (sourceDay.itemIds.length === 0) {
+    return mutationError("day-has-no-items", "복사할 일정이 없는 날짜입니다.");
+  }
+
+  if (sourceDay.itemIds.length !== newItemIds.length) {
+    return mutationError(
+      "source-item-count-changed",
+      "원본 일정이 변경되었습니다. 복사 창을 닫고 다시 시도해 주세요.",
+    );
+  }
+
+  const uniqueNewItemIds = new Set(newItemIds);
+
+  if (
+    uniqueNewItemIds.size !== newItemIds.length ||
+    newItemIds.some((itemId) => Boolean(current.itinerary.items[itemId]))
+  ) {
+    return mutationError("item-already-exists", "복사할 일정의 새 ID가 이미 사용 중입니다.");
+  }
+
+  const items = { ...current.itinerary.items };
+
+  for (const [sourceIndex, sourceItemId] of sourceDay.itemIds.entries()) {
+    const sourceItem = current.itinerary.items[sourceItemId];
+    const newItemId = newItemIds[sourceIndex];
+
+    if (!sourceItem || !newItemId) {
+      return mutationError("item-not-found", "복사할 일정 아이템을 찾을 수 없습니다.");
+    }
+
+    items[newItemId] = {
+      ...sourceItem,
+      createdBy,
+      dayId: destinationDay.id,
+      id: newItemId,
+      place: { ...sourceItem.place },
+      updatedAt,
+    };
+  }
+
+  return validateMutation({
+    trip: current.trip,
+    itinerary: {
+      ...current.itinerary,
+      days: {
+        ...current.itinerary.days,
+        [destinationDay.id]: {
+          ...destinationDay,
+          itemIds: [...destinationDay.itemIds, ...newItemIds],
+        },
+      },
+      items,
+    },
   });
 }
 

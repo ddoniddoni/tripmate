@@ -70,11 +70,13 @@ describe("tripItinerarySchema", () => {
   it("rejects a place suggestion that does not belong to an itinerary day", () => {
     const input = structuredClone(jejuTrip);
     input.itinerary.placeSuggestions["orphaned-candidate"] = {
+      comments: {},
       createdAt: "2026-01-20T10:00:00.000Z",
       createdBy: "user-jiwoo",
       dayId: "missing-day",
       id: "orphaned-candidate",
       place: input.itinerary.items["woojin-breakfast"].place,
+      votes: {},
     };
 
     expectInvalid(input, "존재하지 않는 날짜");
