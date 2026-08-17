@@ -13,20 +13,32 @@ type LoginFormProps = {
   nextPath: string;
 };
 
+function MailIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20">
+      <rect height="13" rx="2.25" width="16" x="2" y="3.5" />
+      <path d="m3.25 5 6.75 5 6.75-5" />
+    </svg>
+  );
+}
+
 function EmailField({ disabled }: { disabled: boolean }) {
   return (
     <>
       <label htmlFor="login-email">이메일</label>
-      <input
-        autoComplete="email"
-        disabled={disabled}
-        id="login-email"
-        inputMode="email"
-        name="email"
-        placeholder="you@example.com"
-        required
-        type="email"
-      />
+      <div className="login-email-field">
+        <MailIcon />
+        <input
+          autoComplete="email"
+          disabled={disabled}
+          id="login-email"
+          inputMode="email"
+          name="email"
+          placeholder="이메일 주소를 입력하세요"
+          required
+          type="email"
+        />
+      </div>
     </>
   );
 }

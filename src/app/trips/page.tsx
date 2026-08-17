@@ -17,6 +17,32 @@ type TripCardProps = {
   trip: Trip;
 };
 
+function LocationIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20">
+      <path d="M16 8.25c0 4.2-6 8.25-6 8.25S4 12.45 4 8.25a6 6 0 1 1 12 0Z" />
+      <circle cx="10" cy="8.25" r="2" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20">
+      <rect height="13" rx="2.25" width="15" x="2.5" y="4.25" />
+      <path d="M6.25 2.5v3.25M13.75 2.5v3.25M2.5 8h15" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20">
+      <path d="M4 10h11M11 6l4 4-4 4" />
+    </svg>
+  );
+}
+
 function TripCard({ trip }: TripCardProps) {
   const startDate = calendarDateToUtcDate(trip.startDate);
 
@@ -33,19 +59,31 @@ function TripCard({ trip }: TripCardProps) {
       </div>
       <div className="trip-card-body">
         <div className="trip-card-heading">
-          <div>
-            <span className="trip-status">계획 중</span>
-            <h2>{trip.title}</h2>
-          </div>
-          <span className="arrow-link" aria-hidden="true">
-            ↗
-          </span>
+          <span className="trip-status">계획 중</span>
+          <span className="trip-membership-label">내 여행</span>
         </div>
-        <p>
-          {trip.destination.replace(" · ", " ")} · {formatTripDateRange(trip.startDate, trip.endDate)}
-        </p>
+        <h2>{trip.title}</h2>
+        <dl className="trip-card-meta">
+          <div>
+            <dt>
+              <LocationIcon />
+              <span className="sr-only">여행지</span>
+            </dt>
+            <dd>{trip.destination}</dd>
+          </div>
+          <div>
+            <dt>
+              <CalendarIcon />
+              <span className="sr-only">여행 기간</span>
+            </dt>
+            <dd>{formatTripDateRange(trip.startDate, trip.endDate)}</dd>
+          </div>
+        </dl>
         <div className="trip-card-footer">
-          <span>내 여행</span>
+          <span>여행 열기</span>
+          <span className="arrow-link" aria-hidden="true">
+            <ArrowRightIcon />
+          </span>
         </div>
       </div>
     </Link>
@@ -99,11 +137,14 @@ export default async function TripsPage() {
       </header>
 
       <section className="trips-content" aria-labelledby="trips-heading">
-        <div className="eyebrow">나의 여행</div>
         <div className="trips-title-row">
           <div>
-            <h1 id="trips-heading">다음 여행은 어디인가요?</h1>
-            <p>함께 계획하고, 같은 순간을 기대해 보세요.</p>
+            <span className="eyebrow">여행 보드</span>
+            <h1 id="trips-heading">나의 여행</h1>
+            <p>
+              <strong>다음 여행은 어디인가요?</strong>
+              <span>함께 계획하고, 같은 순간을 기대해 보세요.</span>
+            </p>
           </div>
           <span className="trip-count">{trips.length}개의 여행</span>
         </div>
