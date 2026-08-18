@@ -16,6 +16,7 @@ import type { TripMember } from "@/entities/trip/model/trip-membership";
 import type { Trip } from "@/entities/trip/model/trip";
 import { createTripBriefing } from "@/features/trip-briefing/model/create-trip-briefing";
 import { formatCalendarDate } from "@/shared/lib/calendar-date";
+import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
 
 type TripBriefingDialogProps = {
   currentUserId: string;
@@ -192,7 +193,7 @@ export function TripBriefingDialog({
               </Dialog.Description>
             </div>
             <Dialog.Close aria-label="여행 브리핑 닫기" className="dialog-close">
-              ×
+              <DialogCloseIcon />
             </Dialog.Close>
           </header>
 

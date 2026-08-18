@@ -16,6 +16,8 @@ import { createTripInvitation } from "@/features/trip-sharing/model/trip-invitat
 import { initialCreateTripInvitationActionState } from "@/features/trip-sharing/model/trip-invitation-action-state";
 import { PendingTripInvitations } from "@/features/trip-sharing/ui/pending-trip-invitations";
 import { TripMembers } from "@/features/trip-sharing/ui/trip-members";
+import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
+import { HeaderActionIcon } from "@/shared/ui/header-action-icon";
 
 type TripSharingDialogProps = {
   canManageMembers: boolean;
@@ -96,6 +98,7 @@ export function TripSharingDialog({
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger className="share-placeholder share-button" type="button">
+        <HeaderActionIcon name="share" />
         멤버 {memberCount}명{canManageMembers ? " · 초대" : ""}
       </Dialog.Trigger>
 
@@ -116,7 +119,7 @@ export function TripSharingDialog({
               </Dialog.Description>
             </div>
             <Dialog.Close className="dialog-close" aria-label="대화상자 닫기" disabled={isPending}>
-              ×
+              <DialogCloseIcon />
             </Dialog.Close>
           </div>
 

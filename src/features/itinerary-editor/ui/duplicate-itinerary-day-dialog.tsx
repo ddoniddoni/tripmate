@@ -8,6 +8,7 @@ import type {
   TripDay,
 } from "@/entities/itinerary/model/trip-itinerary";
 import { formatCalendarDate } from "@/shared/lib/calendar-date";
+import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
 
 type DuplicateItineraryDayDialogProps = {
   days: readonly TripDay[];
@@ -59,7 +60,7 @@ export function DuplicateItineraryDayDialog({
               </Dialog.Description>
             </div>
             <Dialog.Close aria-label="하루 일정 복사 닫기" className="dialog-close">
-              ×
+              <DialogCloseIcon />
             </Dialog.Close>
           </div>
 

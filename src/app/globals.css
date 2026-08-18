@@ -3131,10 +3131,8 @@ textarea {
 .day-planning-panel {
   margin: -8px 0 30px;
   padding: 17px;
-  background:
-    linear-gradient(135deg, rgb(232 241 236 / 88%), rgb(255 255 255 / 72%)),
-    var(--surface);
-  border: 1px solid rgb(38 112 82 / 18%);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 16px;
 }
 
@@ -3180,8 +3178,8 @@ textarea {
 .place-suggestion-card {
   min-width: 0;
   padding: 14px;
-  background: rgb(255 255 255 / 75%);
-  border: 1px solid rgb(221 228 220 / 92%);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
   border-radius: 12px;
 }
 
@@ -3202,7 +3200,7 @@ textarea {
 .day-memo-summary p,
 .day-memo-readonly {
   margin: 0;
-  color: #59655e;
+  color: var(--muted);
   font-size: 11px;
   line-height: 1.65;
   white-space: pre-wrap;
@@ -5622,99 +5620,18 @@ button.place-suggestion-vote:hover {
 .trip-overview-workspace {
   display: grid;
   min-height: calc(100vh - 133px);
-  grid-template-columns: 254px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   padding: 0;
   overflow: visible;
   background: var(--paper);
 }
 
-.trip-overview-days {
-  position: sticky;
-  top: 133px;
-  display: flex;
-  height: calc(100vh - 133px);
-  flex-direction: column;
-  align-self: start;
-  padding: 26px 18px;
-  background: #e8f7ed;
-  border-right: 1px solid #bfc9c1;
-}
-
-.trip-overview-days-heading {
-  display: grid;
-  gap: 5px;
-  padding: 0 9px 18px;
-}
-
-.trip-overview-days-heading span {
-  color: var(--green-dark);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
-.trip-overview-days-heading strong {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.trip-overview-days ol {
-  display: grid;
-  gap: 5px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.trip-overview-days button {
-  display: grid;
-  width: 100%;
-  min-height: 58px;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 10px;
-  align-items: center;
-  padding: 9px 11px;
-  color: var(--muted);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  cursor: pointer;
-  text-align: left;
-  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease,
-    transform 150ms ease;
-}
-
-.trip-overview-days button:hover {
-  color: var(--green-dark);
-  background: rgb(255 255 255 / 55%);
-}
-
-.trip-overview-days button:focus-visible,
 .trip-overview-next-card:focus-visible,
 .trip-overview-stat:focus-visible {
   outline: 3px solid rgb(38 112 82 / 30%);
   outline-offset: 2px;
 }
 
-.trip-overview-days .trip-overview-day-active {
-  color: #fff;
-  background: var(--green);
-  border-color: var(--green);
-  box-shadow: 0 5px 13px rgb(38 112 82 / 16%);
-}
-
-.trip-overview-day-icon {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  color: currentColor;
-  background: rgb(255 255 255 / 48%);
-  border-radius: 8px;
-}
-
-.trip-overview-day-icon svg,
 .trip-overview-destination-pill svg,
 .trip-overview-briefing-card p svg,
 .trip-overview-stat svg,
@@ -5726,30 +5643,6 @@ button.place-suggestion-vote:hover {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
-}
-
-.trip-overview-days button > span:last-child {
-  min-width: 0;
-}
-
-.trip-overview-days button strong,
-.trip-overview-days button small {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.trip-overview-days button strong {
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.trip-overview-days button small {
-  margin-top: 3px;
-  color: currentColor;
-  font-size: 9px;
-  opacity: 0.78;
 }
 
 .trip-overview-canvas {
@@ -6194,37 +6087,7 @@ button.place-suggestion-vote:hover {
 
 @media (max-width: 860px) {
   .trip-overview-workspace {
-    display: block;
     min-height: calc(100vh - 139px);
-  }
-
-  .trip-overview-days {
-    position: static;
-    display: block;
-    height: auto;
-    padding: 16px max(18px, env(safe-area-inset-right)) 16px
-      max(18px, env(safe-area-inset-left));
-    overflow-x: auto;
-    border-right: 0;
-    border-bottom: 1px solid #cddbd2;
-    scrollbar-width: none;
-  }
-
-  .trip-overview-days::-webkit-scrollbar {
-    display: none;
-  }
-
-  .trip-overview-days-heading {
-    display: none;
-  }
-
-  .trip-overview-days ol {
-    display: flex;
-    width: max-content;
-  }
-
-  .trip-overview-days li {
-    width: 154px;
   }
 
   .trip-overview-canvas {
@@ -7043,8 +6906,8 @@ button.place-suggestion-vote:hover {
   align-content: center;
   gap: 13px;
   padding: 40px 24px 110px;
-  color: #607168;
-  background: #f7f6f1;
+  color: var(--muted);
+  background: var(--paper);
   font-size: 13px;
   font-weight: 700;
 }
@@ -7053,8 +6916,8 @@ button.place-suggestion-vote:hover {
   width: 44px;
   height: 44px;
   content: "";
-  background: conic-gradient(from 45deg, transparent 0 24%, var(--green) 25% 100%);
-  border: 8px solid #e1eee5;
+  background: conic-gradient(from 45deg, transparent 0 24%, var(--primary) 25% 100%);
+  border: 8px solid var(--surface-subtle);
   border-radius: 50%;
   mask: radial-gradient(circle, transparent 42%, #000 44%);
   animation: tripmate-state-spin 900ms linear infinite;
@@ -7624,8 +7487,9 @@ button.place-suggestion-vote:hover {
   align-self: start;
   padding: 26px 18px 22px;
   overflow-y: auto;
-  background: #e8f7ed;
-  border-color: #bfc9c1;
+  background: var(--surface);
+  border-right: 0;
+  box-shadow: none;
 }
 
 .month-heading {
@@ -7708,13 +7572,7 @@ button.place-suggestion-vote:hover {
 }
 
 .timeline-panel::before {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 35px;
-  width: 2px;
-  content: "";
-  background: rgb(38 112 82 / 76%);
+  display: none;
 }
 
 .timeline-header {
@@ -7730,8 +7588,8 @@ button.place-suggestion-vote:hover {
   width: 12px;
   height: 12px;
   content: "";
-  background: var(--coral);
-  border: 3px solid var(--green);
+  background: var(--primary);
+  border: 3px solid var(--surface);
   border-radius: 50%;
   box-shadow: 0 0 0 5px var(--paper);
 }
@@ -7867,8 +7725,9 @@ button.place-suggestion-vote:hover {
   align-self: start;
   padding: 0;
   overflow: hidden;
-  background: #dfe8e2;
-  border-color: #bfc9c1;
+  background: var(--surface);
+  border-left: 0;
+  border-color: transparent;
 }
 
 .map-panel-header {
@@ -8019,7 +7878,7 @@ button.place-suggestion-vote:hover {
     padding: 13px max(16px, env(safe-area-inset-right)) 13px
       max(16px, env(safe-area-inset-left));
     overflow-x: auto;
-    background: #e8f7ed;
+    background: var(--surface);
   }
 
   .day-list > li {
@@ -9662,38 +9521,29 @@ button.place-suggestion-vote:hover {
 
 /* Itinerary days retain their route colour even when they are not selected. */
 
-.day-list > li:nth-child(3n + 1) .day-row:not(.day-row-active),
-.trip-overview-days li:nth-child(3n + 1) button:not(.trip-overview-day-active) {
+.day-list > li:nth-child(3n + 1) .day-row:not(.day-row-active) {
   color: var(--primary-active);
   background: var(--green-soft);
   border-color: #ffd1da;
 }
 
-.day-list > li:nth-child(3n + 2) .day-row:not(.day-row-active),
-.trip-overview-days li:nth-child(3n + 2) button:not(.trip-overview-day-active) {
+.day-list > li:nth-child(3n + 2) .day-row:not(.day-row-active) {
   color: #c52748;
   background: #fff5f7;
   border-color: #ffdce4;
 }
 
-.day-list > li:nth-child(3n) .day-row:not(.day-row-active),
-.trip-overview-days li:nth-child(3n) button:not(.trip-overview-day-active) {
+.day-list > li:nth-child(3n) .day-row:not(.day-row-active) {
   color: #a92341;
   background: #fff8f9;
   border-color: #f8dbe2;
 }
 
-.day-list > li .day-row:not(.day-row-active) :is(.day-weekday, strong, .day-label),
-.trip-overview-days button:not(.trip-overview-day-active) :is(
-  .trip-overview-day-icon,
-  strong,
-  small
-) {
+.day-list > li .day-row:not(.day-row-active) :is(.day-weekday, strong, .day-label) {
   color: currentColor;
 }
 
-.day-list > li .day-row:not(.day-row-active):hover,
-.trip-overview-days li button:not(.trip-overview-day-active):hover {
+.day-list > li .day-row:not(.day-row-active):hover {
   filter: saturate(1.1) brightness(0.98);
 }
 
@@ -10294,7 +10144,6 @@ html[data-theme="dark"] .invitation-card,
 html[data-theme="dark"] .trip-overview-briefing-card,
 html[data-theme="dark"] .trip-overview-progress-card,
 html[data-theme="dark"] .trip-overview-stat,
-html[data-theme="dark"] .trip-overview-days,
 html[data-theme="dark"] .preparation-item,
 html[data-theme="dark"] .expense-item,
 html[data-theme="dark"] .timeline-card,
@@ -10801,8 +10650,8 @@ html[data-theme="dark"] .google-map-state::before {
 }
 
 html[data-theme="dark"] .map-panel {
-  background-color: #17241d;
-  border-color: var(--line);
+  background-color: var(--surface-sunken);
+  border-color: transparent;
 }
 
 html[data-theme="dark"] .trip-workspace-tabs,
@@ -10839,40 +10688,30 @@ html[data-theme="dark"] .mobile-view-switch {
 
 /* Keep dark state accents last: legacy page styles above use literal colours. */
 
-html[data-theme="dark"] .day-list > li:nth-child(3n + 1) .day-row:not(.day-row-active),
-html[data-theme="dark"] .trip-overview-days li:nth-child(3n + 1) button:not(.trip-overview-day-active) {
+html[data-theme="dark"] .day-list > li:nth-child(3n + 1) .day-row:not(.day-row-active) {
   color: #ffd1da;
   background: #3d2029;
   border-color: #914055;
 }
 
-html[data-theme="dark"] .day-list > li:nth-child(3n + 2) .day-row:not(.day-row-active),
-html[data-theme="dark"] .trip-overview-days li:nth-child(3n + 2) button:not(.trip-overview-day-active) {
+html[data-theme="dark"] .day-list > li:nth-child(3n + 2) .day-row:not(.day-row-active) {
   color: #ffb3c2;
   background: #352127;
   border-color: #743746;
 }
 
-html[data-theme="dark"] .day-list > li:nth-child(3n) .day-row:not(.day-row-active),
-html[data-theme="dark"] .trip-overview-days li:nth-child(3n) button:not(.trip-overview-day-active) {
+html[data-theme="dark"] .day-list > li:nth-child(3n) .day-row:not(.day-row-active) {
   color: #ff9eb3;
   background: #302126;
   border-color: #633440;
 }
 
-html[data-theme="dark"] :is(
-  .day-list > li .day-row:not(.day-row-active),
-  .trip-overview-days button:not(.trip-overview-day-active)
-) :is(.day-weekday, strong, .day-label, .trip-overview-day-icon, small) {
-  color: currentColor;
-}
-
-html[data-theme="dark"] .trip-overview-days .trip-overview-day-active :is(
-  .trip-overview-day-icon,
+html[data-theme="dark"] .day-list > li .day-row:not(.day-row-active) :is(
+  .day-weekday,
   strong,
-  small
+  .day-label
 ) {
-  color: #ffffff;
+  color: currentColor;
 }
 
 html[data-theme="dark"] .trip-note {
@@ -11447,8 +11286,13 @@ html[data-theme="dark"] :is(.sign-out-button, .dialog-close, .sort-by-time-butto
 
 /* New trip dialog · neutral surfaces and compact close control from DESIGN.md */
 .new-trip-dialog-content .dialog-close {
+  display: grid;
+  flex: 0 0 32px;
   width: 32px;
   height: 32px;
+  padding: 0;
+  place-items: center;
+  line-height: 0;
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line);
@@ -11456,14 +11300,65 @@ html[data-theme="dark"] :is(.sign-out-button, .dialog-close, .sort-by-time-butto
 }
 
 .new-trip-dialog-content .dialog-close::before {
-  width: 12px;
-  height: 12px;
+  display: none;
+}
+
+.new-trip-dialog-content .dialog-close-icon {
+  display: block;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
 }
 
 .new-trip-dialog-content .dialog-close:hover:not(:disabled) {
   color: var(--ink);
   background: var(--surface-subtle);
   border-color: var(--ink);
+}
+
+.new-trip-dialog-content .dialog-actions :is(.primary-button, .secondary-button) {
+  border-radius: 10px;
+}
+
+.new-trip-dialog-content .secondary-button {
+  color: var(--danger-strong);
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+}
+
+.new-trip-dialog-content .secondary-button:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: #c13515;
+  border-color: #c13515;
+}
+
+.new-trip-dialog-content .secondary-button:active:not(:disabled) {
+  color: var(--on-primary);
+  background: #b32505;
+  border-color: #b32505;
+}
+
+/* Overrides the legacy dark-mode secondary-button palette for this modal. */
+html[data-theme="dark"] .new-trip-dialog-content .secondary-button {
+  color: var(--danger-strong);
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+}
+
+html[data-theme="dark"] .new-trip-dialog-content .secondary-button:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: #c13515;
+  border-color: #c13515;
+}
+
+html[data-theme="dark"] .new-trip-dialog-content .secondary-button:active:not(:disabled) {
+  color: var(--on-primary);
+  background: #b32505;
+  border-color: #b32505;
 }
 
 .new-trip-dialog-content .form-field label {
@@ -11532,4 +11427,623 @@ html[data-theme="dark"] .new-trip-dialog-content .new-trip-ai-option {
 .new-trip-dialog-content .form-field :is(input, select)[aria-invalid="true"] {
   border-color: var(--danger);
   box-shadow: 0 0 0 1px var(--danger);
+}
+
+/* AI route draft · reuse the consumer-travel palette from DESIGN.md. */
+.ai-itinerary-dialog .ai-itinerary-trip-ticket {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.ai-itinerary-dialog .ai-itinerary-trip-ticket .section-kicker {
+  color: #ffd1da;
+}
+
+.ai-itinerary-dialog :is(.ai-itinerary-plan-overview, .ai-itinerary-plan-days > li) {
+  background: var(--surface);
+  border-color: var(--line);
+  border-radius: 14px;
+}
+
+.ai-itinerary-dialog .ai-itinerary-plan-overview .section-kicker {
+  color: var(--primary-active);
+}
+
+.ai-itinerary-dialog .ai-itinerary-mock-badge {
+  color: var(--primary-active);
+  background: var(--green-soft);
+  border-color: var(--primary-disabled);
+}
+
+.ai-itinerary-dialog .ai-itinerary-plan-overview h3,
+.ai-itinerary-dialog .ai-itinerary-plan-days > li > header h4,
+.ai-itinerary-dialog .ai-itinerary-plan-stops strong {
+  color: var(--ink);
+}
+
+.ai-itinerary-dialog :is(.ai-itinerary-plan-overview p, .ai-itinerary-plan-stops p) {
+  color: var(--muted);
+}
+
+.ai-itinerary-dialog .ai-itinerary-plan-days > li > header {
+  background: var(--surface-subtle);
+  border-bottom-color: var(--line);
+}
+
+.ai-itinerary-dialog .ai-itinerary-plan-days > li > header > span {
+  color: var(--on-primary);
+  background: var(--primary);
+  border-radius: 8px;
+}
+
+.ai-itinerary-dialog .ai-itinerary-plan-days > li > header strong {
+  color: var(--muted);
+}
+
+.ai-itinerary-dialog .ai-itinerary-plan-stops li + li {
+  border-top-color: var(--line);
+}
+
+.ai-itinerary-dialog .ai-itinerary-plan-stops li > span {
+  color: var(--primary-active);
+  background: var(--green-soft);
+  border-radius: 6px;
+}
+
+.ai-itinerary-dialog .ai-itinerary-route-tip {
+  color: var(--body);
+  background: var(--surface-subtle);
+  border-top-color: var(--line);
+}
+
+.ai-itinerary-dialog .ai-itinerary-route-tip svg {
+  color: var(--primary);
+}
+
+.ai-itinerary-dialog .ai-itinerary-notice {
+  color: var(--body);
+  background: var(--surface-subtle);
+  border-color: var(--line);
+}
+
+.ai-itinerary-dialog .ai-itinerary-notice > span {
+  color: var(--on-primary);
+  background: var(--primary);
+}
+
+.ai-itinerary-dialog .ai-itinerary-notice strong {
+  color: var(--primary-active);
+}
+
+.ai-itinerary-dialog .ai-itinerary-error {
+  color: var(--danger-strong);
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+}
+
+.ai-itinerary-dialog .ai-itinerary-import-status {
+  color: var(--primary-active);
+  background: var(--green-soft);
+  border-color: var(--primary-disabled);
+}
+
+.ai-itinerary-dialog .ai-itinerary-actions :is(.primary-button, .secondary-button) {
+  border-radius: 10px;
+}
+
+.ai-itinerary-dialog .ai-itinerary-actions .secondary-button {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.ai-itinerary-dialog .ai-itinerary-actions .secondary-button:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-soft);
+  border-color: var(--line-strong);
+}
+
+.ai-itinerary-dialog .ai-itinerary-actions .ai-itinerary-regenerate-button {
+  color: var(--primary-active);
+  background: var(--green-soft);
+  border-color: var(--primary-disabled);
+}
+
+.ai-itinerary-dialog .ai-itinerary-actions .ai-itinerary-regenerate-button:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.ai-itinerary-dialog .ai-itinerary-actions .ai-itinerary-regenerate-button:active:not(:disabled) {
+  color: var(--on-primary);
+  background: var(--primary-active);
+  border-color: var(--primary-active);
+}
+
+/* Overview stat icons need brighter semantic contrast on the dark card surface. */
+html[data-theme="dark"] .trip-overview-stat-icon,
+html[data-theme="dark"] .trip-overview-stat-arrow {
+  color: #ff9bad !important;
+}
+
+html[data-theme="dark"] .trip-overview-stat-icon {
+  background: #4a2630;
+}
+
+html[data-theme="dark"] .trip-overview-stat:nth-child(2) .trip-overview-stat-icon,
+html[data-theme="dark"] .trip-overview-stat:nth-child(2) .trip-overview-stat-arrow {
+  color: var(--danger-strong) !important;
+}
+
+html[data-theme="dark"] .trip-overview-stat:nth-child(2) .trip-overview-stat-icon {
+  background: #552d28;
+}
+
+html[data-theme="dark"] .trip-overview-stat:nth-child(3) .trip-overview-stat-icon,
+html[data-theme="dark"] .trip-overview-stat:nth-child(3) .trip-overview-stat-arrow {
+  color: #9bc7ff !important;
+}
+
+html[data-theme="dark"] .trip-overview-stat:nth-child(3) .trip-overview-stat-icon {
+  background: #293f60;
+}
+
+/* Dialog fields stay neutral; pink is reserved for keyboard focus and selection. */
+.dialog-content .form-field :is(input, textarea, select) {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.dialog-content .form-field :is(input, textarea, select)::placeholder,
+.dialog-content .itinerary-search-field input::placeholder {
+  color: var(--muted-soft);
+}
+
+.dialog-content .form-field :is(input, textarea, select):focus {
+  background: var(--surface);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.dialog-content.new-trip-dialog-content .form-field :is(input, select):focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.dialog-content :is(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--primary);
+}
+
+.dialog-content .time-picker {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.dialog-content .time-picker:focus-within {
+  background: var(--surface);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.dialog-content .time-picker-select select:hover:not(:disabled),
+.dialog-content .time-picker-select select:focus-visible {
+  background: var(--surface-soft);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+.dialog-content .place-search,
+.dialog-content .place-suggestion-selection,
+.dialog-content .itinerary-search-field,
+.dialog-content .duplicate-day-source {
+  color: var(--body);
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+.dialog-content .place-search > input,
+.dialog-content .place-search-results button {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.dialog-content .place-search > input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.dialog-content .place-search-results button:hover {
+  background: var(--surface-subtle);
+  border-color: var(--primary);
+}
+
+.dialog-content .place-search-results button:focus-visible,
+.dialog-content .itinerary-search-field:focus-within,
+.dialog-content .itinerary-search-clear:focus-visible,
+.dialog-content .itinerary-search-results button:focus-visible {
+  outline-color: color-mix(in srgb, var(--primary) 32%, transparent);
+}
+
+.dialog-content .itinerary-search-field > svg {
+  color: var(--primary);
+}
+
+.dialog-content .itinerary-search-clear {
+  color: var(--muted);
+  background: var(--surface-sunken);
+}
+
+.dialog-content .duplicate-day-destinations label {
+  color: var(--body);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.dialog-content .duplicate-day-destinations label:hover {
+  background: var(--surface-soft);
+  border-color: var(--line-strong);
+}
+
+.dialog-content .duplicate-day-destinations label.is-selected {
+  background: var(--surface-subtle);
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.dialog-content .duplicate-day-destinations label:focus-within {
+  outline-color: color-mix(in srgb, var(--primary) 32%, transparent);
+}
+
+.dialog-content .duplicate-day-number {
+  color: var(--primary-active);
+  background: var(--green-soft);
+}
+
+.dialog-content .duplicate-day-destinations label.is-selected > i {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+html[data-theme="dark"] .dialog-content .form-field :is(input, textarea, select),
+html[data-theme="dark"] .dialog-content .time-picker,
+html[data-theme="dark"] .dialog-content .place-search > input,
+html[data-theme="dark"] .dialog-content .place-search-results button,
+html[data-theme="dark"] .dialog-content .duplicate-day-destinations label {
+  color: var(--ink);
+  background: var(--surface-sunken);
+  border-color: var(--line);
+}
+
+html[data-theme="dark"] .dialog-content.new-trip-dialog-content .form-field :is(input, select):focus {
+  background: var(--surface-sunken);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+html[data-theme="dark"] .dialog-content :is(
+  .place-search,
+  .place-suggestion-selection,
+  .itinerary-search-field,
+  .duplicate-day-source
+) {
+  color: var(--body);
+  background: var(--surface-subtle);
+  border-color: var(--line);
+}
+
+html[data-theme="dark"] .ai-itinerary-dialog .ai-itinerary-trip-ticket {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Dialog controls: one consistent close affordance and action hierarchy. */
+.dialog-content .dialog-close {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  padding: 0;
+  place-items: center;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  line-height: 0;
+}
+
+.dialog-content .dialog-close::before {
+  display: none;
+}
+
+.dialog-content .dialog-close-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.dialog-content .dialog-close:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-subtle);
+  border-color: var(--ink);
+}
+
+.dialog-content .dialog-close:active:not(:disabled) {
+  background: var(--surface-sunken);
+  border-color: var(--ink);
+}
+
+.dialog-content :is(.dialog-actions, .ai-itinerary-actions, .trip-briefing-actions) :is(
+  .primary-button,
+  .secondary-button,
+  .danger-button
+) {
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+}
+
+.dialog-content :is(.dialog-actions, .ai-itinerary-actions, .trip-briefing-actions) .primary-button {
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.dialog-content :is(.dialog-actions, .ai-itinerary-actions, .trip-briefing-actions) .primary-button:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: var(--primary-active);
+  border-color: var(--primary-active);
+}
+
+.dialog-content :is(.dialog-actions, .ai-itinerary-actions, .trip-briefing-actions) .secondary-button {
+  color: var(--danger-strong);
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+}
+
+.dialog-content
+  :is(.dialog-actions, .ai-itinerary-actions, .trip-briefing-actions)
+  .secondary-button:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: #c13515;
+  border-color: #c13515;
+}
+
+.dialog-content
+  :is(.dialog-actions, .ai-itinerary-actions, .trip-briefing-actions)
+  .secondary-button:active:not(:disabled) {
+  color: var(--on-primary);
+  background: #b32505;
+  border-color: #b32505;
+}
+
+.dialog-content :is(.dialog-actions, .ai-itinerary-actions, .trip-briefing-actions) .danger-button {
+  color: var(--on-primary);
+  background: #c13515;
+  border-color: #c13515;
+}
+
+.dialog-content
+  :is(.dialog-actions, .ai-itinerary-actions, .trip-briefing-actions)
+  .danger-button:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: #b32505;
+  border-color: #b32505;
+}
+
+.dialog-content
+  :is(.dialog-actions, .ai-itinerary-actions, .trip-briefing-actions)
+  .danger-button:active:not(:disabled) {
+  color: var(--on-primary);
+  background: #8f210b;
+  border-color: #8f210b;
+}
+
+/* These reset the legacy dark palette, which previously turned dialog controls green. */
+html[data-theme="dark"] .dialog-content .dialog-close {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+html[data-theme="dark"] .dialog-content .dialog-close:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-subtle);
+  border-color: var(--ink);
+}
+
+html[data-theme="dark"]
+  .dialog-content
+  :is(.dialog-actions, .ai-itinerary-actions, .trip-briefing-actions)
+  .secondary-button {
+  color: var(--danger-strong);
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+}
+
+html[data-theme="dark"]
+  .dialog-content
+  :is(.dialog-actions, .ai-itinerary-actions, .trip-briefing-actions)
+  .secondary-button:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: #c13515;
+  border-color: #c13515;
+}
+
+html[data-theme="dark"]
+  .dialog-content
+  :is(.dialog-actions, .ai-itinerary-actions, .trip-briefing-actions)
+  .secondary-button:active:not(:disabled) {
+  color: var(--on-primary);
+  background: #b32505;
+  border-color: #b32505;
+}
+
+/* Editor header: neutral boundaries and a single 16px outline-icon language. */
+.editor-header {
+  background: var(--surface);
+  border-bottom: 0;
+}
+
+.trip-heading {
+  border-left: 0;
+}
+
+.day-sidebar {
+  background: var(--surface);
+  border-right: 0;
+}
+
+.header-actions {
+  gap: 8px;
+}
+
+.header-action-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.editor-header :is(.trip-details-button, .share-placeholder, .trip-delete-trigger) {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.editor-header .trip-details-button {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.editor-header .trip-details-button:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-subtle);
+  border-color: var(--line-strong);
+}
+
+.editor-header .share-placeholder {
+  min-width: auto;
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.editor-header .share-placeholder:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: var(--primary-active);
+  border-color: var(--primary-active);
+}
+
+.editor-header .trip-delete-trigger {
+  color: var(--danger-strong);
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+}
+
+.editor-header .trip-delete-trigger:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: #c13515;
+  border-color: #c13515;
+}
+
+.editor-header .history-controls {
+  min-height: 40px;
+  padding: 3px;
+  background: var(--surface-soft);
+  border-color: var(--line);
+  border-radius: 8px;
+}
+
+.editor-header .history-controls button {
+  min-height: 32px;
+  color: var(--muted);
+  background: transparent;
+  border-radius: 6px;
+}
+
+.editor-header .history-controls button:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: none;
+  transform: none;
+}
+
+.editor-header .history-control-shortcut {
+  background: transparent;
+}
+
+html[data-theme="dark"] .editor-header {
+  background: var(--surface);
+  border-bottom: 0;
+}
+
+html[data-theme="dark"] .day-sidebar {
+  background: var(--surface);
+  border-right: 0;
+}
+
+html[data-theme="dark"] .editor-header .trip-details-button {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+html[data-theme="dark"] .editor-header .trip-details-button:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-subtle);
+  border-color: var(--line-strong);
+}
+
+html[data-theme="dark"] .editor-header .history-controls,
+html[data-theme="dark"] .editor-header .history-controls button {
+  color: var(--muted);
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+html[data-theme="dark"] .editor-header .history-controls button {
+  background: transparent;
+}
+
+html[data-theme="dark"] .editor-header .history-controls button:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-raised);
+  border-color: var(--line);
+}
+
+/* "새 초안 만들기" is a constructive action, not a close/cancel action. */
+.ai-itinerary-dialog .ai-itinerary-actions .ai-itinerary-regenerate-button {
+  color: var(--primary-active);
+  background: var(--green-soft);
+  border-color: var(--primary-disabled);
+}
+
+.ai-itinerary-dialog .ai-itinerary-actions .ai-itinerary-regenerate-button:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.ai-itinerary-dialog .ai-itinerary-actions .ai-itinerary-regenerate-button:active:not(:disabled) {
+  color: var(--on-primary);
+  background: var(--primary-active);
+  border-color: var(--primary-active);
 }

@@ -5,6 +5,7 @@ import { useActionState } from "react";
 
 import { deleteTrip } from "@/features/trip-management/model/delete-trip-action";
 import { initialDeleteTripActionState } from "@/features/trip-management/model/delete-trip-action-state";
+import { HeaderActionIcon } from "@/shared/ui/header-action-icon";
 
 type DeleteTripDialogProps = {
   canDeleteTrip: boolean;
@@ -26,7 +27,7 @@ export function DeleteTripDialog({
   return (
     <AlertDialog.Root>
       <AlertDialog.Trigger className="trip-delete-trigger" type="button">
-        <span aria-hidden="true">!</span>
+        <HeaderActionIcon name="delete" />
         이 여행 삭제
       </AlertDialog.Trigger>
 

@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as Dialog from "@radix-ui/react-dialog";
 import { startTransition, useActionState, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import {
   createTripSchema,
@@ -11,6 +11,7 @@ import {
 } from "@/entities/trip/model/create-trip";
 import { createTrip } from "@/features/trip-management/model/create-trip-action";
 import { initialCreateTripActionState } from "@/features/trip-management/model/create-trip-action-state";
+import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
 
 const defaultValues: CreateTripInput = {
   destination: "",
@@ -30,6 +31,10 @@ function toFormData(values: CreateTripInput) {
   return formData;
 }
 
+function hasLongCalendarYear(value: string | undefined) {
+  return typeof value === "string" && /^\d{5,}-/.test(value);
+}
+
 export function NewTripForm() {
   const [openAiPlanner, setOpenAiPlanner] = useState(true);
   const [open, setOpen] = useState(false);
@@ -38,6 +43,7 @@ export function NewTripForm() {
     initialCreateTripActionState,
   );
   const {
+    control,
     formState: { errors },
     handleSubmit,
     register,
@@ -47,6 +53,22 @@ export function NewTripForm() {
     reValidateMode: "onChange",
     resolver: zodResolver(createTripSchema),
   });
+  const startDate = useWatch({ control, name: "startDate" });
+  const endDate = useWatch({ control, name: "endDate" });
+  const showStartDateHelp = hasLongCalendarYear(startDate) && !errors.startDate;
+  const showEndDateHelp = hasLongCalendarYear(endDate) && !errors.endDate;
+  const startDateDescribedBy = [
+    showStartDateHelp ? "trip-start-date-help" : undefined,
+    errors.startDate ? "trip-start-date-error" : undefined,
+  ]
+    .filter((id): id is string => id !== undefined)
+    .join(" ");
+  const endDateDescribedBy = [
+    showEndDateHelp ? "trip-end-date-help" : undefined,
+    errors.endDate ? "trip-end-date-error" : undefined,
+  ]
+    .filter((id): id is string => id !== undefined)
+    .join(" ");
 
   function handleCreateTrip(values: CreateTripInput) {
     startTransition(() => {
@@ -81,7 +103,7 @@ export function NewTripForm() {
               </Dialog.Description>
             </div>
             <Dialog.Close className="dialog-close" aria-label="대화상자 닫기" disabled={isPending}>
-              ×
+              <DialogCloseIcon />
             </Dialog.Close>
           </div>
 
@@ -126,17 +148,17 @@ export function NewTripForm() {
               <label htmlFor="trip-start-date">시작일</label>
               <input
                 id="trip-start-date"
-                aria-describedby={`trip-start-date-help${
-                  errors.startDate ? " trip-start-date-error" : ""
-                }`}
+                aria-describedby={startDateDescribedBy || undefined}
                 aria-invalid={Boolean(errors.startDate)}
                 disabled={isPending}
                 type="date"
                 {...register("startDate")}
               />
-              <span className="form-field-help" id="trip-start-date-help">
-                연도는 네 자리로 입력해 주세요.
-              </span>
+              {showStartDateHelp ? (
+                <span className="form-field-help" id="trip-start-date-help">
+                  연도는 네 자리로 입력해 주세요.
+                </span>
+              ) : null}
               {errors.startDate ? (
                 <span id="trip-start-date-error" role="alert">
                   {errors.startDate.message}
@@ -148,17 +170,17 @@ export function NewTripForm() {
               <label htmlFor="trip-end-date">종료일</label>
               <input
                 id="trip-end-date"
-                aria-describedby={`trip-end-date-help${
-                  errors.endDate ? " trip-end-date-error" : ""
-                }`}
+                aria-describedby={endDateDescribedBy || undefined}
                 aria-invalid={Boolean(errors.endDate)}
                 disabled={isPending}
                 type="date"
                 {...register("endDate")}
               />
-              <span className="form-field-help" id="trip-end-date-help">
-                연도는 네 자리로 입력해 주세요.
-              </span>
+              {showEndDateHelp ? (
+                <span className="form-field-help" id="trip-end-date-help">
+                  연도는 네 자리로 입력해 주세요.
+                </span>
+              ) : null}
               {errors.endDate ? (
                 <span id="trip-end-date-error" role="alert">
                   {errors.endDate.message}

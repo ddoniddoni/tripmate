@@ -3,7 +3,7 @@
 import { shallow } from "@liveblocks/client";
 import { useMutation, useOthers, useStorage } from "@liveblocks/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import {
   applyItineraryMutationToStorage,
@@ -55,9 +55,14 @@ type LiveblocksItineraryEditorProps = {
   trip: Trip;
 };
 
-type LiveblocksItineraryEditorContentProps = LiveblocksItineraryEditorProps & {
+type LiveblocksItineraryEditorContentProps = Omit<
+  LiveblocksItineraryEditorProps,
+  "initialAiPlannerOpen"
+> & {
+  aiPlannerOpen: boolean;
   expenses: readonly NonNullable<ReturnType<typeof getLiveblocksTripExpenseSnapshot>>["items"][string][];
   expenseSettlementState: TripExpenseSettlementState;
+  onAiPlannerOpenChange: (open: boolean) => void;
   preparationItems: readonly NonNullable<
     ReturnType<typeof getLiveblocksPreparationChecklistSnapshot>
   >["items"][string][];
@@ -159,11 +164,12 @@ function TripWorkspaceTabs({
 function LiveblocksItineraryEditorContent({
   canEditItinerary,
   currentUserId,
+  aiPlannerOpen,
   expenses,
   expenseSettlementState,
   initialWorkspaceNavigation,
-  initialAiPlannerOpen,
   members,
+  onAiPlannerOpenChange,
   preparationItems,
   trip,
   tripItinerary,
@@ -253,11 +259,6 @@ function LiveblocksItineraryEditorContent({
     preparationItems,
     settlementState: expenseSettlementState,
   });
-  const overviewDays = tripItinerary.itinerary.dayOrder.flatMap((dayId) => {
-    const day = tripItinerary.itinerary.days[dayId];
-
-    return day ? [day] : [];
-  });
   const memberLabels = getTripMemberLabels(members, currentUserId);
 
   return (
@@ -268,13 +269,13 @@ function LiveblocksItineraryEditorContent({
       />
       {workspaceNavigation.navigation.view === "overview" ? (
         <TripOverviewWorkspaceView
-          days={overviewDays}
           headerActions={
             <>
               {canEditItinerary ? (
                 <AiItineraryPlannerDialog
-                  initialOpen={initialAiPlannerOpen}
                   onApplyPlan={applyAiItineraryPlan}
+                  onOpenChange={onAiPlannerOpenChange}
+                  open={aiPlannerOpen}
                   trip={trip}
                 />
               ) : null}
@@ -290,9 +291,7 @@ function LiveblocksItineraryEditorContent({
             </>
           }
           onNavigate={workspaceNavigation.selectView}
-          onSelectDay={workspaceNavigation.selectItineraryDay}
           overview={overview}
-          selectedDayId={workspaceNavigation.navigation.selectedDayId}
           trip={trip}
         />
       ) : null}
@@ -331,6 +330,7 @@ export function LiveblocksItineraryEditor({
   trip,
 }: LiveblocksItineraryEditorProps) {
   const router = useRouter();
+  const [aiPlannerOpen, setAiPlannerOpen] = useState(initialAiPlannerOpen);
   const storage = useStorage((root) => root);
   const expenseSettlementCompletions = useStorage((root) => root.expenseSettlementCompletions);
   const expenseSettlementRevision = useStorage((root) => root.expenseSettlementRevision);
@@ -345,6 +345,24 @@ export function LiveblocksItineraryEditor({
       router.refresh();
     }
   }, [hasUpdatedTripDates, router]);
+
+  useEffect(() => {
+    if (!initialAiPlannerOpen) {
+      return;
+    }
+
+    const searchParams = new URLSearchParams(window.location.search);
+
+    if (!searchParams.has("ai")) {
+      return;
+    }
+
+    searchParams.delete("ai");
+    const query = searchParams.toString();
+    const nextPath = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+
+    window.history.replaceState(window.history.state, "", nextPath);
+  }, [initialAiPlannerOpen]);
 
   if (!storage) {
     return (
@@ -375,11 +393,12 @@ export function LiveblocksItineraryEditor({
     <LiveblocksItineraryEditorContent
       canEditItinerary={canEditItinerary}
       currentUserId={currentUserId}
+      aiPlannerOpen={aiPlannerOpen}
       expenses={expenseDocument ? Object.values(expenseDocument.items) : []}
       expenseSettlementState={expenseSettlementState}
-      initialAiPlannerOpen={initialAiPlannerOpen}
       initialWorkspaceNavigation={initialWorkspaceNavigation}
       members={members}
+      onAiPlannerOpenChange={setAiPlannerOpen}
       preparationItems={preparationChecklist ? Object.values(preparationChecklist.items) : []}
       trip={sharedTrip}
       tripItinerary={tripItinerary}

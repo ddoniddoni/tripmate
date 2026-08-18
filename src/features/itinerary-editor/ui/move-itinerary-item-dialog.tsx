@@ -9,6 +9,7 @@ import type {
   TripDay,
 } from "@/entities/itinerary/model/trip-itinerary";
 import { formatCalendarDate } from "@/shared/lib/calendar-date";
+import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
 
 type MoveItineraryItemDialogProps = {
   days: TripDay[];
@@ -52,7 +53,7 @@ export function MoveItineraryItemDialog({
               </Dialog.Description>
             </div>
             <Dialog.Close className="dialog-close" aria-label="대화상자 닫기">
-              ×
+              <DialogCloseIcon />
             </Dialog.Close>
           </div>
 
