@@ -1,9 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  createMockAiItineraryPlan: vi.fn(),
   generateOpenAiItineraryPlan: vi.fn(),
   getAuthenticatedUser: vi.fn(),
   getSupabaseTrip: vi.fn(),
+  isOpenAiItineraryPlanConfigured: vi.fn(),
   listSupabaseTripMembers: vi.fn(),
 }));
 
@@ -16,9 +18,22 @@ vi.mock("@/entities/trip/api/supabase-trip-repository", () => ({
   listSupabaseTripMembers: mocks.listSupabaseTripMembers,
 }));
 
+vi.mock("@/features/ai-itinerary/api/mock-itinerary-plan", () => ({
+  createMockAiItineraryPlan: mocks.createMockAiItineraryPlan,
+}));
+
 vi.mock("@/features/ai-itinerary/api/openai-itinerary-plan", () => ({
-  OpenAiItineraryPlanError: class OpenAiItineraryPlanError extends Error {},
+  OpenAiItineraryPlanError: class OpenAiItineraryPlanError extends Error {
+    constructor(kind: string) {
+      super(
+        kind === "trip-too-long"
+          ? "AI 동선 추천은 최대 14일 여행까지 만들 수 있어요."
+          : "AI 동선 초안을 만들지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      );
+    }
+  },
   generateOpenAiItineraryPlan: mocks.generateOpenAiItineraryPlan,
+  isOpenAiItineraryPlanConfigured: mocks.isOpenAiItineraryPlanConfigured,
 }));
 
 import { NextRequest } from "next/server";
@@ -68,8 +83,13 @@ function createRequest(payload: unknown) {
 }
 
 describe("POST /api/ai-itinerary", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.isOpenAiItineraryPlanConfigured.mockReturnValue(true);
     mocks.getAuthenticatedUser.mockResolvedValue({ email: "traveler@example.com", id: "user-1" });
     mocks.getSupabaseTrip.mockResolvedValue(trip);
     mocks.listSupabaseTripMembers.mockResolvedValue([
@@ -113,9 +133,54 @@ describe("POST /api/ai-itinerary", () => {
     const response = await POST(createRequest({ tripId }));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ plan });
+    expect(await response.json()).toEqual({ plan, source: "ai" });
     expect(mocks.getSupabaseTrip).toHaveBeenCalledWith(tripId);
     expect(mocks.listSupabaseTripMembers).toHaveBeenCalledWith(tripId);
     expect(mocks.generateOpenAiItineraryPlan).toHaveBeenCalledWith(trip);
+  });
+
+  it("returns a clearly marked mock plan in development without calling OpenAI", async () => {
+    const mockPlan = { ...plan, overview: "개발용 미리보기 동선이에요." };
+    mocks.isOpenAiItineraryPlanConfigured.mockReturnValue(false);
+    mocks.createMockAiItineraryPlan.mockReturnValue(mockPlan);
+    vi.stubEnv("NODE_ENV", "development");
+
+    const response = await POST(createRequest({ tripId }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ plan: mockPlan, source: "mock" });
+    expect(mocks.createMockAiItineraryPlan).toHaveBeenCalledWith(trip);
+    expect(mocks.generateOpenAiItineraryPlan).not.toHaveBeenCalled();
+  });
+
+  it("keeps the OpenAI path outside development when a key is missing", async () => {
+    mocks.isOpenAiItineraryPlanConfigured.mockReturnValue(false);
+    vi.stubEnv("NODE_ENV", "production");
+
+    const response = await POST(createRequest({ tripId }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ plan, source: "ai" });
+    expect(mocks.createMockAiItineraryPlan).not.toHaveBeenCalled();
+    expect(mocks.generateOpenAiItineraryPlan).toHaveBeenCalledWith(trip);
+  });
+
+  it("keeps the 14-day limit before generating a mock or calling OpenAI", async () => {
+    mocks.getSupabaseTrip.mockResolvedValue({
+      ...trip,
+      endDate: "2026-10-15",
+      startDate: "2026-10-01",
+    });
+    mocks.isOpenAiItineraryPlanConfigured.mockReturnValue(false);
+    vi.stubEnv("NODE_ENV", "development");
+
+    const response = await POST(createRequest({ tripId }));
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      message: "AI 동선 추천은 최대 14일 여행까지 만들 수 있어요.",
+    });
+    expect(mocks.createMockAiItineraryPlan).not.toHaveBeenCalled();
+    expect(mocks.generateOpenAiItineraryPlan).not.toHaveBeenCalled();
   });
 });

@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 
 import type { RouteCoordinate } from "@/features/map-sync/model/directions-adapter";
+import type { Theme } from "@/shared/lib/theme-preference";
 
 type GoogleLatLngLiteral = {
   lat: number;
@@ -13,6 +14,7 @@ type GoogleMapInstance = {
   fitBounds: (bounds: GoogleLatLngBounds, padding?: number) => void;
   panTo: (position: GoogleLatLngLiteral) => void;
   setCenter: (position: GoogleLatLngLiteral) => void;
+  setOptions: (options: { styles: readonly GoogleMapStyle[] }) => void;
   setZoom: (zoom: number) => void;
 };
 
@@ -28,7 +30,15 @@ type GooglePolyline = {
   setMap: (map: GoogleMapInstance | null) => void;
 };
 
-type GoogleMapsEventListener = object;
+type GoogleMapsEventListener = {
+  remove: () => void;
+};
+
+type GoogleMapStyle = {
+  elementType?: string;
+  featureType?: string;
+  stylers: readonly { color?: string; visibility?: "off" | "on" | "simplified" }[];
+};
 
 type GoogleMapsNamespace = {
   maps: {
@@ -41,6 +51,7 @@ type GoogleMapsNamespace = {
         fullscreenControl: boolean;
         gestureHandling: "cooperative";
         mapTypeControl: boolean;
+        styles: readonly GoogleMapStyle[];
         streetViewControl: boolean;
         zoom: number;
       },
@@ -73,9 +84,6 @@ type GoogleMapsNamespace = {
     SymbolPath: {
       CIRCLE: string | number;
     };
-    event: {
-      removeListener: (listener: GoogleMapsEventListener) => void;
-    };
   };
 };
 
@@ -89,6 +97,29 @@ declare global {
 const googleMapsScriptId = "tripmate-google-maps-javascript";
 const googleMapsCallbackName = "__tripmateGoogleMapsReady";
 let googleMapsLoadPromise: Promise<GoogleMapsNamespace> | null = null;
+const noRouteCoordinates: readonly RouteCoordinate[] = [];
+
+const darkGoogleMapStyles = [
+  { elementType: "geometry", stylers: [{ color: "#1b1b1b" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#efefef" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#151515" }] },
+  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#4a4446" }] },
+  { featureType: "administrative.land_parcel", elementType: "labels.text.fill", stylers: [{ color: "#a9a3a5" }] },
+  { featureType: "landscape.man_made", elementType: "geometry", stylers: [{ color: "#242124" }] },
+  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#2b2729" }] },
+  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#c9c2c5" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#30262b" }] },
+  { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#f1c5cf" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#3d383a" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#2a2729" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#e0dadd" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#575053" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#393336" }] },
+  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#322e30" }] },
+  { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d8d0d3" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#292d38" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#bdc9ef" }] },
+] as const satisfies readonly GoogleMapStyle[];
 
 type GoogleItineraryMapMarker = {
   coordinate: RouteCoordinate;
@@ -191,17 +222,15 @@ async function reserveGoogleMapsAccess() {
     method: "POST",
   });
 
-  if (response.ok) {
-    return;
+  if (!response.ok) {
+    const data = (await response.json().catch(() => null)) as { message?: unknown } | null;
+    const message =
+      typeof data?.message === "string"
+        ? data.message
+        : "지도를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+
+    throw new GoogleMapsAccessError(response.status, message);
   }
-
-  const data = (await response.json().catch(() => null)) as { message?: unknown } | null;
-  const message =
-    typeof data?.message === "string"
-      ? data.message
-      : "지도를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
-
-  throw new GoogleMapsAccessError(response.status, message);
 }
 
 function getMarkerLabel(index: number) {
@@ -212,24 +241,35 @@ function toGoogleCoordinate(coordinate: RouteCoordinate): GoogleLatLngLiteral {
   return { lat: coordinate.latitude, lng: coordinate.longitude };
 }
 
+function getDocumentTheme(): Theme {
+  if (typeof document === "undefined") {
+    return "light";
+  }
+
+  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+}
+
+function getMapStyles(theme: Theme): readonly GoogleMapStyle[] {
+  return theme === "dark" ? darkGoogleMapStyles : [];
+}
+
 function GoogleItineraryMapWithMarkers({
   destination,
   markers,
   onSelect,
-  routeCoordinates = [],
+  routeCoordinates = noRouteCoordinates,
 }: GoogleItineraryMapProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_KEY?.trim() ?? "";
   const [mapState, setMapState] = useState<MapState>("loading");
   const [mapMessage, setMapMessage] = useState("");
   const [retryVersion, setRetryVersion] = useState(0);
+  const [theme, setTheme] = useState<Theme>(getDocumentTheme);
   const canvasRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<GoogleMapInstance | null>(null);
   const mapsRef = useRef<GoogleMapsNamespace | null>(null);
-  const markerRefs = useRef<GoogleMarker[]>([]);
-  const listenerRefs = useRef<GoogleMapsEventListener[]>([]);
-  const polylineRef = useRef<GooglePolyline | null>(null);
   const hasFittedBoundsRef = useRef(false);
   const accessPromiseRef = useRef<Promise<void> | null>(null);
+  const handleMarkerSelect = useEffectEvent((itemId: string) => onSelect(itemId));
 
   const markersSignature = useMemo(
     () =>
@@ -245,17 +285,6 @@ function GoogleItineraryMapWithMarkers({
     () => routeCoordinates.map((coordinate) => `${coordinate.latitude}:${coordinate.longitude}`).join("|"),
     [routeCoordinates],
   );
-
-  const clearMapObjects = useCallback(() => {
-    const maps = mapsRef.current?.maps;
-
-    listenerRefs.current.forEach((listener) => maps?.event.removeListener(listener));
-    listenerRefs.current = [];
-    markerRefs.current.forEach((marker) => marker.setMap(null));
-    markerRefs.current = [];
-    polylineRef.current?.setMap(null);
-    polylineRef.current = null;
-  }, []);
 
   const fitMapToMarkers = useCallback(() => {
     const map = mapRef.current;
@@ -275,6 +304,17 @@ function GoogleItineraryMapWithMarkers({
     markers.forEach((marker) => bounds.extend(toGoogleCoordinate(marker.coordinate)));
     map.fitBounds(bounds, 48);
   }, [markers]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncTheme = () => setTheme(getDocumentTheme());
+    const observer = new MutationObserver(syncTheme);
+
+    syncTheme();
+    observer.observe(root, { attributeFilter: ["data-theme"], attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!apiKey) {
@@ -306,6 +346,7 @@ function GoogleItineraryMapWithMarkers({
           fullscreenControl: false,
           gestureHandling: "cooperative",
           mapTypeControl: false,
+          styles: getMapStyles(getDocumentTheme()),
           streetViewControl: false,
           zoom: 12,
         });
@@ -335,28 +376,41 @@ function GoogleItineraryMapWithMarkers({
 
     return () => {
       cancelled = true;
-      clearMapObjects();
       mapRef.current = null;
       mapsRef.current = null;
       hasFittedBoundsRef.current = false;
     };
-  }, [apiKey, clearMapObjects, retryVersion]);
+  }, [apiKey, retryVersion]);
+
+  useEffect(() => {
+    if (mapState !== "ready") {
+      return;
+    }
+
+    mapRef.current?.setOptions({ styles: getMapStyles(theme) });
+  }, [mapState, theme]);
 
   useEffect(() => {
     const maps = mapsRef.current?.maps;
     const map = mapRef.current;
+    const mapMarkers: GoogleMarker[] = [];
+    const listeners: GoogleMapsEventListener[] = [];
+    let polyline: GooglePolyline | null = null;
+    const cleanupMapObjects = () => {
+      listeners.forEach((listener) => listener.remove());
+      mapMarkers.forEach((marker) => marker.setMap(null));
+      polyline?.setMap(null);
+    };
 
     if (mapState !== "ready" || !maps || !map) {
-      return;
+      return cleanupMapObjects;
     }
-
-    clearMapObjects();
 
     markers.forEach((marker, index) => {
       const isSelected = marker.isSelected;
       const mapMarker = new maps.Marker({
         icon: {
-          fillColor: isSelected ? "#185b3c" : "#277052",
+          fillColor: isSelected ? "#e00b41" : "#ff385c",
           fillOpacity: 1,
           path: maps.SymbolPath.CIRCLE,
           scale: isSelected ? 12 : 10,
@@ -370,16 +424,16 @@ function GoogleItineraryMapWithMarkers({
         zIndex: isSelected ? 2 : 1,
       });
 
-      markerRefs.current.push(mapMarker);
-      listenerRefs.current.push(mapMarker.addListener("click", () => onSelect(marker.id)));
+      mapMarkers.push(mapMarker);
+      listeners.push(mapMarker.addListener("click", () => handleMarkerSelect(marker.id)));
     });
 
     if (routeCoordinates.length >= 2) {
-      polylineRef.current = new maps.Polyline({
+      polyline = new maps.Polyline({
         geodesic: true,
         map,
         path: routeCoordinates.map(toGoogleCoordinate),
-        strokeColor: "#ee6c5d",
+        strokeColor: "#ff385c",
         strokeOpacity: 0.86,
         strokeWeight: 4,
       });
@@ -388,21 +442,20 @@ function GoogleItineraryMapWithMarkers({
     if (!hasFittedBoundsRef.current) {
       fitMapToMarkers();
       hasFittedBoundsRef.current = true;
-      return;
+    } else {
+      const selectedMarker = markers.find((marker) => marker.isSelected);
+
+      if (selectedMarker) {
+        map.panTo(toGoogleCoordinate(selectedMarker.coordinate));
+      }
     }
 
-    const selectedMarker = markers.find((marker) => marker.isSelected);
-
-    if (selectedMarker) {
-      map.panTo(toGoogleCoordinate(selectedMarker.coordinate));
-    }
+    return cleanupMapObjects;
   }, [
-    clearMapObjects,
     fitMapToMarkers,
     mapState,
     markers,
     markersSignature,
-    onSelect,
     routeCoordinates,
     routeSignature,
   ]);

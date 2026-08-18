@@ -3,11 +3,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseTrip, listSupabaseTripMembers } from "@/entities/trip/api/supabase-trip-repository";
 import { getTripPermissions } from "@/entities/trip/model/trip-membership";
 import { getAuthenticatedUser } from "@/features/auth/model/get-authenticated-user";
+import { createMockAiItineraryPlan } from "@/features/ai-itinerary/api/mock-itinerary-plan";
 import {
   generateOpenAiItineraryPlan,
+  isOpenAiItineraryPlanConfigured,
   OpenAiItineraryPlanError,
 } from "@/features/ai-itinerary/api/openai-itinerary-plan";
-import { aiItineraryPlanRequestSchema } from "@/features/ai-itinerary/model/ai-itinerary-plan";
+import {
+  aiItineraryPlanRequestSchema,
+  getAiItineraryTripDates,
+} from "@/features/ai-itinerary/model/ai-itinerary-plan";
 
 export const runtime = "nodejs";
 
@@ -43,9 +48,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const plan = await generateOpenAiItineraryPlan(trip);
+    if (getAiItineraryTripDates(trip).length > 14) {
+      throw new OpenAiItineraryPlanError("trip-too-long");
+    }
 
-    return NextResponse.json({ plan });
+    const useMockPlan = process.env.NODE_ENV === "development" && !isOpenAiItineraryPlanConfigured();
+    const plan = useMockPlan ? createMockAiItineraryPlan(trip) : await generateOpenAiItineraryPlan(trip);
+
+    return NextResponse.json({ plan, source: useMockPlan ? "mock" : "ai" });
   } catch (error) {
     if (error instanceof OpenAiItineraryPlanError) {
       return NextResponse.json({ message: error.message }, { status: 503 });

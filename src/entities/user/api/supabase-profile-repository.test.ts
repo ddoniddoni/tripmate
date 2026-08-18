@@ -21,6 +21,7 @@ const userId = "b37aa707-35d7-4d7d-a8c5-b5ea8c703673";
 describe("Supabase profile repository", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
     mocks.from.mockReturnValue({ select: mocks.select });
     mocks.select.mockReturnValue({ eq: mocks.eq });
     mocks.eq.mockReturnValue({ maybeSingle: mocks.maybeSingle });
@@ -45,10 +46,24 @@ describe("Supabase profile repository", () => {
   });
 
   it("wraps profile query failures in a user-facing repository error", async () => {
-    mocks.maybeSingle.mockResolvedValue({ data: null, error: new Error("database unavailable") });
+    mocks.maybeSingle.mockResolvedValue({
+      data: null,
+      error: {
+        code: "42501",
+        details: "permission denied",
+        hint: null,
+        message: "database unavailable",
+      },
+    });
 
     await expect(getSupabaseUserProfile(userId)).rejects.toBeInstanceOf(
       SupabaseProfileRepositoryError,
     );
+    expect(console.error).toHaveBeenCalledWith("Supabase profile query failed.", {
+      code: "42501",
+      details: "permission denied",
+      hint: null,
+      message: "database unavailable",
+    });
   });
 });

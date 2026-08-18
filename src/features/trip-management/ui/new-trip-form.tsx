@@ -43,6 +43,8 @@ export function NewTripForm() {
     register,
   } = useForm<CreateTripInput>({
     defaultValues,
+    mode: "onBlur",
+    reValidateMode: "onChange",
     resolver: zodResolver(createTripSchema),
   });
 
@@ -66,7 +68,10 @@ export function NewTripForm() {
 
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className="dialog-content" aria-describedby="create-trip-description">
+        <Dialog.Content
+          className="dialog-content new-trip-dialog-content"
+          aria-describedby="create-trip-description"
+        >
           <div className="dialog-heading">
             <div>
               <span className="section-kicker">새 여행</span>
@@ -121,12 +126,17 @@ export function NewTripForm() {
               <label htmlFor="trip-start-date">시작일</label>
               <input
                 id="trip-start-date"
-                aria-describedby={errors.startDate ? "trip-start-date-error" : undefined}
+                aria-describedby={`trip-start-date-help${
+                  errors.startDate ? " trip-start-date-error" : ""
+                }`}
                 aria-invalid={Boolean(errors.startDate)}
                 disabled={isPending}
                 type="date"
                 {...register("startDate")}
               />
+              <span className="form-field-help" id="trip-start-date-help">
+                연도는 네 자리로 입력해 주세요.
+              </span>
               {errors.startDate ? (
                 <span id="trip-start-date-error" role="alert">
                   {errors.startDate.message}
@@ -138,12 +148,17 @@ export function NewTripForm() {
               <label htmlFor="trip-end-date">종료일</label>
               <input
                 id="trip-end-date"
-                aria-describedby={errors.endDate ? "trip-end-date-error" : undefined}
+                aria-describedby={`trip-end-date-help${
+                  errors.endDate ? " trip-end-date-error" : ""
+                }`}
                 aria-invalid={Boolean(errors.endDate)}
                 disabled={isPending}
                 type="date"
                 {...register("endDate")}
               />
+              <span className="form-field-help" id="trip-end-date-help">
+                연도는 네 자리로 입력해 주세요.
+              </span>
               {errors.endDate ? (
                 <span id="trip-end-date-error" role="alert">
                   {errors.endDate.message}

@@ -3,6 +3,7 @@ import { calendarDateToUtcDate, calendarDateSchema } from "@/shared/lib/calendar
 import { z } from "@/shared/lib/zod";
 
 const itineraryStopPeriodSchema = z.enum(["morning", "afternoon", "evening"]);
+const aiItineraryPlanSourceSchema = z.enum(["ai", "mock"]);
 
 export const aiItineraryPlanRequestSchema = z.object({
   tripId: z.uuid(),
@@ -29,10 +30,12 @@ export const aiItineraryPlanSchema = z.object({
 
 export const aiItineraryPlanResponseSchema = z.object({
   plan: aiItineraryPlanSchema,
+  source: aiItineraryPlanSourceSchema,
 });
 
 export type AiItineraryPlan = z.infer<typeof aiItineraryPlanSchema>;
 export type AiItineraryPlanRequest = z.infer<typeof aiItineraryPlanRequestSchema>;
+export type AiItineraryPlanResult = z.infer<typeof aiItineraryPlanResponseSchema>;
 export type AiItineraryStopPeriod = z.infer<typeof itineraryStopPeriodSchema>;
 
 function getTripDates(startDate: string, endDate: string) {

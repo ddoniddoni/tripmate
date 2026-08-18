@@ -1,6 +1,6 @@
 import {
   aiItineraryPlanResponseSchema,
-  type AiItineraryPlan,
+  type AiItineraryPlanResult,
 } from "@/features/ai-itinerary/model/ai-itinerary-plan";
 
 const aiItineraryPath = "/api/ai-itinerary";
@@ -21,7 +21,7 @@ async function getErrorMessage(response: Response) {
   return "AI 동선 초안을 만들지 못했습니다. 잠시 후 다시 시도해 주세요.";
 }
 
-export async function requestAiItineraryPlan(tripId: string): Promise<AiItineraryPlan> {
+export async function requestAiItineraryPlan(tripId: string): Promise<AiItineraryPlanResult> {
   const response = await fetch(aiItineraryPath, {
     body: JSON.stringify({ tripId }),
     headers: { Accept: "application/json", "Content-Type": "application/json" },
@@ -39,5 +39,5 @@ export async function requestAiItineraryPlan(tripId: string): Promise<AiItinerar
     throw new Error("AI 동선 결과를 처리하지 못했습니다. 다시 만들어 주세요.");
   }
 
-  return parsedPayload.data.plan;
+  return parsedPayload.data;
 }

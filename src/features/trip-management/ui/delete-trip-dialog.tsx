@@ -25,14 +25,15 @@ export function DeleteTripDialog({
 
   return (
     <AlertDialog.Root>
-      <AlertDialog.Trigger className="text-action text-action-danger" type="button">
-        여행 삭제
+      <AlertDialog.Trigger className="trip-delete-trigger" type="button">
+        <span aria-hidden="true">!</span>
+        이 여행 삭제
       </AlertDialog.Trigger>
 
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="dialog-overlay" />
         <AlertDialog.Content className="dialog-content alert-dialog-content">
-          <span className="section-kicker">여행 삭제</span>
+          <span className="section-kicker">되돌릴 수 없는 작업</span>
           <AlertDialog.Title>{tripTitle}을 삭제할까요?</AlertDialog.Title>
           <AlertDialog.Description className="dialog-description">
             초대와 멤버 정보가 함께 삭제되고, 공유 일정에는 더 이상 접근할 수 없습니다. 이 작업은 되돌릴 수 없습니다.

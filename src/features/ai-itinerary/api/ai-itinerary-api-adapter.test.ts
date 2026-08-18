@@ -25,12 +25,14 @@ afterEach(() => {
 describe("requestAiItineraryPlan", () => {
   it("posts only the trip ID and returns a validated route plan", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ plan }), { headers: { "Content-Type": "application/json" } }),
+      new Response(JSON.stringify({ plan, source: "ai" }), {
+        headers: { "Content-Type": "application/json" },
+      }),
     );
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(requestAiItineraryPlan("d4f6f86c-8e85-4d2a-b77f-f2b15d1be3d8")).resolves.toEqual(
-      plan,
+      { plan, source: "ai" },
     );
     expect(fetchMock).toHaveBeenCalledWith("/api/ai-itinerary", {
       body: JSON.stringify({ tripId: "d4f6f86c-8e85-4d2a-b77f-f2b15d1be3d8" }),

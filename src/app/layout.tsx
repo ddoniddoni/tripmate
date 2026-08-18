@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 
 import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
+import Script from "next/script";
 
 import { publicEnv } from "@/shared/config/public-env";
+import { themeInitializationScript } from "@/shared/lib/theme-preference";
+import { ThemeToggle } from "@/shared/ui/theme-toggle";
 
 import "./globals.css";
 
@@ -17,8 +20,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ko">
-      <body>{children}</body>
+    <html lang="ko" suppressHydrationWarning>
+      <body>
+        <Script id="theme-initializer" strategy="beforeInteractive">
+          {themeInitializationScript}
+        </Script>
+        {children}
+        <ThemeToggle />
+      </body>
     </html>
   );
 }

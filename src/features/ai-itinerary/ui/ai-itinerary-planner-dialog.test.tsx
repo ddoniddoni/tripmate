@@ -47,8 +47,8 @@ const plan = {
 };
 
 describe("AiItineraryPlannerDialog", () => {
-  it("shows a read-only route draft only after an editor requests it", async () => {
-    mocks.requestAiItineraryPlan.mockResolvedValue(plan);
+  it("shows a route draft only after an editor requests it", async () => {
+    mocks.requestAiItineraryPlan.mockResolvedValue({ plan, source: "mock" });
     const user = userEvent.setup();
 
     render(<AiItineraryPlannerDialog trip={trip} />);
@@ -62,6 +62,28 @@ describe("AiItineraryPlannerDialog", () => {
     expect(mocks.requestAiItineraryPlan).toHaveBeenCalledWith(trip.id);
     expect(screen.getByText("바다와 야경을 잇는 첫날")).toBeVisible();
     expect(screen.getByText("해운대")).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("개발용 미리보기");
+    expect(screen.getByText("새 초안 만들기")).toBeVisible();
+  });
+
+  it("lets an editor bring a generated draft into the shared day memos", async () => {
+    mocks.requestAiItineraryPlan.mockResolvedValue({ plan, source: "ai" });
+    const onApplyPlan = vi.fn().mockReturnValue({
+      success: true,
+      importedDayCount: 2,
+      preservedDayCount: 0,
+      unmatchedDayCount: 0,
+    });
+    const user = userEvent.setup();
+
+    render(<AiItineraryPlannerDialog onApplyPlan={onApplyPlan} trip={trip} />);
+
+    await user.click(screen.getByRole("button", { name: "AI 동선 추천" }));
+    await user.click(screen.getByRole("button", { name: "AI 동선 만들기" }));
+    await user.click(screen.getByRole("button", { name: "일정 메모로 가져오기" }));
+
+    expect(onApplyPlan).toHaveBeenCalledWith(plan);
+    expect(screen.getByRole("status")).toHaveTextContent("초안을 2일차의 공유 메모에 추가했어요.");
     expect(screen.getByText("새 초안 만들기")).toBeVisible();
   });
 });

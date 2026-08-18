@@ -5,12 +5,18 @@ import { useId, useState } from "react";
 
 import type { Trip } from "@/entities/trip/model/trip";
 import { requestAiItineraryPlan } from "@/features/ai-itinerary/api/ai-itinerary-api-adapter";
-import type { AiItineraryPlan, AiItineraryStopPeriod } from "@/features/ai-itinerary/model/ai-itinerary-plan";
+import type {
+  AiItineraryPlan,
+  AiItineraryPlanResult,
+  AiItineraryStopPeriod,
+} from "@/features/ai-itinerary/model/ai-itinerary-plan";
+import type { AiItineraryPlanImportFeedback } from "@/features/ai-itinerary/model/apply-ai-itinerary-plan";
 import { formatTripDateRange, formatTripLength } from "@/entities/trip/lib/format-trip";
 import { formatCalendarDate } from "@/shared/lib/calendar-date";
 
 type AiItineraryPlannerDialogProps = {
   initialOpen?: boolean;
+  onApplyPlan?: (plan: AiItineraryPlan) => AiItineraryPlanImportFeedback;
   trip: Trip;
 };
 
@@ -48,11 +54,18 @@ function CalendarIcon() {
   );
 }
 
-function RoutePlan({ plan }: { plan: AiItineraryPlan }) {
+function RoutePlan({ plan, source }: AiItineraryPlanResult) {
   return (
     <div className="ai-itinerary-plan-result">
       <section aria-labelledby="ai-itinerary-plan-overview" className="ai-itinerary-plan-overview">
-        <span className="section-kicker">ROUTE DRAFT</span>
+        <div className="ai-itinerary-plan-heading">
+          <span className="section-kicker">ROUTE DRAFT</span>
+          {source === "mock" ? (
+            <span className="ai-itinerary-mock-badge" role="status">
+              개발용 미리보기
+            </span>
+          ) : null}
+        </div>
         <h3 id="ai-itinerary-plan-overview">{plan.overview}</h3>
         <p>{plan.routeRationale}</p>
       </section>
@@ -97,22 +110,49 @@ function RoutePlan({ plan }: { plan: AiItineraryPlan }) {
   );
 }
 
+function getImportMessage({
+  importedDayCount,
+  preservedDayCount,
+  unmatchedDayCount,
+}: Extract<AiItineraryPlanImportFeedback, { success: true }>) {
+  const messages: string[] = [];
+
+  if (importedDayCount > 0) {
+    messages.push(`초안을 ${importedDayCount}일차의 공유 메모에 추가했어요.`);
+  }
+
+  if (preservedDayCount > 0) {
+    messages.push(`기존 메모가 있는 ${preservedDayCount}일차는 건드리지 않았어요.`);
+  }
+
+  if (unmatchedDayCount > 0) {
+    messages.push(`여행 날짜와 맞지 않는 ${unmatchedDayCount}일차는 건너뛰었어요.`);
+  }
+
+  return messages.length > 0
+    ? messages.join(" ")
+    : "가져올 수 있는 일정 메모가 없어요. 기존 메모를 확인해 주세요.";
+}
+
 export function AiItineraryPlannerDialog({
   initialOpen = false,
+  onApplyPlan,
   trip,
 }: AiItineraryPlannerDialogProps) {
   const descriptionId = useId();
   const [errorMessage, setErrorMessage] = useState("");
+  const [importMessage, setImportMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(initialOpen);
-  const [plan, setPlan] = useState<AiItineraryPlan | null>(null);
+  const [result, setResult] = useState<AiItineraryPlanResult | null>(null);
 
   async function handleGenerate() {
     setErrorMessage("");
+    setImportMessage("");
     setIsLoading(true);
 
     try {
-      setPlan(await requestAiItineraryPlan(trip.id));
+      setResult(await requestAiItineraryPlan(trip.id));
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -122,6 +162,23 @@ export function AiItineraryPlannerDialog({
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleApplyPlan() {
+    if (!result || !onApplyPlan) {
+      return;
+    }
+
+    const importResult = onApplyPlan(result.plan);
+
+    if (!importResult.success) {
+      setImportMessage("");
+      setErrorMessage(importResult.message);
+      return;
+    }
+
+    setErrorMessage("");
+    setImportMessage(getImportMessage(importResult));
   }
 
   return (
@@ -167,11 +224,17 @@ export function AiItineraryPlannerDialog({
               </span>
             </section>
 
-            {plan ? <RoutePlan plan={plan} /> : null}
+            {result ? <RoutePlan {...result} /> : null}
 
             {errorMessage ? (
               <p className="ai-itinerary-error" role="alert">
                 {errorMessage}
+              </p>
+            ) : null}
+
+            {importMessage ? (
+              <p className="ai-itinerary-import-status" role="status">
+                {importMessage}
               </p>
             ) : null}
 
@@ -188,10 +251,30 @@ export function AiItineraryPlannerDialog({
             <Dialog.Close className="secondary-button" disabled={isLoading} type="button">
               닫기
             </Dialog.Close>
-            <button className="primary-button" disabled={isLoading} onClick={handleGenerate} type="button">
-              <SparkIcon />
-              {isLoading ? "동선 구상 중…" : plan ? "새 초안 만들기" : "AI 동선 만들기"}
-            </button>
+            {result ? (
+              <button className="secondary-button" disabled={isLoading} onClick={handleGenerate} type="button">
+                새 초안 만들기
+              </button>
+            ) : (
+              <button
+                className="primary-button"
+                disabled={isLoading}
+                onClick={handleGenerate}
+                type="button"
+              >
+                <SparkIcon />
+                {isLoading ? "동선 구상 중…" : "AI 동선 만들기"}
+              </button>
+            )}
+            {result && onApplyPlan ? (
+              <button
+                className="primary-button ai-itinerary-import-button"
+                onClick={handleApplyPlan}
+                type="button"
+              >
+                일정 메모로 가져오기
+              </button>
+            ) : null}
           </footer>
         </Dialog.Content>
       </Dialog.Portal>

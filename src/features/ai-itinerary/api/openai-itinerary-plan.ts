@@ -13,6 +13,10 @@ type OpenAiResponse = {
 
 const AI_ITINERARY_MODEL = "gpt-5-mini";
 
+export function isOpenAiItineraryPlanConfigured() {
+  return Boolean(process.env.OPENAI_API_KEY?.trim());
+}
+
 export class OpenAiItineraryPlanError extends Error {
   constructor(
     public readonly kind: "configuration" | "invalid-response" | "provider" | "trip-too-long",
@@ -86,7 +90,7 @@ function createInput(trip: Trip, tripDates: readonly string[]) {
 export async function generateOpenAiItineraryPlan(trip: Trip): Promise<AiItineraryPlan> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
 
-  if (!apiKey) {
+  if (!isOpenAiItineraryPlanConfigured() || !apiKey) {
     throw new OpenAiItineraryPlanError("configuration");
   }
 
