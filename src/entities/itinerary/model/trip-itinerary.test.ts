@@ -34,7 +34,7 @@ describe("tripItinerarySchema", () => {
     const input = structuredClone(jejuTrip);
     input.itinerary.days["jeju-day-2"].date = "2026-02-30";
 
-    expectInvalid(input, "유효한 날짜");
+    expectInvalid(input, "실제 달력에 있는 날짜");
   });
 
   it("rejects duplicate item references across days", () => {

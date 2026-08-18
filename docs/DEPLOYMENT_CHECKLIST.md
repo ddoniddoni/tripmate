@@ -8,9 +8,8 @@
 ## 현재 상태
 
 - 기본 원격 브랜치: `develop`
-- 아직 커밋되지 않은 기능: 일정 전체 검색, 장소 후보 투표·댓글, 하루 일정 복사
-- 로컬 검증 이력: lint, typecheck, unit test 통과
-- 아직 필요한 검증: 프로덕션 빌드, E2E, 두 계정 실시간 협업, Preview·Production 스모크 테스트
+- 로컬 검증 이력: lint, typecheck, unit test(85개 파일·342개 테스트), 기본 E2E, 인증된 E2E 통과
+- 아직 필요한 검증: 두 계정 실시간 협업, Preview·Production 스모크 테스트
 - 개발 환경에서만 이메일 인증 없이 바로 로그인하며, Production에서는 이메일 매직 링크로 로그인한다.
 
 ## 진행 순서
@@ -35,7 +34,7 @@
 - [ ] 현재 변경 사항의 diff를 검토한다.
 - [x] `npm run lint`를 실행한다. (2026-08-18 통과)
 - [x] `npm run typecheck`를 실행한다. (2026-08-18 통과)
-- [x] `npm test`를 실행한다. (2026-08-18, 74개 파일·313개 테스트 통과)
+- [x] `npm test`를 실행한다. (2026-08-18, 85개 파일·342개 테스트 통과)
 - [x] `npm run build`를 실행한다. (2026-08-18 통과)
 - [x] Node.js 실행 기준을 22.x 이상으로 명확히 고정한다.
 - [ ] 변경 사항을 목적에 맞는 Conventional Commit으로 커밋하고 원격에 푸시한다.
@@ -60,9 +59,13 @@
 
 - [x] Playwright와 `test:e2e` 스크립트를 추가한다. (2026-08-18)
 - [x] 외부 API·DB 쓰기 없이 실행되는 비로그인·로그인 UI·모바일 E2E를 작성한다. (2026-08-18)
-- [ ] 핵심 사용자 여정을 E2E로 작성한다.
-  - [ ] 이메일 로그인
-  - [ ] 여행 생성
+- [x] 전용 테스트 계정으로 로그인·여행 생성·삭제를 검증하는 옵트인 E2E를 작성한다. (2026-08-18)
+  - 기본 `npm run test:e2e`는 외부 API·DB 쓰기 없이 실행된다.
+  - 실제 Supabase 테스트는 전용 계정으로만 실행한다. 생성된 여행은 테스트 마지막에 소유자 권한으로 삭제한다.
+  - 실행: `E2E_AUTHENTICATED=1 E2E_TEST_EMAIL=<전용-테스트-이메일> npx playwright test tests/e2e/authenticated-trip.spec.ts`
+  - [x] 전용 합성 테스트 계정으로 인증 E2E를 실행한다. (2026-08-18)
+  - [x] 이메일 로그인
+  - [x] 여행 생성·삭제
   - [ ] 장소 검색 후 일정 추가
   - [ ] 일정 수정·이동·삭제
   - [ ] 지도와 일정 선택 연동
@@ -108,14 +111,16 @@
 | `GOOGLE_MAPS_JAVASCRIPT_DAILY_LIMIT` | 비밀 | 지도 표시 일일 하드 리밋 |
 | `GOOGLE_MAPS_JAVASCRIPT_MONTHLY_LIMIT` | 비밀 | 지도 표시 월간 하드 리밋 |
 
+> 로컬 개발에서 `OPENAI_API_KEY`를 비워 두면 외부 호출 없이 “개발용 미리보기” 동선이 표시된다. 초안은 기존 메모를 덮어쓰지 않고 비어 있는 일자의 공유 메모로 가져올 수 있으며, 정확한 장소·운영 정보는 장소 검색으로 확정한다. Preview와 Production에서는 실제 AI 초안을 위해 키가 필요하다.
+
 ### Supabase
 
 - [ ] 모든 마이그레이션이 연결된 원격 프로젝트에 적용됐는지 확인한다.
 - [ ] Database Security Advisor와 Performance Advisor를 확인한다.
 - [ ] 모든 `public` 테이블의 RLS와 정책을 검토한다.
 - [ ] Auth Site URL을 Production URL로 설정한다.
-- [ ] Redirect URL에 `https://<production-domain>/auth/confirm`을 등록한다.
-- [ ] Preview 로그인까지 검증할 경우 Vercel Preview URL 패턴도 Redirect URL에 등록한다.
+- [ ] Redirect URL에 정확한 `https://<production-domain>/auth/confirm`을 등록한다.
+- [ ] Preview 로그인까지 검증할 경우 Vercel Preview URL 패턴 `https://*-<team-or-account-slug>.vercel.app/**`도 Redirect URL에 등록한다.
 - [ ] 이메일 매직 링크 템플릿이 `{{ .RedirectTo }}`를 사용하도록 확인한다.
 - [ ] 외부 사용자 로그인을 공개하려면 Custom SMTP를 설정한다.
 - [ ] Supabase 관리자 계정에 MFA를 적용한다.

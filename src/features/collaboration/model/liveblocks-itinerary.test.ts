@@ -13,6 +13,8 @@ import {
   updateItineraryItem,
 } from "@/entities/itinerary/model/mutations";
 import { jejuTrip } from "@/entities/itinerary/mock/jeju-trip";
+import { createMockAiItineraryPlan } from "@/features/ai-itinerary/api/mock-itinerary-plan";
+import { applyAiItineraryPlanToDayNotes } from "@/features/ai-itinerary/model/apply-ai-itinerary-plan";
 import {
   applyItineraryMutationToStorage,
   createTripItineraryStorage,
@@ -143,6 +145,19 @@ describe("Liveblocks itinerary storage", () => {
     expect(promoted.success).toBe(true);
     expect(promotedSnapshot?.itinerary.placeSuggestions["osulloc-candidate"]).toBeUndefined();
     expect(promotedSnapshot?.itinerary.items["osulloc-scheduled"]?.dayId).toBe("jeju-day-2");
+  });
+
+  it("synchronizes an AI draft as shared day memos without altering confirmed places", () => {
+    const storage = createStorageRoot();
+    const result = applyItineraryMutationToStorage(storage, jejuTrip.trip, (current) =>
+      applyAiItineraryPlanToDayNotes(current, createMockAiItineraryPlan(jejuTrip.trip)),
+    );
+    const snapshot = getLiveblocksItinerarySnapshot(jejuTrip.trip, storage.toJSON());
+
+    expect(result.success).toBe(true);
+    expect(snapshot?.itinerary.days["jeju-day-1"]?.note).toContain("[AI 동선 초안]");
+    expect(snapshot?.itinerary.days["jeju-day-4"]?.note).toContain("[AI 동선 초안]");
+    expect(snapshot?.itinerary.items).toEqual(jejuTrip.itinerary.items);
   });
 
   it("persists candidate votes and comments in nested collaborative maps", () => {

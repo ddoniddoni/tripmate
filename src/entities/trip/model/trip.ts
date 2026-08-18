@@ -37,7 +37,10 @@ export const tripSchema = z
       .refine(isIanaTimeZone, "유효한 IANA 시간대여야 합니다."),
   })
   .superRefine((trip, context) => {
-    if (trip.startDate > trip.endDate) {
+    const startDateResult = calendarDateSchema.safeParse(trip.startDate);
+    const endDateResult = calendarDateSchema.safeParse(trip.endDate);
+
+    if (startDateResult.success && endDateResult.success && trip.startDate > trip.endDate) {
       context.addIssue({
         code: "custom",
         message: "종료일은 시작일보다 빠를 수 없습니다.",

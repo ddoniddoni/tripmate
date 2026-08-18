@@ -40,6 +40,13 @@ export async function getSupabaseUserProfile(userId: string): Promise<UserProfil
     .maybeSingle();
 
   if (error) {
+    console.error("Supabase profile query failed.", {
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      message: error.message,
+    });
+
     throw new SupabaseProfileRepositoryError();
   }
 

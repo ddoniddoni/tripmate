@@ -1,6 +1,8 @@
 import { z } from "@/shared/lib/zod";
 
 const calendarDatePattern = /^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/;
+const calendarDatePartsPattern = /^\d{4}-\d{2}-\d{2}$/;
+const calendarDateWithYearPattern = /^\d+-/;
 
 function isRealCalendarDate(value: string) {
   if (!calendarDatePattern.test(value)) {
@@ -20,8 +22,26 @@ function isRealCalendarDate(value: string) {
 export const calendarDateSchema = z
   .string("날짜를 입력해 주세요.")
   .trim()
-  .min(1, "날짜를 입력해 주세요.")
-  .refine(isRealCalendarDate, "YYYY-MM-DD 형식의 유효한 날짜여야 합니다.");
+  .superRefine((value, context) => {
+    if (!value) {
+      context.addIssue({ code: "custom", message: "날짜를 입력해 주세요." });
+      return;
+    }
+
+    if (calendarDateWithYearPattern.test(value) && !/^\d{4}-/.test(value)) {
+      context.addIssue({ code: "custom", message: "연도는 네 자리로 입력해 주세요." });
+      return;
+    }
+
+    if (!calendarDatePartsPattern.test(value)) {
+      context.addIssue({ code: "custom", message: "날짜는 YYYY-MM-DD 형식으로 입력해 주세요." });
+      return;
+    }
+
+    if (!calendarDatePattern.test(value) || !isRealCalendarDate(value)) {
+      context.addIssue({ code: "custom", message: "실제 달력에 있는 날짜를 입력해 주세요." });
+    }
+  });
 
 export function calendarDateToUtcDate(value: string) {
   return new Date(`${value}T00:00:00.000Z`);

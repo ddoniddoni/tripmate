@@ -1,6 +1,7 @@
 import { z } from "@/shared/lib/zod";
 
 import { tripSchema } from "@/entities/trip/model/trip";
+import { calendarDateSchema } from "@/shared/lib/calendar-date";
 
 export const createTripSchema = z
   .object({
@@ -11,7 +12,10 @@ export const createTripSchema = z
     title: tripSchema.shape.title,
   })
   .superRefine((trip, context) => {
-    if (trip.startDate > trip.endDate) {
+    const startDateResult = calendarDateSchema.safeParse(trip.startDate);
+    const endDateResult = calendarDateSchema.safeParse(trip.endDate);
+
+    if (startDateResult.success && endDateResult.success && trip.startDate > trip.endDate) {
       context.addIssue({
         code: "custom",
         message: "종료일은 시작일보다 빠를 수 없습니다.",

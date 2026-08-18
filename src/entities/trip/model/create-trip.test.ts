@@ -29,6 +29,25 @@ describe("create trip input", () => {
     }
   });
 
+  it("rejects a year longer than four digits with a clear Korean message", () => {
+    const result = createTripSchema.safeParse({
+      ...validTrip,
+      startDate: "202608-12-01",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            message: "연도는 네 자리로 입력해 주세요.",
+            path: ["startDate"],
+          }),
+        ]),
+      );
+    }
+  });
+
   it("uses Korean validation messages for missing travel details", () => {
     const result = createTripSchema.safeParse({
       ...validTrip,

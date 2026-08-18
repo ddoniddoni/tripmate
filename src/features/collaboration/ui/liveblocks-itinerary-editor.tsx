@@ -22,6 +22,11 @@ import type {
 import { useTripWorkspaceNavigation } from "@/features/collaboration/model/use-trip-workspace-navigation";
 import { useItinerarySelectionPresence } from "@/features/collaboration/model/use-itinerary-selection-presence";
 import { useTripWorkspacePresence } from "@/features/collaboration/model/use-trip-workspace-presence";
+import {
+  applyAiItineraryPlanToDayNotes,
+  type AiItineraryPlanImportFeedback,
+} from "@/features/ai-itinerary/model/apply-ai-itinerary-plan";
+import type { AiItineraryPlan } from "@/features/ai-itinerary/model/ai-itinerary-plan";
 import { useItineraryEditorController } from "@/features/itinerary-editor/model/use-itinerary-editor";
 import {
   ItineraryEditorWorkspaceView,
@@ -173,6 +178,42 @@ function LiveblocksItineraryEditorContent({
     ({ storage }, mutation) => applyItineraryMutationToStorage(storage, trip, mutation),
     [trip],
   );
+  const applyAiItineraryPlan = useMutation(
+    ({ storage }, plan: AiItineraryPlan): AiItineraryPlanImportFeedback => {
+      const mutationState: {
+        result: ReturnType<typeof applyAiItineraryPlanToDayNotes> | null;
+      } = { result: null };
+      const storageResult = applyItineraryMutationToStorage(storage, trip, (current) => {
+        mutationState.result = applyAiItineraryPlanToDayNotes(current, plan);
+        return mutationState.result;
+      });
+
+      if (!storageResult.success) {
+        return { success: false, message: storageResult.message };
+      }
+
+      const importResult = mutationState.result;
+
+      if (!importResult) {
+        return {
+          success: false,
+          message: "AI 동선 초안을 일정에 반영하지 못했습니다. 다시 시도해 주세요.",
+        };
+      }
+
+      if (!importResult.success) {
+        return { success: false, message: importResult.message };
+      }
+
+      return {
+        success: true,
+        importedDayCount: importResult.importedDayCount,
+        preservedDayCount: importResult.preservedDayCount,
+        unmatchedDayCount: importResult.unmatchedDayCount,
+      };
+    },
+    [trip],
+  );
   const editor = useItineraryEditorController({
     canEditItinerary,
     commitMutation,
@@ -231,7 +272,11 @@ function LiveblocksItineraryEditorContent({
           headerActions={
             <>
               {canEditItinerary ? (
-                <AiItineraryPlannerDialog initialOpen={initialAiPlannerOpen} trip={trip} />
+                <AiItineraryPlannerDialog
+                  initialOpen={initialAiPlannerOpen}
+                  onApplyPlan={applyAiItineraryPlan}
+                  trip={trip}
+                />
               ) : null}
               <TripBriefingDialog
                 currentUserId={currentUserId}

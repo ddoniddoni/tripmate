@@ -3,14 +3,16 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const mapListener = { remove: vi.fn() };
 const marker = {
-  addListener: vi.fn(() => ({})),
+  addListener: vi.fn(() => mapListener),
   setMap: vi.fn(),
 };
 const map = {
   fitBounds: vi.fn(),
   panTo: vi.fn(),
   setCenter: vi.fn(),
+  setOptions: vi.fn(),
   setZoom: vi.fn(),
 };
 const mapsConstructor = vi.fn(function createMapInstance() {
@@ -56,6 +58,7 @@ describe("GoogleItineraryMap", () => {
     vi.stubEnv("NEXT_PUBLIC_GOOGLE_MAPS_MAP_KEY", "test-browser-key");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
     document.getElementById("tripmate-google-maps-javascript")?.remove();
+    document.documentElement.dataset.theme = "light";
     delete window.google;
     delete window.__tripmateGoogleMapsReady;
   });
@@ -122,6 +125,35 @@ describe("GoogleItineraryMap", () => {
 
     await waitFor(() => {
       expect(map.panTo).toHaveBeenCalledWith({ lat: 37.5445, lng: 127.0557 });
+    });
+  });
+
+  it("changes the rendered Google map style when the app theme changes", async () => {
+    const { GoogleItineraryMap } = await loadGoogleItineraryMap();
+
+    render(<GoogleItineraryMap destination="서울" markers={markers} onSelect={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalled();
+    });
+
+    installGoogleMapsMock();
+    window.__tripmateGoogleMapsReady?.();
+
+    await waitFor(() => {
+      expect(mapsConstructor).toHaveBeenCalledOnce();
+    });
+
+    map.setOptions.mockClear();
+    document.documentElement.dataset.theme = "dark";
+
+    await waitFor(() => {
+      expect(map.setOptions).toHaveBeenCalledWith({
+        styles: expect.arrayContaining([
+          expect.objectContaining({ elementType: "geometry" }),
+          expect.objectContaining({ featureType: "water" }),
+        ]),
+      });
     });
   });
 
