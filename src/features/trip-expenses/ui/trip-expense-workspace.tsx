@@ -90,6 +90,8 @@ const expenseCategoryFilters: readonly TripExpenseCategoryFilter[] = [
   ...tripExpenseCategories,
 ];
 
+const koreanWeekdays = ["일", "월", "화", "수", "목", "금", "토"] as const;
+
 const wonFormatter = new Intl.NumberFormat("ko-KR", {
   currency: "KRW",
   maximumFractionDigits: 0,
@@ -106,6 +108,37 @@ function getMemberName(userId: string, memberLabels: ReadonlyMap<string, string>
 
 function getExpenseCategoryFilterLabel(category: TripExpenseCategoryFilter) {
   return category === "all" ? "전체" : categoryCopy[category].title;
+}
+
+function getExpenseRecordDateKey(createdAt: string) {
+  return createdAt.slice(0, 10);
+}
+
+function formatExpenseRecordDate(recordDate: string) {
+  const [year, month, day] = recordDate.split("-").map(Number);
+  const weekday = koreanWeekdays[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
+
+  return `기록일 · ${year}년 ${month}월 ${day}일 (${weekday})`;
+}
+
+function groupExpensesByRecordDate(expenses: readonly TripExpense[]) {
+  const groups = new Map<string, TripExpense[]>();
+
+  for (const expense of expenses) {
+    const recordDate = getExpenseRecordDateKey(expense.createdAt);
+    const group = groups.get(recordDate);
+
+    if (group) {
+      group.push(expense);
+    } else {
+      groups.set(recordDate, [expense]);
+    }
+  }
+
+  return [...groups].map(([recordDate, groupedExpenses]) => ({
+    expenses: groupedExpenses,
+    recordDate,
+  }));
 }
 
 function getPerPersonAmountLabel(participantShares: readonly ExpenseParticipantShare[]) {
@@ -147,10 +180,25 @@ function TripExpenseRow({
         <span>
           {category.title} · {payerName} 결제 · {expense.participantIds.length}명 정산
         </span>
+      </div>
+      <div className="expense-row-financials">
+        <strong className="expense-row-amount">{formatWon(expense.amount)}</strong>
         <details className="expense-split-details">
-          <summary>
-            <span>균등 N빵</span>
-            <strong>{getPerPersonAmountLabel(participantShares)}</strong>
+          <summary aria-label={`${expense.title} 참여자별 N빵 보기`}>
+            <span className="expense-split-summary">
+              <span className="expense-split-summary-label">N빵 보기</span>
+              <strong className="expense-split-summary-amount">
+                {getPerPersonAmountLabel(participantShares)}
+              </strong>
+            </span>
+            <svg
+              aria-hidden="true"
+              className="expense-split-toggle-icon"
+              fill="none"
+              viewBox="0 0 16 16"
+            >
+              <path d="m4 6 4 4 4-4" />
+            </svg>
           </summary>
           <ul aria-label={`${expense.title} 참여자별 부담 금액`} className="expense-share-list">
             {participantShares.map((participantShare) => {
@@ -169,7 +217,6 @@ function TripExpenseRow({
           </ul>
         </details>
       </div>
-      <strong className="expense-row-amount">{formatWon(expense.amount)}</strong>
       {canEditExpenses ? (
         <div className="expense-row-actions">
           <button
@@ -215,6 +262,7 @@ function TripExpenseLedger({
     expenseCategoryFilter === "all"
       ? orderedExpenses
       : orderedExpenses.filter((expense) => expense.category === expenseCategoryFilter);
+  const expenseRecordGroups = groupExpensesByRecordDate(filteredExpenses);
   const expenseCategoryCounts = expenses.reduce<Record<TripExpenseCategory, number>>(
     (counts, expense) => {
       counts[expense.category] += 1;
@@ -270,18 +318,32 @@ function TripExpenseLedger({
               </button>
             </div>
           ) : (
-            <ol>
-              {filteredExpenses.map((expense) => (
-                <TripExpenseRow
-                  canEditExpenses={canEditExpenses}
-                  expense={expense}
-                  key={expense.id}
-                  memberLabels={memberLabels}
-                  onEdit={onEdit}
-                  onRemove={onRemove}
-                />
-              ))}
-            </ol>
+            <div className="expense-ledger-body">
+              <ol className="expense-record-groups">
+                {expenseRecordGroups.map(({ expenses: recordExpenses, recordDate }) => (
+                  <li className="expense-record-group" key={recordDate}>
+                    <div className="expense-record-group-heading">
+                      <h4>
+                        <time dateTime={recordDate}>{formatExpenseRecordDate(recordDate)}</time>
+                      </h4>
+                      <span>{recordExpenses.length}건</span>
+                    </div>
+                    <ol className="expense-record-list">
+                      {recordExpenses.map((expense) => (
+                        <TripExpenseRow
+                          canEditExpenses={canEditExpenses}
+                          expense={expense}
+                          key={expense.id}
+                          memberLabels={memberLabels}
+                          onEdit={onEdit}
+                          onRemove={onRemove}
+                        />
+                      ))}
+                    </ol>
+                  </li>
+                ))}
+              </ol>
+            </div>
           )}
         </>
       )}
@@ -385,7 +447,7 @@ function TripExpenseSettlementPanel({
             </div>
           ) : (
             <p className="expense-settlement-complete" role="status">
-              이미 정산이 완료됐어요.
+              현재 정산이 완료되었어요.
             </p>
           )}
           {progress.allTransfersCompleted ? (
@@ -412,6 +474,7 @@ export function TripExpenseWorkspaceView({
   statusMessage,
 }: TripExpenseWorkspaceViewProps) {
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const hasExpenses = expenses.length > 0;
   const memberIds = members.map((member) => member.userId);
   const memberLabels = getTripMemberLabels(members, currentUserId);
   const settlement = calculateTripExpenseSettlement(expenses, memberIds);
@@ -483,7 +546,10 @@ export function TripExpenseWorkspaceView({
   }
 
   return (
-    <section aria-label="경비" className="expense-workspace">
+    <section
+      aria-label="경비"
+      className={hasExpenses ? "expense-workspace" : "expense-workspace expense-workspace-empty"}
+    >
       <header className="expense-briefing">
         <div>
           <span className="section-kicker">공동 경비</span>
@@ -497,7 +563,7 @@ export function TripExpenseWorkspaceView({
         </div>
       </header>
 
-      <div className="expense-layout">
+      <div className={hasExpenses ? "expense-layout" : "expense-layout expense-layout-empty"}>
         <div className="expense-main-column">
           {canEditExpenses ? (
             <form className="expense-add-form" noValidate onSubmit={handleSubmit(handleExpenseSubmit)}>
@@ -645,13 +711,15 @@ export function TripExpenseWorkspaceView({
           />
         </div>
 
-        <TripExpenseSettlementPanel
-          canEditExpenses={canEditExpenses}
-          memberLabels={memberLabels}
-          onToggleTransferCompletion={onToggleTransferCompletion}
-          settlement={settlement}
-          settlementState={settlementState}
-        />
+        {hasExpenses ? (
+          <TripExpenseSettlementPanel
+            canEditExpenses={canEditExpenses}
+            memberLabels={memberLabels}
+            onToggleTransferCompletion={onToggleTransferCompletion}
+            settlement={settlement}
+            settlementState={settlementState}
+          />
+        ) : null}
       </div>
 
       <p aria-atomic="true" className="sr-only" role="status">

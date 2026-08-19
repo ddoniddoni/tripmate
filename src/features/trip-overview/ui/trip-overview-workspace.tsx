@@ -133,7 +133,6 @@ export function TripOverviewWorkspaceView({
   return (
     <section aria-label="여행 개요" className="trip-overview-workspace">
       <div className="trip-overview-canvas">
-        <span aria-hidden="true" className="trip-overview-ribbon" />
         <header className="trip-overview-heading">
           <span aria-hidden="true" className="trip-overview-marker" />
           <div className="trip-overview-heading-copy">

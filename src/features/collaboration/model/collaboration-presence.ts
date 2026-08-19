@@ -10,6 +10,7 @@ const workspaceActivityCopy: Record<TripWorkspaceView, string> = {
   itinerary: "일정을 살펴보는 중",
   overview: "여행 개요를 보는 중",
   preparation: "준비 항목을 확인하는 중",
+  settings: "여행 설정을 확인하는 중",
 };
 
 export function getWorkspaceActivityCopy(activeWorkspace?: TripWorkspaceView) {

@@ -174,7 +174,7 @@ describe("ItineraryEditorWorkspace", () => {
     vi.unstubAllGlobals();
   });
 
-  it("switches to an empty day and adds a validated itinerary item", async () => {
+  it("switches to an empty day and adds a searched place without optional details", async () => {
     const user = renderWorkspace();
 
     await user.click(screen.getByRole("button", { name: /둘째 날/ }));
@@ -186,10 +186,6 @@ describe("ItineraryEditorWorkspace", () => {
 
     await user.type(within(dialog).getByLabelText("장소 검색"), "성산");
     await user.click(await within(dialog).findByRole("button", { name: "성산일출봉 선택" }));
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "시작 시간 시" }), "08");
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "시작 시간 분" }), "00");
-    await user.type(within(dialog).getByLabelText("소요 시간(분)"), "120");
-    await user.type(within(dialog).getByLabelText("메모"), "아침 일찍 출발");
     await user.click(within(dialog).getByRole("button", { name: "일정 추가" }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -205,8 +201,9 @@ describe("ItineraryEditorWorkspace", () => {
     const dialog = await screen.findByRole("dialog", { name: "장소를 일정에 추가" });
     await user.click(within(dialog).getByRole("button", { name: "일정 추가" }));
 
-    expect(await within(dialog).findByText("장소 이름을 입력해 주세요.")).toBeInTheDocument();
-    expect(within(dialog).getByText("주소를 입력해 주세요.")).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText("장소 검색 결과에서 장소를 선택해 주세요."),
+    ).toBeInTheDocument();
   });
 
   it("fills the form from a Google place search result without exposing coordinates", async () => {
@@ -346,8 +343,8 @@ describe("ItineraryEditorWorkspace", () => {
 
     await user.click(screen.getByRole("button", { name: "우진해장국 수정" }));
     const dialog = await screen.findByRole("dialog", { name: "우진해장국" });
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "시작 시간 시" }), "11");
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "시작 시간 분" }), "30");
+    await user.selectOptions(within(dialog).getByRole("combobox", { name: "도착 시간 시" }), "11");
+    await user.selectOptions(within(dialog).getByRole("combobox", { name: "도착 시간 분" }), "30");
 
     expect(await within(dialog).findByText("일정 시간이 겹쳐요.")).toBeInTheDocument();
     expect(within(dialog).getByText(/함덕해수욕장 일정과 겹쳐요/)).toBeInTheDocument();

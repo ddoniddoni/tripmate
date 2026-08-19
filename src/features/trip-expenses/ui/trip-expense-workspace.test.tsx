@@ -40,6 +40,17 @@ const dinnerExpense: TripExpense = {
   title: "흑돼지 저녁",
 };
 
+const previousDayStayExpense: TripExpense = {
+  amount: 120_000,
+  category: "stay",
+  createdAt: "2026-04-17T15:00:00.000Z",
+  createdBy: "user-jiwoo",
+  id: "seaside-stay",
+  paidBy: "user-jiwoo",
+  participantIds: ["user-jiwoo", "user-minji"],
+  title: "바닷가 숙소",
+};
+
 function ExpenseHarness({ canEditExpenses = true }: { canEditExpenses?: boolean }) {
   const [expenses, setExpenses] = useState<TripExpense[]>([]);
   const [settlementState, setSettlementState] = useState<TripExpenseSettlementState>(
@@ -109,6 +120,23 @@ function ExpenseHarness({ canEditExpenses = true }: { canEditExpenses?: boolean 
 }
 
 describe("TripExpenseWorkspaceView", () => {
+  it("keeps an empty expense workspace focused on recording the first expense", async () => {
+    const user = userEvent.setup();
+    render(<ExpenseHarness />);
+
+    const workspace = screen.getByRole("region", { name: "경비" });
+
+    expect(workspace).toHaveClass("expense-workspace-empty");
+    expect(screen.queryByRole("complementary", { name: "이렇게 보내면 끝나요." })).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("지출 내용"), "공항 택시");
+    await user.type(screen.getByLabelText("금액"), "36000");
+    await user.click(screen.getByRole("button", { name: "지출 기록하기" }));
+
+    expect(workspace).not.toHaveClass("expense-workspace-empty");
+    expect(screen.getByRole("complementary", { name: "이렇게 보내면 끝나요." })).toBeInTheDocument();
+  });
+
   it("records an expense and shows the resulting settlement", async () => {
     const user = userEvent.setup();
     render(<ExpenseHarness />);
@@ -121,7 +149,9 @@ describe("TripExpenseWorkspaceView", () => {
     expect(screen.getByLabelText("현재 총 지출 ₩36,000")).toBeInTheDocument();
     expect(screen.getByText("보낼 돈")).toBeInTheDocument();
     expect(screen.getByText(/나 · 지우 결제 · 2명 정산/)).toBeInTheDocument();
+    expect(screen.getByText("N빵 보기")).toBeInTheDocument();
     expect(screen.getByText("1인당 ₩18,000")).toBeInTheDocument();
+    expect(screen.getByLabelText("공항 택시 참여자별 N빵 보기")).toBeInTheDocument();
     expect(screen.getByLabelText("공항 택시 참여자별 부담 금액")).not.toBeVisible();
   });
 
@@ -162,6 +192,8 @@ describe("TripExpenseWorkspaceView", () => {
     );
 
     expect(screen.getByText("송금 대기")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "공항 택시 지출 수정" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "공항 택시 지출 삭제" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /송금 완료 처리/ })).not.toBeInTheDocument();
   });
 
@@ -196,6 +228,33 @@ describe("TripExpenseWorkspaceView", () => {
 
     expect(screen.getByText("공항 택시")).toBeInTheDocument();
     expect(screen.getByText("흑돼지 저녁")).toBeInTheDocument();
+  });
+
+  it("groups the expense ledger by recorded date while keeping recent entries first", () => {
+    render(
+      <TripExpenseWorkspaceView
+        canEditExpenses={false}
+        currentUserId="user-jiwoo"
+        expenses={[previousDayStayExpense, sharedTaxiExpense, dinnerExpense]}
+        members={members}
+        onAdd={() => false}
+        onRemove={() => undefined}
+        onToggleTransferCompletion={() => undefined}
+        onUpdate={() => false}
+        settlementState={createEmptyTripExpenseSettlementState()}
+        statusMessage=""
+      />,
+    );
+
+    const recordDateHeadings = screen
+      .getAllByRole("heading", { level: 4 })
+      .filter((heading) => heading.textContent?.startsWith("기록일 ·"));
+
+    expect(recordDateHeadings.map((heading) => heading.textContent)).toEqual([
+      "기록일 · 2026년 4월 18일 (토)",
+      "기록일 · 2026년 4월 17일 (금)",
+    ]);
+    expect(screen.getByText("바닷가 숙소")).toBeInTheDocument();
   });
 
   it("shows shared progress and lets an editor mark a transfer as sent", async () => {
@@ -267,6 +326,6 @@ describe("TripExpenseWorkspaceView", () => {
       />,
     );
 
-    expect(screen.getByText("이미 정산이 완료됐어요.")).toBeInTheDocument();
+    expect(screen.getByText("현재 정산이 완료되었어요.")).toBeInTheDocument();
   });
 });

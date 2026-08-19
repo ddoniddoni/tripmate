@@ -25,7 +25,7 @@ function isTextEditingElement(target: EventTarget | null) {
   );
 }
 
-export function TripHistoryControls({ canEditItinerary }: TripHistoryControlsProps) {
+function useTripHistoryActions({ canEditItinerary }: TripHistoryControlsProps) {
   const canRedo = useCanRedo();
   const canUndo = useCanUndo();
   const redo = useRedo();
@@ -93,6 +93,38 @@ export function TripHistoryControls({ canEditItinerary }: TripHistoryControlsPro
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  return {
+    handleRedo,
+    handleUndo,
+    historyMessage,
+    redoDisabled,
+    redoTitle,
+    undoDisabled,
+    undoTitle,
+  };
+}
+
+export function TripHistoryShortcuts({ canEditItinerary }: TripHistoryControlsProps) {
+  const { historyMessage } = useTripHistoryActions({ canEditItinerary });
+
+  return (
+    <span className="sr-only" role="status" aria-live="polite">
+      {historyMessage}
+    </span>
+  );
+}
+
+export function TripHistoryControls({ canEditItinerary }: TripHistoryControlsProps) {
+  const {
+    handleRedo,
+    handleUndo,
+    historyMessage,
+    redoDisabled,
+    redoTitle,
+    undoDisabled,
+    undoTitle,
+  } = useTripHistoryActions({ canEditItinerary });
 
   return (
     <div className="history-controls" role="group" aria-label="일정 변경 이력">

@@ -18,7 +18,10 @@ vi.mock("@liveblocks/react", () => ({
   useUndo: () => mocks.undo,
 }));
 
-import { TripHistoryControls } from "@/features/collaboration/ui/trip-history-controls";
+import {
+  TripHistoryControls,
+  TripHistoryShortcuts,
+} from "@/features/collaboration/ui/trip-history-controls";
 
 function resetMocks() {
   mocks.canRedo = false;
@@ -102,5 +105,17 @@ describe("TripHistoryControls", () => {
     fireEvent.keyDown(screen.getByLabelText("일정 메모"), { ctrlKey: true, key: "z" });
 
     expect(mocks.undo).not.toHaveBeenCalled();
+  });
+
+  it("keeps keyboard shortcuts available without rendering persistent controls", () => {
+    resetMocks();
+    mocks.canUndo = true;
+    render(<TripHistoryShortcuts canEditItinerary />);
+
+    fireEvent.keyDown(window, { ctrlKey: true, key: "z" });
+
+    expect(mocks.undo).toHaveBeenCalledOnce();
+    expect(screen.getByRole("status")).toHaveTextContent("마지막 변경을 실행 취소했습니다.");
+    expect(screen.queryByRole("group", { name: "일정 변경 이력" })).not.toBeInTheDocument();
   });
 });

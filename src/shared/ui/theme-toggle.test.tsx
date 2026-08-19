@@ -40,7 +40,8 @@ describe("ThemeToggle", () => {
     const toggle = screen.getByRole("button", { name: "라이트 모드로 전환" });
     expect(toggle).toHaveAttribute("aria-pressed", "true");
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
-    expect(screen.getByText("라이트 모드")).toBeInTheDocument();
+    expect(screen.queryByText("라이트 모드")).not.toBeInTheDocument();
+    expect(screen.queryByText("화면 테마")).not.toBeInTheDocument();
 
     await user.click(toggle);
 
@@ -50,7 +51,7 @@ describe("ThemeToggle", () => {
     );
     expect(document.documentElement).toHaveAttribute("data-theme", "light");
     expect(window.localStorage.getItem(themeStorageKey)).toBe("light");
-    expect(screen.getByText("다크 모드")).toBeInTheDocument();
+    expect(screen.queryByText("다크 모드")).not.toBeInTheDocument();
   });
 
   it("reflects the theme initialized before hydration", () => {

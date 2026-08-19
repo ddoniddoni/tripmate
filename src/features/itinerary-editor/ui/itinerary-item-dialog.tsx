@@ -9,6 +9,7 @@ import type { ItineraryItem } from "@/entities/itinerary/model/trip-itinerary";
 import { getItineraryScheduleConflicts } from "@/entities/itinerary/model/schedule-conflicts";
 import {
   itineraryItemFormSchema,
+  type ItineraryItemFormFields,
   type ItineraryItemFormValues,
 } from "@/features/itinerary-editor/model/itinerary-item-form";
 import { usePlaceSearch } from "@/features/place-search/model/use-place-search";
@@ -23,16 +24,15 @@ type ItineraryItemDialogProps = {
   scheduledItems: readonly ItineraryItem[];
 };
 
-function getDefaultValues(item?: ItineraryItem): ItineraryItemFormValues {
+function getDefaultValues(item?: ItineraryItem): ItineraryItemFormFields {
   return {
+    place: item?.place ?? null,
     name: item?.place.name ?? "",
     address: item?.place.address ?? "",
     category: item?.place.category ?? "",
     startTime: item?.startTime ?? "",
     durationMinutes: item?.durationMinutes?.toString() ?? "",
     note: item?.note ?? "",
-    longitude: item?.place.longitude.toString() ?? "",
-    latitude: item?.place.latitude.toString() ?? "",
   };
 }
 
@@ -45,11 +45,13 @@ export function ItineraryItemDialog({
 }: ItineraryItemDialogProps) {
   const {
     control,
+    clearErrors,
     formState: { errors },
     handleSubmit,
     register,
+    setError,
     setValue,
-  } = useForm<ItineraryItemFormValues>({
+  } = useForm<ItineraryItemFormFields>({
     defaultValues: getDefaultValues(item),
     resolver: zodResolver(itineraryItemFormSchema),
   });
@@ -90,19 +92,42 @@ export function ItineraryItemDialog({
   );
 
   function handlePlaceSelect(place: PlaceSnapshot) {
+    clearErrors("place");
+    setValue("place", place, { shouldDirty: true, shouldValidate: true });
     setValue("name", place.name, { shouldDirty: true, shouldValidate: true });
     setValue("address", place.address, { shouldDirty: true, shouldValidate: true });
     setValue("category", place.category ?? "", { shouldDirty: true, shouldValidate: true });
-    setValue("longitude", place.longitude.toString(), { shouldDirty: true, shouldValidate: true });
-    setValue("latitude", place.latitude.toString(), { shouldDirty: true, shouldValidate: true });
     placeSearch.clear();
+  }
+
+  function handleFormSubmit(values: ItineraryItemFormFields) {
+    if (!values.place) {
+      setError("place", {
+        message: "장소 검색 결과에서 장소를 선택해 주세요.",
+        type: "required",
+      });
+      return;
+    }
+
+    onSubmit({
+      ...values,
+      place: {
+        ...values.place,
+        address: values.address || values.place.address,
+        category: values.category || values.place.category,
+        name: values.name || values.place.name,
+      },
+    });
   }
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className="dialog-content" aria-describedby="itinerary-dialog-description">
+        <Dialog.Content
+          className="dialog-content itinerary-item-dialog-content"
+          aria-describedby="itinerary-dialog-description"
+        >
           <div className="dialog-heading">
             <div>
               <span className="section-kicker">{mode === "add" ? "새 일정" : "일정 수정"}</span>
@@ -111,7 +136,7 @@ export function ItineraryItemDialog({
                 className="dialog-description"
                 id="itinerary-dialog-description"
               >
-                장소를 검색해 선택한 뒤 방문 시간을 입력해 주세요.
+                장소를 검색해 선택하면 바로 추가할 수 있어요. 도착 시간과 메모는 필요할 때만 입력해 주세요.
               </Dialog.Description>
             </div>
             <Dialog.Close className="dialog-close" aria-label="대화상자 닫기">
@@ -119,7 +144,7 @@ export function ItineraryItemDialog({
             </Dialog.Close>
           </div>
 
-          <form className="itinerary-form" noValidate onSubmit={handleSubmit(onSubmit)}>
+          <form className="itinerary-form" noValidate onSubmit={handleSubmit(handleFormSubmit)}>
             <div className="place-search form-field-wide">
               <label htmlFor="place-search">장소 검색</label>
               <input
@@ -129,7 +154,6 @@ export function ItineraryItemDialog({
                 value={placeSearch.query}
                 onChange={(event) => placeSearch.setQuery(event.target.value)}
               />
-              <p>두 글자 이상 입력하면 주소와 지도 위치를 함께 찾아 드립니다.</p>
               {placeSearch.status === "loading" ? (
                 <p role="status">장소를 검색하고 있습니다.</p>
               ) : null}
@@ -157,57 +181,44 @@ export function ItineraryItemDialog({
                 </ul>
               ) : null}
             </div>
+            {errors.place ? (
+              <p className="form-field-wide" role="alert">
+                {errors.place.message}
+              </p>
+            ) : null}
 
-            <div className="form-field form-field-wide">
+            <div className="form-field itinerary-item-name-field">
               <label htmlFor="place-name">장소 이름</label>
               <input
                 id="place-name"
-                aria-describedby={errors.name ? "place-name-error" : undefined}
-                aria-invalid={Boolean(errors.name)}
                 autoComplete="off"
+                placeholder="장소 검색 결과를 선택해 주세요"
                 {...register("name")}
               />
-              {errors.name ? (
-                <span id="place-name-error" role="alert">
-                  {errors.name.message}
-                </span>
-              ) : null}
             </div>
 
-            <div className="form-field form-field-wide">
+            <div className="form-field itinerary-item-address-field">
               <label htmlFor="place-address">주소</label>
               <input
                 id="place-address"
-                aria-describedby={errors.address ? "place-address-error" : undefined}
-                aria-invalid={Boolean(errors.address)}
                 autoComplete="street-address"
+                placeholder="장소 검색 결과를 선택해 주세요"
                 {...register("address")}
               />
-              {errors.address ? (
-                <span id="place-address-error" role="alert">
-                  {errors.address.message}
-                </span>
-              ) : null}
             </div>
 
-            <div className="form-field">
+            <div className="form-field itinerary-item-category-field">
               <label htmlFor="place-category">카테고리</label>
               <input
                 id="place-category"
-                aria-describedby={errors.category ? "place-category-error" : undefined}
-                aria-invalid={Boolean(errors.category)}
                 autoComplete="off"
+                placeholder="장소를 선택하면 표시됩니다"
                 {...register("category")}
               />
-              {errors.category ? (
-                <span id="place-category-error" role="alert">
-                  {errors.category.message}
-                </span>
-              ) : null}
             </div>
 
-            <fieldset className="form-field time-picker-field">
-              <legend>시작 시간</legend>
+            <div className="form-field itinerary-item-time-field">
+              <label>도착 시간</label>
               <TimePicker
                 aria-describedby={errors.startTime ? "place-start-time-error" : undefined}
                 invalid={Boolean(errors.startTime)}
@@ -221,10 +232,10 @@ export function ItineraryItemDialog({
                   {errors.startTime.message}
                 </span>
               ) : null}
-            </fieldset>
+            </div>
 
-            <div className="form-field">
-              <label htmlFor="place-duration">소요 시간(분)</label>
+            <div className="form-field itinerary-item-duration-field">
+              <label htmlFor="place-duration">예상 체류 시간</label>
               <input
                 id="place-duration"
                 aria-describedby={errors.durationMinutes ? "place-duration-error" : undefined}
@@ -232,6 +243,8 @@ export function ItineraryItemDialog({
                 inputMode="numeric"
                 min="1"
                 max="1440"
+                placeholder="분 단위 입력"
+                step="5"
                 type="number"
                 {...register("durationMinutes")}
               />
@@ -249,12 +262,6 @@ export function ItineraryItemDialog({
                   {conflictingItems.map((conflictingItem) => conflictingItem.place.name).join(", ")} 일정과
                   겹쳐요. 필요하면 시간을 조정해 주세요.
                 </span>
-              </p>
-            ) : null}
-
-            {errors.longitude || errors.latitude ? (
-              <p className="form-field-wide" role="alert">
-                장소 검색 결과에서 장소를 선택해 주세요.
               </p>
             ) : null}
 

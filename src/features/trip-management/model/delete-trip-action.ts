@@ -8,6 +8,7 @@ import type { DeleteTripActionState } from "@/features/trip-management/model/del
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 
 const deleteTripInputSchema = z.object({
+  confirmationTitle: z.string().trim().min(1),
   tripId: z.uuid(),
 });
 
@@ -30,6 +31,7 @@ export async function deleteTrip(
   }
 
   const inputResult = deleteTripInputSchema.safeParse({
+    confirmationTitle: formData.get("confirmationTitle"),
     tripId: formData.get("tripId"),
   });
 
@@ -46,6 +48,16 @@ export async function deleteTrip(
 
   if (membershipError || !ownerMembershipSchema.safeParse(membership).success) {
     return { message: "여행을 삭제할 권한이 없습니다.", status: "error" };
+  }
+
+  const { data: trip, error: tripError } = await supabase
+    .from("trips")
+    .select("title")
+    .eq("id", inputResult.data.tripId)
+    .maybeSingle();
+
+  if (tripError || !trip || trip.title !== inputResult.data.confirmationTitle) {
+    return { message: "여행 이름이 일치하지 않습니다. 다시 확인해 주세요.", status: "error" };
   }
 
   const { error } = await supabase.from("trips").delete().eq("id", inputResult.data.tripId);

@@ -513,6 +513,7 @@ export function TripPreparationChecklistView({
   onTogglePriority,
   statusMessage,
 }: TripPreparationChecklistViewProps) {
+  const hasItems = items.length > 0;
   const completedCount = items.filter((item) => item.completedAt !== null).length;
   const memberLabels = getTripMemberLabels(members, currentUserId);
   const progress = items.length === 0 ? 0 : Math.round((completedCount / items.length) * 100);
@@ -533,7 +534,10 @@ export function TripPreparationChecklistView({
   }
 
   return (
-    <section aria-label="준비하기" className="preparation-workspace">
+    <section
+      aria-label="준비하기"
+      className={hasItems ? "preparation-workspace" : "preparation-workspace preparation-workspace-empty"}
+    >
       <header className="preparation-briefing">
         <div>
           <span className="section-kicker">출발 전 브리핑</span>
