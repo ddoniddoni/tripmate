@@ -13,10 +13,13 @@ import type {
 import type { AiItineraryPlanImportFeedback } from "@/features/ai-itinerary/model/apply-ai-itinerary-plan";
 import { formatTripDateRange, formatTripLength } from "@/entities/trip/lib/format-trip";
 import { formatCalendarDate } from "@/shared/lib/calendar-date";
+import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
 
 type AiItineraryPlannerDialogProps = {
   initialOpen?: boolean;
   onApplyPlan?: (plan: AiItineraryPlan) => AiItineraryPlanImportFeedback;
+  onOpenChange?: (open: boolean) => void;
+  open?: boolean;
   trip: Trip;
 };
 
@@ -137,14 +140,25 @@ function getImportMessage({
 export function AiItineraryPlannerDialog({
   initialOpen = false,
   onApplyPlan,
+  onOpenChange,
+  open: controlledOpen,
   trip,
 }: AiItineraryPlannerDialogProps) {
   const descriptionId = useId();
   const [errorMessage, setErrorMessage] = useState("");
   const [importMessage, setImportMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [open, setOpen] = useState(initialOpen);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(initialOpen);
   const [result, setResult] = useState<AiItineraryPlanResult | null>(null);
+  const open = controlledOpen ?? uncontrolledOpen;
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (controlledOpen === undefined) {
+      setUncontrolledOpen(nextOpen);
+    }
+
+    onOpenChange?.(nextOpen);
+  }
 
   async function handleGenerate() {
     setErrorMessage("");
@@ -182,7 +196,7 @@ export function AiItineraryPlannerDialog({
   }
 
   return (
-    <Dialog.Root onOpenChange={setOpen} open={open}>
+    <Dialog.Root onOpenChange={handleOpenChange} open={open}>
       <Dialog.Trigger className="ai-itinerary-trigger" type="button">
         <SparkIcon />
         AI 동선 추천
@@ -203,7 +217,7 @@ export function AiItineraryPlannerDialog({
               </Dialog.Description>
             </div>
             <Dialog.Close aria-label="AI 동선 추천 닫기" className="dialog-close" disabled={isLoading}>
-              ×
+              <DialogCloseIcon />
             </Dialog.Close>
           </header>
 
@@ -252,7 +266,12 @@ export function AiItineraryPlannerDialog({
               닫기
             </Dialog.Close>
             {result ? (
-              <button className="secondary-button" disabled={isLoading} onClick={handleGenerate} type="button">
+              <button
+                className="secondary-button ai-itinerary-regenerate-button"
+                disabled={isLoading}
+                onClick={handleGenerate}
+                type="button"
+              >
                 새 초안 만들기
               </button>
             ) : (

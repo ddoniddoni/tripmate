@@ -12,6 +12,7 @@ import {
   type ItineraryItemFormValues,
 } from "@/features/itinerary-editor/model/itinerary-item-form";
 import { usePlaceSearch } from "@/features/place-search/model/use-place-search";
+import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
 import { TimePicker } from "@/shared/ui/time-picker";
 
 type ItineraryItemDialogProps = {
@@ -114,7 +115,7 @@ export function ItineraryItemDialog({
               </Dialog.Description>
             </div>
             <Dialog.Close className="dialog-close" aria-label="대화상자 닫기">
-              ×
+              <DialogCloseIcon />
             </Dialog.Close>
           </div>
 

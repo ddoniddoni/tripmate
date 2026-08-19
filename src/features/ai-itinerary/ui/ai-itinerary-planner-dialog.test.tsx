@@ -2,6 +2,7 @@
 
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ requestAiItineraryPlan: vi.fn() }));
@@ -47,6 +48,44 @@ const plan = {
 };
 
 describe("AiItineraryPlannerDialog", () => {
+  it("does not reopen after its overview view remounts", async () => {
+    const user = userEvent.setup();
+
+    function OverviewHarness() {
+      const [activeView, setActiveView] = useState<"itinerary" | "overview">("overview");
+      const [isPlannerOpen, setIsPlannerOpen] = useState(true);
+
+      return (
+        <>
+          <button onClick={() => setActiveView("overview")} type="button">
+            개요
+          </button>
+          <button onClick={() => setActiveView("itinerary")} type="button">
+            일정
+          </button>
+          {activeView === "overview" ? (
+            <AiItineraryPlannerDialog
+              initialOpen
+              onOpenChange={setIsPlannerOpen}
+              open={isPlannerOpen}
+              trip={trip}
+            />
+          ) : null}
+        </>
+      );
+    }
+
+    render(<OverviewHarness />);
+
+    await user.click(screen.getByRole("button", { name: "AI 동선 추천 닫기" }));
+    expect(screen.queryByRole("dialog", { name: "여행 동선 초안" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "일정" }));
+    await user.click(screen.getByRole("button", { name: "개요" }));
+
+    expect(screen.queryByRole("dialog", { name: "여행 동선 초안" })).not.toBeInTheDocument();
+  });
+
   it("shows a route draft only after an editor requests it", async () => {
     mocks.requestAiItineraryPlan.mockResolvedValue({ plan, source: "mock" });
     const user = userEvent.setup();

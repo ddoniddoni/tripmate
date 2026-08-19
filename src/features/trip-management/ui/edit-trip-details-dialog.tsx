@@ -12,6 +12,8 @@ import {
 } from "@/entities/trip/model/update-trip-details";
 import { updateTripDetails } from "@/features/trip-management/model/update-trip-details-action";
 import { initialUpdateTripDetailsActionState } from "@/features/trip-management/model/update-trip-details-action-state";
+import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
+import { HeaderActionIcon } from "@/shared/ui/header-action-icon";
 
 type EditTripDetailsDialogProps = {
   canUpdateTrip: boolean;
@@ -90,6 +92,7 @@ export function EditTripDetailsDialog({
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Trigger className="trip-details-button" type="button">
+        <HeaderActionIcon name="edit" />
         여행 정보 수정
       </Dialog.Trigger>
 
@@ -105,7 +108,7 @@ export function EditTripDetailsDialog({
               </Dialog.Description>
             </div>
             <Dialog.Close className="dialog-close" aria-label="대화상자 닫기" disabled={isPending}>
-              ×
+              <DialogCloseIcon />
             </Dialog.Close>
           </div>
 

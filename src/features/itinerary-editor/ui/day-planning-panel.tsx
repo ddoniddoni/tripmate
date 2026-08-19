@@ -262,7 +262,7 @@ export function DayPlanningPanel({
           <p>바로 넣기 망설여지는 아이디어는 후보로 먼저 모아 두세요.</p>
         </div>
         {canEditItinerary ? (
-          <button className="secondary-button day-suggestion-add" type="button" onClick={onAddSuggestion}>
+          <button className="primary-button day-suggestion-add" type="button" onClick={onAddSuggestion}>
             장소 제안
           </button>
         ) : null}

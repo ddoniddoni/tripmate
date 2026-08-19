@@ -2,22 +2,17 @@
 
 import type { ReactNode } from "react";
 
-import type { TripDay } from "@/entities/itinerary/model/trip-itinerary";
 import { formatTripDateRange, formatTripLength } from "@/entities/trip/lib/format-trip";
 import type { Trip } from "@/entities/trip/model/trip";
 import type {
   TripOverview,
   TripOverviewAction,
 } from "@/features/trip-overview/model/trip-overview";
-import { formatCalendarDate } from "@/shared/lib/calendar-date";
 
 type TripOverviewWorkspaceViewProps = {
-  days: readonly TripDay[];
   headerActions?: ReactNode;
   onNavigate: (view: TripOverviewAction) => void;
-  onSelectDay: (dayId: string) => void;
   overview: TripOverview;
-  selectedDayId: string;
   trip: Trip;
 };
 
@@ -121,12 +116,9 @@ function TripOverviewStat({
 }
 
 export function TripOverviewWorkspaceView({
-  days,
   headerActions,
   onNavigate,
-  onSelectDay,
   overview,
-  selectedDayId,
   trip,
 }: TripOverviewWorkspaceViewProps) {
   const tripProgress =
@@ -140,47 +132,6 @@ export function TripOverviewWorkspaceView({
 
   return (
     <section aria-label="여행 개요" className="trip-overview-workspace">
-      <aside aria-label="여행 날짜 바로가기" className="trip-overview-days">
-        <div className="trip-overview-days-heading">
-          <span>여행 일정</span>
-          <strong>{formatTripDateRange(trip.startDate, trip.endDate)}</strong>
-        </div>
-        <ol>
-          {days.map((day, index) => {
-            const isSelected = day.id === selectedDayId;
-
-            return (
-              <li key={day.id}>
-                <button
-                  aria-current={isSelected ? "date" : undefined}
-                  aria-label={`${index + 1}일차 일정 열기`}
-                  className={isSelected ? "trip-overview-day-active" : undefined}
-                  onClick={() => onSelectDay(day.id)}
-                  type="button"
-                >
-                  <span className="trip-overview-day-icon">
-                    <OverviewIcon name="calendar" />
-                  </span>
-                  <span>
-                    <strong>{index + 1}일차</strong>
-                    <small>
-                      {formatCalendarDate(day.date, {
-                        day: "numeric",
-                        month: "short",
-                        weekday: "short",
-                      })}
-                      {day.itemIds.length > 0
-                        ? ` · ${numberFormatter.format(day.itemIds.length)}곳`
-                        : " · 비어 있음"}
-                    </small>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ol>
-      </aside>
-
       <div className="trip-overview-canvas">
         <span aria-hidden="true" className="trip-overview-ribbon" />
         <header className="trip-overview-heading">

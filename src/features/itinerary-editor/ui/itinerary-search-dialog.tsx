@@ -6,6 +6,7 @@ import { useDeferredValue, useState } from "react";
 import type { ItineraryDocument } from "@/entities/itinerary/model/trip-itinerary";
 import { searchItineraryItems } from "@/entities/itinerary/model/search-itinerary-items";
 import { formatCalendarDate } from "@/shared/lib/calendar-date";
+import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
 
 type ItinerarySearchDialogProps = {
   itinerary: ItineraryDocument;
@@ -62,7 +63,7 @@ export function ItinerarySearchDialog({
               </Dialog.Description>
             </div>
             <Dialog.Close aria-label="일정 찾기 닫기" className="dialog-close">
-              ×
+              <DialogCloseIcon />
             </Dialog.Close>
           </div>
 

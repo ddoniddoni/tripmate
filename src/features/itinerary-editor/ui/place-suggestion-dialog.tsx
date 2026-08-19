@@ -11,6 +11,7 @@ import {
   type PlaceSuggestionFormValues,
 } from "@/features/itinerary-editor/model/place-suggestion-form";
 import { usePlaceSearch } from "@/features/place-search/model/use-place-search";
+import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
 
 type PlaceSuggestionDialogProps = {
   onOpenChange: (open: boolean) => void;
@@ -58,7 +59,7 @@ export function PlaceSuggestionDialog({
               </Dialog.Description>
             </div>
             <Dialog.Close className="dialog-close" aria-label="대화상자 닫기">
-              ×
+              <DialogCloseIcon />
             </Dialog.Close>
           </div>
 
