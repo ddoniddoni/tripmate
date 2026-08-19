@@ -26,6 +26,7 @@ type TripSharingDialogProps = {
   memberCount: number;
   members: readonly TripMember[];
   tripId: string;
+  triggerLabel?: string;
 };
 
 type TripInvitationFormValues = Omit<CreateTripInvitationInput, "tripId">;
@@ -52,6 +53,7 @@ export function TripSharingDialog({
   memberCount,
   members,
   tripId,
+  triggerLabel,
 }: TripSharingDialogProps) {
   const router = useRouter();
   const [copyMessage, setCopyMessage] = useState("");
@@ -99,7 +101,7 @@ export function TripSharingDialog({
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger className="share-placeholder share-button" type="button">
         <HeaderActionIcon name="share" />
-        멤버 {memberCount}명{canManageMembers ? " · 초대" : ""}
+        {triggerLabel ?? `멤버 ${memberCount}명${canManageMembers ? " · 초대" : ""}`}
       </Dialog.Trigger>
 
       <Dialog.Portal>

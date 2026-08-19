@@ -8,6 +8,7 @@ import {
 describe("collaboration presence copy", () => {
   it("describes the active workspace without exposing a durable editing lock", () => {
     expect(getWorkspaceActivityCopy("itinerary")).toBe("일정을 살펴보는 중");
+    expect(getWorkspaceActivityCopy("settings")).toBe("여행 설정을 확인하는 중");
     expect(getWorkspaceActivityCopy()).toBeNull();
   });
 

@@ -206,19 +206,8 @@ export function useItineraryEditorController({
     }
 
     const updatedAt = new Date().toISOString();
-    const placeFields = {
-      name: values.name,
-      address: values.address,
-      longitude: Number(values.longitude),
-      latitude: Number(values.latitude),
-      category: values.category || undefined,
-    };
     const editableFields = {
-      place: {
-        provider: "mapbox" as const,
-        providerPlaceId: editingItem?.place.providerPlaceId ?? "",
-        ...placeFields,
-      },
+      place: values.place,
       startTime: values.startTime || undefined,
       durationMinutes: values.durationMinutes ? Number(values.durationMinutes) : undefined,
       note: values.note || undefined,
@@ -233,7 +222,7 @@ export function useItineraryEditorController({
               itemId: editingItem.id,
               changes: editableFields,
             }),
-          `${values.name} 일정을 수정했습니다.`,
+          `${values.place.name} 일정을 수정했습니다.`,
         )
       ) {
         setDialogState({ type: "closed" });
@@ -255,14 +244,10 @@ export function useItineraryEditorController({
               id: itemId,
               dayId: selectedDay.id,
               ...editableFields,
-              place: {
-                ...editableFields.place,
-                providerPlaceId: `mock.mapbox.manual.${itemId}`,
-              },
               createdBy: currentUserId,
             },
           }),
-        `${values.name}을 ${selectedDayIndex + 1}일차에 추가했습니다.`,
+        `${values.place.name}을 ${selectedDayIndex + 1}일차에 추가했습니다.`,
       )
     ) {
       setSelectedItemId(itemId);

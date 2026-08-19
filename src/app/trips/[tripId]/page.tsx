@@ -12,14 +12,10 @@ import { getSupabaseUserProfile } from "@/entities/user/api/supabase-profile-rep
 import { getAuthenticatedUser } from "@/features/auth/model/get-authenticated-user";
 import { getTripRoomId } from "@/features/collaboration/model/trip-room";
 import { getTripWorkspaceNavigation } from "@/features/collaboration/model/trip-workspace-navigation";
-import { TripHistoryControls } from "@/features/collaboration/ui/trip-history-controls";
 import { LiveblocksItineraryEditor } from "@/features/collaboration/ui/liveblocks-itinerary-editor";
 import { TripCollaborationRoom } from "@/features/collaboration/ui/trip-collaboration-room";
 import { TripCollaborationStatus } from "@/features/collaboration/ui/trip-collaboration-status";
 import { ItineraryEditorShell } from "@/features/itinerary-editor/ui/itinerary-editor-shell";
-import { DeleteTripDialog } from "@/features/trip-management/ui/delete-trip-dialog";
-import { EditTripDetailsDialog } from "@/features/trip-management/ui/edit-trip-details-dialog";
-import { TripSharingDialog } from "@/features/trip-sharing/ui/trip-sharing-dialog";
 import { getSafeTripEditorPath } from "@/shared/lib/safe-internal-path";
 
 type TripEditorPageProps = {
@@ -102,42 +98,15 @@ export default async function TripEditorPage({ params, searchParams }: TripEdito
     <ItineraryEditorShell
       canEditItinerary={permissions.canEditItinerary}
       collaborationControl={<TripCollaborationStatus />}
-      historyControl={<TripHistoryControls canEditItinerary={permissions.canEditItinerary} />}
       itineraryEditor={
         <LiveblocksItineraryEditor
-          canEditItinerary={permissions.canEditItinerary}
           currentUserId={user.id}
           initialAiPlannerOpen={initialAiPlannerOpen}
           initialWorkspaceNavigation={initialWorkspaceNavigation}
-          members={members}
-          trip={trip}
-        />
-      }
-      sharingControl={
-        <TripSharingDialog
-          canManageMembers={permissions.canManageMembers}
-          currentUserId={user.id}
           invitations={pendingInvitations}
-          memberCount={members.length}
           members={members}
-          tripId={trip.id}
-        />
-      }
-      deletionControl={
-        <DeleteTripDialog
-          canDeleteTrip={permissions.canDeleteTrip}
-          tripId={trip.id}
-          tripTitle={trip.title}
-        />
-      }
-      tripDetailsControl={
-        <EditTripDetailsDialog
-          canUpdateTrip={permissions.canUpdateTrip}
-          destination={trip.destination}
-          endDate={trip.endDate}
-          startDate={trip.startDate}
-          title={trip.title}
-          tripId={trip.id}
+          permissions={permissions}
+          trip={trip}
         />
       }
       tripItinerary={initialTripItinerary}

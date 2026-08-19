@@ -13,27 +13,24 @@ function TimePickerHarness() {
   return (
     <>
       <TimePicker onChange={setValue} value={value} />
-      <output>{value || "시간 미정"}</output>
+      <output>{value || "선택 안 함"}</output>
     </>
   );
 }
 
 describe("TimePicker", () => {
-  it("combines hour and minute choices and lets the user clear the time", async () => {
+  it("combines numeric hour and minute choices", async () => {
     const user = userEvent.setup();
     render(<TimePickerHarness />);
 
-    expect(screen.getByRole("group", { name: "시작 시간" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "미정" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("group", { name: "도착 시간" })).toBeInTheDocument();
+    expect(screen.getAllByRole("option", { name: "09" })).toHaveLength(2);
+    expect(screen.queryByRole("option", { name: "09시" })).not.toBeInTheDocument();
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "시작 시간 시" }), "09");
-    expect(screen.getByRole("status")).toHaveTextContent("시간 미정");
+    await user.selectOptions(screen.getByRole("combobox", { name: "도착 시간 시" }), "09");
+    expect(screen.getByRole("status")).toHaveTextContent("선택 안 함");
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "시작 시간 분" }), "30");
+    await user.selectOptions(screen.getByRole("combobox", { name: "도착 시간 분" }), "30");
     expect(screen.getByRole("status")).toHaveTextContent("09:30");
-    expect(screen.getByRole("button", { name: "미정" })).toHaveAttribute("aria-pressed", "false");
-
-    await user.click(screen.getByRole("button", { name: "미정" }));
-    expect(screen.getByRole("status")).toHaveTextContent("시간 미정");
   });
 });

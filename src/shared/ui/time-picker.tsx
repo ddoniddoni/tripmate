@@ -4,6 +4,7 @@ type TimePickerProps = {
   "aria-describedby"?: string;
   disabled?: boolean;
   invalid?: boolean;
+  label?: string;
   onChange: (value: string) => void;
   value: string;
 };
@@ -36,6 +37,7 @@ export function TimePicker({
   "aria-describedby": ariaDescribedBy,
   disabled = false,
   invalid = false,
+  label = "도착 시간",
   onChange,
   value,
 }: TimePickerProps) {
@@ -44,7 +46,8 @@ export function TimePicker({
 
   if (previousValue !== value) {
     setPreviousValue(value);
-    setDraftTime(getTimeParts(value));
+    const nextTime = getTimeParts(value);
+    setDraftTime(nextTime);
   }
 
   function updateTime(nextHour: string, nextMinute: string) {
@@ -54,43 +57,20 @@ export function TimePicker({
     onChange(getTimeValue(nextTime));
   }
 
-  function clearTime() {
-    setDraftTime({ hour: "", minute: "" });
-    onChange("");
-  }
-
   return (
-    <div
-      className="time-picker"
-      aria-describedby={ariaDescribedBy}
-      aria-label="시작 시간"
-      role="group"
-    >
-      <button
-        aria-pressed={!draftTime.hour && !draftTime.minute}
-        className={
-          !draftTime.hour && !draftTime.minute
-            ? "time-picker-unscheduled is-active"
-            : "time-picker-unscheduled"
-        }
-        disabled={disabled}
-        onClick={clearTime}
-        type="button"
-      >
-        미정
-      </button>
+    <div className="time-picker" aria-describedby={ariaDescribedBy} aria-label={label} role="group">
       <span className="time-picker-select">
         <select
-          aria-label="시작 시간 시"
+          aria-label={`${label} 시`}
           aria-invalid={invalid || undefined}
           disabled={disabled}
           onChange={(event) => updateTime(event.target.value, draftTime.minute)}
           value={draftTime.hour}
         >
-          <option value="">시</option>
+          <option value="">--</option>
           {hours.map((option) => (
             <option key={option} value={option}>
-              {option}시
+              {option}
             </option>
           ))}
         </select>
@@ -101,16 +81,16 @@ export function TimePicker({
       </span>
       <span className="time-picker-select">
         <select
-          aria-label="시작 시간 분"
+          aria-label={`${label} 분`}
           aria-invalid={invalid || undefined}
           disabled={disabled}
           onChange={(event) => updateTime(draftTime.hour, event.target.value)}
           value={draftTime.minute}
         >
-          <option value="">분</option>
+          <option value="">--</option>
           {minutes.map((option) => (
             <option key={option} value={option}>
-              {option}분
+              {option}
             </option>
           ))}
         </select>

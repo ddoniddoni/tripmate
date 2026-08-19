@@ -3,6 +3,7 @@ export const tripWorkspaceViews = [
   "itinerary",
   "preparation",
   "expenses",
+  "settings",
 ] as const;
 
 export type TripWorkspaceView = (typeof tripWorkspaceViews)[number];

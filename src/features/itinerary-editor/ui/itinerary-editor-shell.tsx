@@ -9,22 +9,14 @@ import { BrandMark } from "@/shared/ui/brand-mark";
 type ItineraryEditorShellProps = {
   canEditItinerary?: boolean;
   collaborationControl?: ReactNode;
-  deletionControl?: ReactNode;
-  historyControl?: ReactNode;
   itineraryEditor?: ReactNode;
-  sharingControl?: ReactNode;
-  tripDetailsControl?: ReactNode;
   tripItinerary: TripItinerary;
 };
 
 export function ItineraryEditorShell({
   canEditItinerary = true,
   collaborationControl,
-  deletionControl,
-  historyControl,
   itineraryEditor,
-  sharingControl,
-  tripDetailsControl,
   tripItinerary,
 }: ItineraryEditorShellProps) {
   const { trip } = tripItinerary;
@@ -51,16 +43,12 @@ export function ItineraryEditorShell({
         </div>
 
         <div className="header-actions">
-          {tripDetailsControl}
           {collaborationControl ?? (
             <span className="sync-pill">
               <i aria-hidden="true" />
               {canEditItinerary ? "일정은 이 기기에서 편집 중" : "보기 전용 · 일정 변경 불가"}
             </span>
           )}
-          {historyControl}
-          {sharingControl ?? <span className="share-placeholder">초대 준비 중</span>}
-          {deletionControl}
         </div>
       </header>
 

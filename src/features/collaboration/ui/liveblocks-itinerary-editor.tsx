@@ -33,6 +33,11 @@ import {
   type ItinerarySelectionCollaborator,
 } from "@/features/itinerary-editor/ui/itinerary-editor-workspace";
 import { TripPreparationChecklist } from "@/features/preparation-checklist/ui/trip-preparation-checklist";
+import { TripHistoryShortcuts } from "@/features/collaboration/ui/trip-history-controls";
+import { DeleteTripDialog } from "@/features/trip-management/ui/delete-trip-dialog";
+import { EditTripDetailsDialog } from "@/features/trip-management/ui/edit-trip-details-dialog";
+import { TripSettingsWorkspace } from "@/features/trip-management/ui/trip-settings-workspace";
+import { TripSharingDialog } from "@/features/trip-sharing/ui/trip-sharing-dialog";
 import { AiItineraryPlannerDialog } from "@/features/ai-itinerary/ui/ai-itinerary-planner-dialog";
 import { TripBriefingDialog } from "@/features/trip-briefing/ui/trip-briefing-dialog";
 import { TripExpenseWorkspace } from "@/features/trip-expenses/ui/trip-expense-workspace";
@@ -43,15 +48,17 @@ import {
   type TripExpenseSettlementState,
 } from "@/entities/expense/model/trip-expense-settlement-state";
 import { getTripMemberLabels } from "@/entities/trip/lib/get-trip-member-labels";
-import type { TripMember } from "@/entities/trip/model/trip-membership";
+import type { TripInvitation } from "@/entities/trip/model/trip-invitation";
+import type { TripMember, TripPermissions } from "@/entities/trip/model/trip-membership";
 import type { Trip } from "@/entities/trip/model/trip";
 
 type LiveblocksItineraryEditorProps = {
-  canEditItinerary: boolean;
   currentUserId: string;
   initialAiPlannerOpen: boolean;
   initialWorkspaceNavigation: TripWorkspaceNavigation;
+  invitations: TripInvitation[];
   members: readonly TripMember[];
+  permissions: TripPermissions;
   trip: Trip;
 };
 
@@ -96,10 +103,19 @@ function WorkspaceTabIcon({ view }: { view: TripWorkspaceView }) {
     );
   }
 
+  if (view === "expenses") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <rect height="16" rx="2" width="18" x="3" y="4" />
+        <path d="M3 9h18M7 15h4" />
+      </svg>
+    );
+  }
+
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
-      <rect height="16" rx="2" width="18" x="3" y="4" />
-      <path d="M3 9h18M7 15h4" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.94 1.94-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V20h-2.76v-.08A1.7 1.7 0 0 0 11.1 18.36a1.7 1.7 0 0 0-1.88.34l-.06.06-1.94-1.94.06-.06A1.7 1.7 0 0 0 7.62 14.9a1.7 1.7 0 0 0-1.56-1.03H6V11.1h.08a1.7 1.7 0 0 0 1.54-1.03 1.7 1.7 0 0 0-.34-1.88l-.06-.06 1.94-1.94.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V5h2.76v.08a1.7 1.7 0 0 0 1.03 1.54 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.94 1.94-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H20v2.76h-.08A1.7 1.7 0 0 0 18.36 14.9c.12.38.48.72 1.04.1Z" />
     </svg>
   );
 }
@@ -157,19 +173,31 @@ function TripWorkspaceTabs({
         </span>
         경비
       </button>
+      <button
+        aria-current={activeView === "settings" ? "page" : undefined}
+        className={activeView === "settings" ? "trip-workspace-tab-active" : undefined}
+        onClick={() => onChange("settings")}
+        type="button"
+      >
+        <span className="workspace-tab-icon">
+          <WorkspaceTabIcon view="settings" />
+        </span>
+        설정
+      </button>
     </nav>
   );
 }
 
 function LiveblocksItineraryEditorContent({
-  canEditItinerary,
   currentUserId,
   aiPlannerOpen,
   expenses,
   expenseSettlementState,
   initialWorkspaceNavigation,
+  invitations,
   members,
   onAiPlannerOpenChange,
+  permissions,
   preparationItems,
   trip,
   tripItinerary,
@@ -221,7 +249,7 @@ function LiveblocksItineraryEditorContent({
     [trip],
   );
   const editor = useItineraryEditorController({
-    canEditItinerary,
+    canEditItinerary: permissions.canEditItinerary,
     commitMutation,
     currentUserId,
     initialStatusMessage: "공유 일정을 불러왔습니다.",
@@ -267,11 +295,14 @@ function LiveblocksItineraryEditorContent({
         activeView={workspaceNavigation.navigation.view}
         onChange={workspaceNavigation.selectView}
       />
+      {workspaceNavigation.navigation.view === "itinerary" ? (
+        <TripHistoryShortcuts canEditItinerary={permissions.canEditItinerary} />
+      ) : null}
       {workspaceNavigation.navigation.view === "overview" ? (
         <TripOverviewWorkspaceView
           headerActions={
             <>
-              {canEditItinerary ? (
+              {permissions.canEditItinerary ? (
                 <AiItineraryPlannerDialog
                   onApplyPlan={applyAiItineraryPlan}
                   onOpenChange={onAiPlannerOpenChange}
@@ -297,7 +328,7 @@ function LiveblocksItineraryEditorContent({
       ) : null}
       {workspaceNavigation.navigation.view === "itinerary" ? (
         <ItineraryEditorWorkspaceView
-          canEditItinerary={canEditItinerary}
+          canEditItinerary={permissions.canEditItinerary}
           editor={editor}
           memberLabels={memberLabels}
           selectedItemCollaborators={selectedItemCollaborators}
@@ -305,16 +336,51 @@ function LiveblocksItineraryEditorContent({
       ) : null}
       {workspaceNavigation.navigation.view === "preparation" ? (
         <TripPreparationChecklist
-          canEditChecklist={canEditItinerary}
+          canEditChecklist={permissions.canEditItinerary}
           currentUserId={currentUserId}
           members={members}
         />
       ) : null}
       {workspaceNavigation.navigation.view === "expenses" ? (
         <TripExpenseWorkspace
-          canEditExpenses={canEditItinerary}
+          canEditExpenses={permissions.canEditItinerary}
           currentUserId={currentUserId}
           members={members}
+        />
+      ) : null}
+      {workspaceNavigation.navigation.view === "settings" ? (
+        <TripSettingsWorkspace
+          permissions={permissions}
+          deletionControl={
+            <DeleteTripDialog
+              canDeleteTrip={permissions.canDeleteTrip}
+              tripId={trip.id}
+              tripTitle={trip.title}
+            />
+          }
+          memberCount={members.length}
+          sharingControl={
+            <TripSharingDialog
+              canManageMembers={permissions.canManageMembers}
+              currentUserId={currentUserId}
+              invitations={invitations}
+              memberCount={members.length}
+              members={members}
+              tripId={trip.id}
+              triggerLabel="멤버 관리"
+            />
+          }
+          trip={trip}
+          tripDetailsControl={
+            <EditTripDetailsDialog
+              canUpdateTrip={permissions.canUpdateTrip}
+              destination={trip.destination}
+              endDate={trip.endDate}
+              startDate={trip.startDate}
+              title={trip.title}
+              tripId={trip.id}
+            />
+          }
         />
       ) : null}
     </>
@@ -322,11 +388,12 @@ function LiveblocksItineraryEditorContent({
 }
 
 export function LiveblocksItineraryEditor({
-  canEditItinerary,
   currentUserId,
   initialAiPlannerOpen,
   initialWorkspaceNavigation,
+  invitations,
   members,
+  permissions,
   trip,
 }: LiveblocksItineraryEditorProps) {
   const router = useRouter();
@@ -391,14 +458,15 @@ export function LiveblocksItineraryEditor({
 
   return (
     <LiveblocksItineraryEditorContent
-      canEditItinerary={canEditItinerary}
       currentUserId={currentUserId}
       aiPlannerOpen={aiPlannerOpen}
       expenses={expenseDocument ? Object.values(expenseDocument.items) : []}
       expenseSettlementState={expenseSettlementState}
       initialWorkspaceNavigation={initialWorkspaceNavigation}
+      invitations={invitations}
       members={members}
       onAiPlannerOpenChange={setAiPlannerOpen}
+      permissions={permissions}
       preparationItems={preparationChecklist ? Object.values(preparationChecklist.items) : []}
       trip={sharedTrip}
       tripItinerary={tripItinerary}

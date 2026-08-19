@@ -101,13 +101,6 @@ export function ThemeToggle() {
       <span className="theme-toggle-icon theme-toggle-moon">
         <MoonIcon />
       </span>
-      <span className="theme-toggle-copy">
-        <span className="theme-toggle-title">화면 테마</span>
-        <span className="theme-toggle-label">{isDark ? "라이트 모드" : "다크 모드"}</span>
-      </span>
-      <span aria-hidden="true" className="theme-toggle-switch">
-        <span />
-      </span>
     </button>
   );
 }

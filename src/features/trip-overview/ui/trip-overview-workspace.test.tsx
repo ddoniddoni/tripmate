@@ -133,4 +133,24 @@ describe("TripOverviewWorkspaceView", () => {
 
     expect(screen.queryByRole("complementary", { name: "여행 날짜 바로가기" })).not.toBeInTheDocument();
   });
+
+  it("does not render a decorative vertical ribbon in the overview", () => {
+    const overview = createTripOverview({
+      expenses: [],
+      itinerary: jejuTrip.itinerary,
+      memberIds: ["user-jiwoo"],
+      preparationItems: [],
+      settlementState: createEmptyTripExpenseSettlementState(),
+    });
+
+    const { container } = render(
+      <TripOverviewWorkspaceView
+        onNavigate={vi.fn()}
+        overview={overview}
+        trip={jejuTrip.trip}
+      />,
+    );
+
+    expect(container.querySelector(".trip-overview-ribbon")).not.toBeInTheDocument();
+  });
 });

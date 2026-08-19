@@ -117,6 +117,22 @@ function ChecklistHarness({
 }
 
 describe("TripPreparationChecklistView", () => {
+  it("keeps an empty checklist in a focused first-item flow", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<ChecklistHarness initialItems={[]} />);
+
+    const workspace = screen.getByRole("region", { name: "준비하기" });
+
+    expect(workspace).toHaveClass("preparation-workspace-empty");
+    expect(container.querySelector(".preparation-empty-state")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("준비할 일"), "여권 유효기간 확인하기");
+    await user.click(screen.getByRole("button", { name: "추가" }));
+
+    expect(workspace).not.toHaveClass("preparation-workspace-empty");
+    expect(screen.queryByText("첫 준비 항목을 적어 볼까요?")).not.toBeInTheDocument();
+  });
+
   it("adds a categorized task, assigns a member, and marks it complete", async () => {
     const user = userEvent.setup();
     render(<ChecklistHarness />);

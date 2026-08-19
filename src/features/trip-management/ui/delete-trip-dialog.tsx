@@ -1,7 +1,7 @@
 "use client";
 
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { deleteTrip } from "@/features/trip-management/model/delete-trip-action";
 import { initialDeleteTripActionState } from "@/features/trip-management/model/delete-trip-action-state";
@@ -19,16 +19,26 @@ export function DeleteTripDialog({
   tripTitle,
 }: DeleteTripDialogProps) {
   const [state, formAction, isPending] = useActionState(deleteTrip, initialDeleteTripActionState);
+  const [confirmationTitle, setConfirmationTitle] = useState("");
+  const [open, setOpen] = useState(false);
 
   if (!canDeleteTrip) {
     return null;
   }
 
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+
+    if (!nextOpen) {
+      setConfirmationTitle("");
+    }
+  }
+
   return (
-    <AlertDialog.Root>
+    <AlertDialog.Root open={open} onOpenChange={handleOpenChange}>
       <AlertDialog.Trigger className="trip-delete-trigger" type="button">
         <HeaderActionIcon name="delete" />
-        이 여행 삭제
+        여행 삭제
       </AlertDialog.Trigger>
 
       <AlertDialog.Portal>
@@ -41,7 +51,34 @@ export function DeleteTripDialog({
           </AlertDialog.Description>
 
           <form action={formAction}>
+            <input name="confirmationTitle" type="hidden" value={confirmationTitle} />
             <input name="tripId" type="hidden" value={tripId} />
+
+            <div className="form-field delete-trip-confirmation-field">
+              <label htmlFor="delete-trip-confirmation">
+                삭제하려면 여행 이름 <strong>{tripTitle}</strong>을 입력해 주세요.
+              </label>
+              <input
+                aria-describedby={
+                  confirmationTitle && confirmationTitle !== tripTitle
+                    ? "delete-trip-confirmation-error"
+                    : undefined
+                }
+                aria-invalid={Boolean(confirmationTitle && confirmationTitle !== tripTitle)}
+                autoComplete="off"
+                disabled={isPending}
+                id="delete-trip-confirmation"
+                onChange={(event) => setConfirmationTitle(event.target.value)}
+                placeholder={tripTitle}
+                type="text"
+                value={confirmationTitle}
+              />
+              {confirmationTitle && confirmationTitle !== tripTitle ? (
+                <span id="delete-trip-confirmation-error" role="alert">
+                  여행 이름이 일치하지 않아요.
+                </span>
+              ) : null}
+            </div>
 
             {state.status === "error" ? (
               <p className="form-message form-message-error" role="alert">
@@ -55,7 +92,11 @@ export function DeleteTripDialog({
                   취소
                 </button>
               </AlertDialog.Cancel>
-              <button className="danger-button" type="submit" disabled={isPending}>
+              <button
+                className="danger-button"
+                type="submit"
+                disabled={isPending || confirmationTitle !== tripTitle}
+              >
                 {isPending ? "삭제 중…" : "여행 삭제"}
               </button>
             </div>

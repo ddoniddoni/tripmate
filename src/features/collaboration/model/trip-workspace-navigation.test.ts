@@ -14,6 +14,13 @@ describe("trip workspace navigation", () => {
     ).toEqual({ selectedDayId: "day-two", view: "itinerary" });
   });
 
+  it("supports settings while preserving the selected day for returning to the itinerary", () => {
+    expect(getTripWorkspaceNavigation({ day: "day-two", view: "settings" }, dayIds)).toEqual({
+      selectedDayId: "day-two",
+      view: "settings",
+    });
+  });
+
   it("falls back to the overview and first day for malformed or unavailable values", () => {
     expect(
       getTripWorkspaceNavigation({ day: "other-trip-day", view: "timeline" }, dayIds),
