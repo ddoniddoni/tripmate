@@ -622,9 +622,9 @@ textarea {
   top: 0;
   bottom: 0;
   left: 48px;
-  width: 2px;
+  width: 1px;
   content: "";
-  background: rgb(38 112 82 / 40%);
+  background: var(--line);
 }
 
 .eyebrow,
@@ -12186,9 +12186,9 @@ html[data-theme="dark"] .new-trip-dialog-content .new-trip-ai-option {
   justify-content: center;
   gap: 8px;
   padding: 0 14px;
-  color: var(--danger-strong);
-  background: var(--surface);
-  border: 1px solid var(--danger-line);
+  color: var(--on-primary);
+  background: #c13515;
+  border: 1px solid #c13515;
   border-radius: 8px;
   box-shadow: none;
   font-size: 13px;
@@ -12197,8 +12197,14 @@ html[data-theme="dark"] .new-trip-dialog-content .new-trip-ai-option {
 
 .trip-settings-danger-action .trip-delete-trigger:hover:not(:disabled) {
   color: var(--on-primary);
-  background: var(--danger);
-  border-color: var(--danger);
+  background: #b32505;
+  border-color: #b32505;
+}
+
+.trip-settings-danger-action .trip-delete-trigger:active:not(:disabled) {
+  color: var(--on-primary);
+  background: #9d1f04;
+  border-color: #9d1f04;
 }
 
 .alert-dialog-content .delete-trip-confirmation-field {
@@ -12263,7 +12269,6 @@ html[data-theme="dark"] .trip-settings-danger-zone {
 }
 
 html[data-theme="dark"] .trip-settings-card-action .trip-details-button,
-html[data-theme="dark"] .trip-settings-danger-action .trip-delete-trigger,
 html[data-theme="dark"] .alert-dialog-content .delete-trip-confirmation-field input {
   color: var(--ink);
   background: var(--surface);
