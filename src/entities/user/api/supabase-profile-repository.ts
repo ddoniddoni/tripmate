@@ -5,7 +5,10 @@ import {
   type UserProfile,
   userProfileSchema,
 } from "@/entities/user/model/profile";
-import { createSupabaseServerClient } from "@/shared/api/supabase/server";
+import {
+  createSupabaseServerClient,
+  type SupabaseServerClient,
+} from "@/shared/api/supabase/server";
 
 const profileIdSchema = z.uuid();
 const supabaseProfileRowSchema = z.object({
@@ -27,12 +30,15 @@ function toUserProfile(row: z.infer<typeof supabaseProfileRowSchema>): UserProfi
   });
 }
 
-export async function getSupabaseUserProfile(userId: string): Promise<UserProfile | null> {
+export async function getSupabaseUserProfile(
+  userId: string,
+  serverClient?: SupabaseServerClient,
+): Promise<UserProfile | null> {
   if (!profileIdSchema.safeParse(userId).success) {
     return null;
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = serverClient ?? (await createSupabaseServerClient());
   const { data, error } = await supabase
     .from("profiles")
     .select("id, display_name")
@@ -41,10 +47,11 @@ export async function getSupabaseUserProfile(userId: string): Promise<UserProfil
 
   if (error) {
     console.error("Supabase profile query failed.", {
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-      message: error.message,
+      code: error.code ?? null,
+      details: error.details ?? null,
+      hint: error.hint ?? null,
+      message: error.message ?? null,
+      name: error.name ?? null,
     });
 
     throw new SupabaseProfileRepositoryError();

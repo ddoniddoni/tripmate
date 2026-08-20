@@ -64,6 +64,7 @@ describe("Supabase profile repository", () => {
       details: "permission denied",
       hint: null,
       message: "database unavailable",
+      name: null,
     });
   });
 });

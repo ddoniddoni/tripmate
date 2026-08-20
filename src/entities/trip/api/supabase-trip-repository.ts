@@ -15,7 +15,10 @@ import {
 import { tripSchema, type Trip } from "@/entities/trip/model/trip";
 import { calendarDateSchema } from "@/shared/lib/calendar-date";
 import { createSupabaseAdminClient } from "@/shared/api/supabase/admin";
-import { createSupabaseServerClient } from "@/shared/api/supabase/server";
+import {
+  createSupabaseServerClient,
+  type SupabaseServerClient,
+} from "@/shared/api/supabase/server";
 
 const supabaseTripIdSchema = z.uuid();
 const supabaseTripRowSchema = z.object({
@@ -71,8 +74,8 @@ function toTrip(row: z.infer<typeof supabaseTripRowSchema>): Trip {
   });
 }
 
-export async function listSupabaseTrips(): Promise<Trip[]> {
-  const supabase = await createSupabaseServerClient();
+export async function listSupabaseTrips(serverClient?: SupabaseServerClient): Promise<Trip[]> {
+  const supabase = serverClient ?? (await createSupabaseServerClient());
   const { data, error } = await supabase
     .from("trips")
     .select("id, title, destination, start_date, end_date, time_zone")

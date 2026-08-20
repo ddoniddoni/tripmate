@@ -8,6 +8,7 @@ import { getSupabaseUserProfile } from "@/entities/user/api/supabase-profile-rep
 import { getAuthenticatedUser } from "@/features/auth/model/get-authenticated-user";
 import { SignOutButton } from "@/features/auth/ui/sign-out-button";
 import { NewTripForm } from "@/features/trip-management/ui/new-trip-form";
+import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { calendarDateToUtcDate } from "@/shared/lib/calendar-date";
 import { BrandMark } from "@/shared/ui/brand-mark";
 
@@ -91,15 +92,16 @@ function TripCard({ trip }: TripCardProps) {
 }
 
 export default async function TripsPage() {
-  const user = await getAuthenticatedUser();
+  const supabase = await createSupabaseServerClient();
+  const user = await getAuthenticatedUser(supabase);
 
   if (!user) {
     redirect("/login");
   }
 
   const [profileResult, tripsResult] = await Promise.allSettled([
-    getSupabaseUserProfile(user.id),
-    listSupabaseTrips(),
+    getSupabaseUserProfile(user.id, supabase),
+    listSupabaseTrips(supabase),
   ]);
 
   if (profileResult.status === "rejected") {

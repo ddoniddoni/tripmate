@@ -1,12 +1,17 @@
-import { createSupabaseServerClient } from "@/shared/api/supabase/server";
+import {
+  createSupabaseServerClient,
+  type SupabaseServerClient,
+} from "@/shared/api/supabase/server";
 
 export type AuthenticatedUser = {
   email: string | null;
   id: string;
 };
 
-export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> {
-  const supabase = await createSupabaseServerClient();
+export async function getAuthenticatedUser(
+  serverClient?: SupabaseServerClient,
+): Promise<AuthenticatedUser | null> {
+  const supabase = serverClient ?? (await createSupabaseServerClient());
   const { data, error } = await supabase.auth.getClaims();
   const claims = data?.claims;
 
