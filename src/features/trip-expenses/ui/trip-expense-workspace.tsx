@@ -37,6 +37,7 @@ import {
   type TripExpenseSettlementCompletionInput,
 } from "@/features/collaboration/model/liveblocks-trip-expenses";
 import { z } from "@/shared/lib/zod";
+import { NativeSelect } from "@/shared/ui/native-select";
 
 const tripExpenseFormSchema = z
   .object({
@@ -611,17 +612,17 @@ export function TripExpenseWorkspaceView({
                 </div>
                 <div>
                   <label htmlFor="expense-category">분류</label>
-                  <select id="expense-category" {...register("category")}>
+                  <NativeSelect id="expense-category" {...register("category")}>
                     {tripExpenseCategories.map((category) => (
                       <option key={category} value={category}>
                         {categoryCopy[category].title}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </div>
                 <div>
                   <label htmlFor="expense-payer">결제자</label>
-                  <select
+                  <NativeSelect
                     id="expense-payer"
                     {...paidByField}
                     onChange={(event) => {
@@ -644,7 +645,7 @@ export function TripExpenseWorkspaceView({
                         {memberLabels.get(member.userId) ?? "여행 멤버"}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </div>
               </div>
 

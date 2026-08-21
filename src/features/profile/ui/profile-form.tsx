@@ -18,15 +18,23 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type ProfileFormProps = {
   initialDisplayName: string;
   nextPath: PostAuthenticationPath;
+  submitLabel?: string;
+  variant?: "account" | "onboarding";
 };
 
-function toFormData(values: ProfileFormValues) {
+function toFormData(values: ProfileFormValues, nextPath: PostAuthenticationPath) {
   const formData = new FormData();
   formData.set("displayName", values.displayName);
+  formData.set("next", nextPath);
   return formData;
 }
 
-export function ProfileForm({ initialDisplayName, nextPath }: ProfileFormProps) {
+export function ProfileForm({
+  initialDisplayName,
+  nextPath,
+  submitLabel,
+  variant = "onboarding",
+}: ProfileFormProps) {
   const router = useRouter();
   const [message, setMessage] = useState<UpdateProfileActionState | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -44,7 +52,7 @@ export function ProfileForm({ initialDisplayName, nextPath }: ProfileFormProps) 
 
     startTransition(async () => {
       try {
-        const result = await updateProfileDisplayName(toFormData(values));
+        const result = await updateProfileDisplayName(toFormData(values, nextPath));
         setMessage(result);
 
         if (result.status === "success") {
@@ -60,7 +68,7 @@ export function ProfileForm({ initialDisplayName, nextPath }: ProfileFormProps) 
   }
 
   return (
-    <form className="profile-form" noValidate onSubmit={handleSubmit(handleSave)}>
+    <form className={`profile-form profile-form-${variant}`} noValidate onSubmit={handleSubmit(handleSave)}>
       <div className="profile-name-field">
         <label htmlFor="profile-display-name">닉네임</label>
         <input
@@ -92,9 +100,10 @@ export function ProfileForm({ initialDisplayName, nextPath }: ProfileFormProps) 
       <button className="primary-button profile-save-button" disabled={isPending} type="submit">
         {isPending
           ? "저장하는 중…"
-          : nextPath.startsWith("/invites/")
-            ? "저장하고 초대 확인하기"
-            : "저장하고 여행 보기"}
+          : (submitLabel ??
+            (nextPath.startsWith("/invites/")
+              ? "저장하고 초대 확인하기"
+              : "저장하고 여행 보기"))}
       </button>
     </form>
   );

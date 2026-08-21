@@ -58,4 +58,24 @@ describe("ProfileForm", () => {
     expect(await screen.findByText("닉네임을 입력해 주세요.")).toBeInTheDocument();
     expect(mocks.update).not.toHaveBeenCalled();
   });
+
+  it("uses a compact save label in account settings", async () => {
+    mocks.update.mockResolvedValue({ message: "닉네임을 저장했어요.", status: "success" });
+    const user = userEvent.setup();
+    const { container } = render(
+      <ProfileForm
+        initialDisplayName="지우"
+        nextPath="/trips"
+        submitLabel="닉네임 저장"
+        variant="account"
+      />,
+    );
+
+    expect(container.querySelector("form")).toHaveClass("profile-form-account");
+    await user.click(screen.getByRole("button", { name: "닉네임 저장" }));
+
+    await waitFor(() => {
+      expect(mocks.replace).toHaveBeenCalledWith("/trips");
+    });
+  });
 });

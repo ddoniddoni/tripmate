@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { parseProfileDisplayNameFormData } from "@/entities/user/model/profile";
 import type { UpdateProfileActionState } from "@/features/profile/model/profile-action-state";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
+import { getSafeInternalPath } from "@/shared/lib/safe-internal-path";
 
 export async function updateProfileDisplayName(
   formData: FormData,
@@ -21,6 +22,7 @@ export async function updateProfileDisplayName(
   }
 
   const nameResult = parseProfileDisplayNameFormData(formData);
+  const nextPath = getSafeInternalPath(formData.get("next"));
 
   if (!nameResult.success) {
     return {
@@ -45,6 +47,7 @@ export async function updateProfileDisplayName(
 
   revalidatePath("/profile");
   revalidatePath("/trips");
+  revalidatePath(nextPath);
 
   return {
     message: "닉네임을 저장했어요.",

@@ -10,6 +10,7 @@ import type {
 } from "@/entities/itinerary/model/trip-itinerary";
 import { formatCalendarDate } from "@/shared/lib/calendar-date";
 import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
+import { NativeSelect } from "@/shared/ui/native-select";
 
 type MoveItineraryItemDialogProps = {
   days: TripDay[];
@@ -74,7 +75,7 @@ export function MoveItineraryItemDialog({
             >
               <div className="form-field form-field-wide">
                 <label htmlFor="move-destination-day">이동할 날짜</label>
-                <select
+                <NativeSelect
                   id="move-destination-day"
                   value={destinationDayId}
                   onChange={(event) => {
@@ -91,12 +92,12 @@ export function MoveItineraryItemDialog({
                       })}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </div>
 
               <div className="form-field form-field-wide">
                 <label htmlFor="move-destination-position">이동할 위치</label>
-                <select
+                <NativeSelect
                   id="move-destination-position"
                   value={toIndex}
                   onChange={(event) => setToIndex(Number(event.target.value))}
@@ -107,7 +108,7 @@ export function MoveItineraryItemDialog({
                       {positionItem.place.name} 뒤에 놓기
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </div>
 
               <div className="dialog-actions form-field-wide">

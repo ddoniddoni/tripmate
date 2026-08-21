@@ -13,12 +13,22 @@ import {
   type TripInvitationPreview,
 } from "@/entities/trip/model/trip-invitation";
 import { tripSchema, type Trip } from "@/entities/trip/model/trip";
+import { tripCoverImagePathSchema } from "@/entities/trip/model/trip-cover-image";
 import { calendarDateSchema } from "@/shared/lib/calendar-date";
 import { createSupabaseAdminClient } from "@/shared/api/supabase/admin";
+import {
+  isSupabaseJwtIssuedInFutureError,
+  waitForSupabaseTokenClockSync,
+} from "@/shared/api/supabase/auth-retry";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 
 const supabaseTripIdSchema = z.uuid();
+const tripSelectFields = "id, title, destination, start_date, end_date, time_zone";
+const tripSelectFieldsWithCoverImage = `${tripSelectFields}, cover_image_path`;
+const tripInvitationPreviewSelectFields = `role, expires_at, trips(${tripSelectFields})`;
+const tripInvitationPreviewSelectFieldsWithCoverImage = `role, expires_at, trips(${tripSelectFieldsWithCoverImage})`;
 const supabaseTripRowSchema = z.object({
+  cover_image_path: tripCoverImagePathSchema.nullable().optional().default(null),
   destination: z.string(),
   end_date: calendarDateSchema,
   id: supabaseTripIdSchema,
@@ -60,8 +70,50 @@ export class SupabaseTripRepositoryError extends Error {
   }
 }
 
+function reportSupabaseTripQueryError(operation: string, error: unknown) {
+  if (typeof error !== "object" || error === null) {
+    console.error("Supabase trip query failed.", { operation });
+    return;
+  }
+
+  const { code, details, hint, message } = error as {
+    code?: unknown;
+    details?: unknown;
+    hint?: unknown;
+    message?: unknown;
+  };
+
+  console.error("Supabase trip query failed.", {
+    code,
+    details,
+    hint,
+    message,
+    operation,
+  });
+}
+
+/**
+ * A staged deploy can briefly run the application before the matching
+ * Supabase migration has reached the database. Keep existing trips readable
+ * in that state, but do not hide unrelated query failures.
+ */
+export function isSupabaseTripCoverColumnUnavailable(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+
+  const { code, message } = error as { code?: unknown; message?: unknown };
+
+  return (
+    typeof message === "string" &&
+    message.includes("cover_image_path") &&
+    (code === "42703" || code === "PGRST204")
+  );
+}
+
 function toTrip(row: z.infer<typeof supabaseTripRowSchema>): Trip {
   return tripSchema.parse({
+    coverImagePath: row.cover_image_path ?? undefined,
     destination: row.destination,
     endDate: row.end_date,
     id: row.id,
@@ -73,12 +125,32 @@ function toTrip(row: z.infer<typeof supabaseTripRowSchema>): Trip {
 
 export async function listSupabaseTrips(): Promise<Trip[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("trips")
-    .select("id, title, destination, start_date, end_date, time_zone")
-    .order("start_date", { ascending: true });
+  const requestTrips = () =>
+    supabase
+      .from("trips")
+      .select(tripSelectFieldsWithCoverImage)
+      .order("start_date", { ascending: true });
+  let initialResult = await requestTrips();
+
+  if (isSupabaseJwtIssuedInFutureError(initialResult.error)) {
+    await waitForSupabaseTokenClockSync();
+    initialResult = await requestTrips();
+  }
+
+  let data: unknown = initialResult.data;
+  let error: unknown = initialResult.error;
+
+  if (isSupabaseTripCoverColumnUnavailable(error)) {
+    const fallbackResult = await supabase
+      .from("trips")
+      .select(tripSelectFields)
+      .order("start_date", { ascending: true });
+    data = fallbackResult.data;
+    error = fallbackResult.error;
+  }
 
   if (error) {
+    reportSupabaseTripQueryError("list", error);
     throw new SupabaseTripRepositoryError();
   }
 
@@ -95,13 +167,26 @@ export async function getSupabaseTrip(tripId: string): Promise<Trip | null> {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  const initialResult = await supabase
     .from("trips")
-    .select("id, title, destination, start_date, end_date, time_zone")
+    .select(tripSelectFieldsWithCoverImage)
     .eq("id", tripId)
     .maybeSingle();
+  let data: unknown = initialResult.data;
+  let error: unknown = initialResult.error;
+
+  if (isSupabaseTripCoverColumnUnavailable(error)) {
+    const fallbackResult = await supabase
+      .from("trips")
+      .select(tripSelectFields)
+      .eq("id", tripId)
+      .maybeSingle();
+    data = fallbackResult.data;
+    error = fallbackResult.error;
+  }
 
   if (error) {
+    reportSupabaseTripQueryError("get", error);
     throw new SupabaseTripRepositoryError();
   }
 
@@ -128,6 +213,7 @@ export async function listSupabaseTripMembers(tripId: string): Promise<TripMembe
     .eq("trip_id", tripId);
 
   if (error) {
+    reportSupabaseTripQueryError("list-members", error);
     throw new SupabaseTripRepositoryError();
   }
 
@@ -160,6 +246,7 @@ export async function listSupabasePendingTripInvitations(
     .order("created_at", { ascending: false });
 
   if (error) {
+    reportSupabaseTripQueryError("list-pending-invitations", error);
     throw new SupabaseTripRepositoryError();
   }
 
@@ -193,16 +280,32 @@ export async function getSupabaseTripInvitationPreview({
   }
 
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
+  const initialResult = await supabase
     .from("trip_invitations")
-    .select("role, expires_at, trips(id, title, destination, start_date, end_date, time_zone)")
+    .select(tripInvitationPreviewSelectFieldsWithCoverImage)
     .eq("email", emailResult.data)
     .eq("token_hash", tokenHash)
     .is("accepted_at", null)
     .gt("expires_at", new Date().toISOString())
     .maybeSingle();
+  let data: unknown = initialResult.data;
+  let error: unknown = initialResult.error;
+
+  if (isSupabaseTripCoverColumnUnavailable(error)) {
+    const fallbackResult = await supabase
+      .from("trip_invitations")
+      .select(tripInvitationPreviewSelectFields)
+      .eq("email", emailResult.data)
+      .eq("token_hash", tokenHash)
+      .is("accepted_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    data = fallbackResult.data;
+    error = fallbackResult.error;
+  }
 
   if (error) {
+    reportSupabaseTripQueryError("get-invitation-preview", error);
     throw new SupabaseTripRepositoryError();
   }
 

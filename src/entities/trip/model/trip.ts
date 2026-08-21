@@ -1,6 +1,7 @@
 import { z } from "@/shared/lib/zod";
 
 import { calendarDateSchema } from "@/shared/lib/calendar-date";
+import { tripCoverImagePathSchema } from "@/entities/trip/model/trip-cover-image";
 
 function isIanaTimeZone(value: string) {
   try {
@@ -35,6 +36,7 @@ export const tripSchema = z
       .trim()
       .min(1, "여행 시간대를 선택해 주세요.")
       .refine(isIanaTimeZone, "유효한 IANA 시간대여야 합니다."),
+    coverImagePath: tripCoverImagePathSchema.optional(),
   })
   .superRefine((trip, context) => {
     const startDateResult = calendarDateSchema.safeParse(trip.startDate);

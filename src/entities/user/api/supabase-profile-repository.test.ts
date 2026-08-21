@@ -5,10 +5,17 @@ const mocks = vi.hoisted(() => ({
   from: vi.fn(),
   maybeSingle: vi.fn(),
   select: vi.fn(),
+  waitForSupabaseTokenClockSync: vi.fn(),
 }));
 
 vi.mock("@/shared/api/supabase/server", () => ({
   createSupabaseServerClient: vi.fn(async () => ({ from: mocks.from })),
+}));
+
+vi.mock("@/shared/api/supabase/auth-retry", () => ({
+  isSupabaseJwtIssuedInFutureError: (error: { code?: string } | null) =>
+    error?.code === "PGRST303",
+  waitForSupabaseTokenClockSync: mocks.waitForSupabaseTokenClockSync,
 }));
 
 import {
@@ -65,5 +72,24 @@ describe("Supabase profile repository", () => {
       hint: null,
       message: "database unavailable",
     });
+  });
+
+  it("retries once when Supabase has just refreshed a token", async () => {
+    mocks.maybeSingle
+      .mockResolvedValueOnce({
+        data: null,
+        error: { code: "PGRST303", message: "JWT issued at future" },
+      })
+      .mockResolvedValueOnce({
+        data: { display_name: "지우", id: userId },
+        error: null,
+      });
+
+    await expect(getSupabaseUserProfile(userId)).resolves.toEqual({
+      displayName: "지우",
+      id: userId,
+    });
+    expect(mocks.waitForSupabaseTokenClockSync).toHaveBeenCalledOnce();
+    expect(mocks.maybeSingle).toHaveBeenCalledTimes(2);
   });
 });

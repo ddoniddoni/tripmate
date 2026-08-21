@@ -22,6 +22,10 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
 
   const profile = await getSupabaseUserProfile(user.id);
 
+  if (profile?.displayName) {
+    redirect("/trips");
+  }
+
   return (
     <main className="profile-page">
       <section className="profile-card" aria-labelledby="profile-heading">

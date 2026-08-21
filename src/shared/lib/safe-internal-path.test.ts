@@ -22,6 +22,9 @@ describe("getSafeInternalPath", () => {
     expect(
       getSafeTripEditorPath(tripId, { day: [dayId], view: ["expenses"] }),
     ).toBe(`/trips/${tripId}?view=expenses&day=${dayId}`);
+    expect(getSafeInternalPath(`/trips/${tripId}?view=settings`)).toBe(
+      `/trips/${tripId}?view=settings`,
+    );
   });
 
   it("rejects external, unrelated, and malformed invitation destinations", () => {

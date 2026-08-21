@@ -36,6 +36,7 @@ import { TripPreparationChecklist } from "@/features/preparation-checklist/ui/tr
 import { TripHistoryShortcuts } from "@/features/collaboration/ui/trip-history-controls";
 import { DeleteTripDialog } from "@/features/trip-management/ui/delete-trip-dialog";
 import { EditTripDetailsDialog } from "@/features/trip-management/ui/edit-trip-details-dialog";
+import { TripCoverImageForm } from "@/features/trip-management/ui/trip-cover-image-form";
 import { TripSettingsWorkspace } from "@/features/trip-management/ui/trip-settings-workspace";
 import { TripSharingDialog } from "@/features/trip-sharing/ui/trip-sharing-dialog";
 import { AiItineraryPlannerDialog } from "@/features/ai-itinerary/ui/ai-itinerary-planner-dialog";
@@ -350,6 +351,14 @@ function LiveblocksItineraryEditorContent({
       ) : null}
       {workspaceNavigation.navigation.view === "settings" ? (
         <TripSettingsWorkspace
+          coverControl={
+            <TripCoverImageForm
+              canUpdateTrip={permissions.canUpdateTrip}
+              coverImagePath={trip.coverImagePath}
+              tripId={trip.id}
+              tripTitle={trip.title}
+            />
+          }
           permissions={permissions}
           deletionControl={
             <DeleteTripDialog

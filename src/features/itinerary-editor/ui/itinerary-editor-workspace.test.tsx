@@ -177,7 +177,7 @@ describe("ItineraryEditorWorkspace", () => {
   it("switches to an empty day and adds a searched place without optional details", async () => {
     const user = renderWorkspace();
 
-    await user.click(screen.getByRole("button", { name: /둘째 날/ }));
+    await user.click(screen.getByRole("button", { name: /2일차/ }));
     expect(screen.getByText("아직 일정이 없어요")).toBeInTheDocument();
     expect(screen.getByText("경유지가 없어요.")).toBeInTheDocument();
 
@@ -440,14 +440,14 @@ describe("ItineraryEditorWorkspace", () => {
     );
     expect(screen.getByRole("button", { name: "우진해장국 지도에서 선택" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /첫째 날/ }));
+    await user.click(screen.getByRole("button", { name: /1일차/ }));
     expect(screen.getByText("일정 3개 · Asia/Seoul")).toBeInTheDocument();
   });
 
   it("disables day copy for an empty day", async () => {
     const user = renderWorkspace();
 
-    await user.click(screen.getByRole("button", { name: /둘째 날/ }));
+    await user.click(screen.getByRole("button", { name: /2일차/ }));
     expect(screen.getByRole("button", { name: "하루 복사" })).toBeDisabled();
   });
 
@@ -638,7 +638,7 @@ describe("ItineraryEditorWorkspace", () => {
     await user.click(mapMarker);
     expect(mapMarker).toHaveAttribute("aria-pressed", "true");
 
-    await user.click(screen.getByRole("button", { name: /둘째 날/ }));
+    await user.click(screen.getByRole("button", { name: /2일차/ }));
     expect(screen.getByText("아직 일정이 없어요")).toBeInTheDocument();
     expect(screen.getByText("다른 구성원이 추가한 일정을 여기서 확인할 수 있어요.")).toBeInTheDocument();
 

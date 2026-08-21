@@ -41,6 +41,8 @@ describe("getSupabaseTripInvitationPreview", () => {
         expires_at: "2099-07-01T00:00:00.000Z",
         role: "editor",
         trips: {
+          cover_image_path:
+            "d4f6f86c-8e85-4d2a-b77f-f2b15d1be3d8/9f1c1e54-12a1-49a9-bf5f-a95027e8bb5e.jpg",
           destination: "제주",
           end_date: "2099-07-03",
           id: "d4f6f86c-8e85-4d2a-b77f-f2b15d1be3d8",
@@ -58,7 +60,12 @@ describe("getSupabaseTripInvitationPreview", () => {
       getSupabaseTripInvitationPreview({ email: "FRIEND@example.com", tokenHash }),
     ).resolves.toMatchObject({
       role: "editor",
-      trip: { destination: "제주", title: "여름 제주 여행" },
+      trip: {
+        coverImagePath:
+          "d4f6f86c-8e85-4d2a-b77f-f2b15d1be3d8/9f1c1e54-12a1-49a9-bf5f-a95027e8bb5e.jpg",
+        destination: "제주",
+        title: "여름 제주 여행",
+      },
     });
 
     expect(mocks.from).toHaveBeenCalledWith("trip_invitations");

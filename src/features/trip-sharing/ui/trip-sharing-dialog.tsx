@@ -18,6 +18,7 @@ import { PendingTripInvitations } from "@/features/trip-sharing/ui/pending-trip-
 import { TripMembers } from "@/features/trip-sharing/ui/trip-members";
 import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
 import { HeaderActionIcon } from "@/shared/ui/header-action-icon";
+import { NativeSelect } from "@/shared/ui/native-select";
 
 type TripSharingDialogProps = {
   canManageMembers: boolean;
@@ -149,7 +150,8 @@ export function TripSharingDialog({
 
               <div className="form-field trip-sharing-role-field">
                 <label htmlFor="invite-role">권한</label>
-                <select
+                <NativeSelect
+                  containerClassName="trip-sharing-role-select"
                   id="invite-role"
                   aria-describedby={errors.role ? "invite-role-error" : undefined}
                   aria-invalid={Boolean(errors.role)}
@@ -158,7 +160,7 @@ export function TripSharingDialog({
                 >
                   <option value="editor">편집자 · 일정 편집 가능</option>
                   <option value="viewer">보기 전용 · 일정 확인만 가능</option>
-                </select>
+                </NativeSelect>
                 {errors.role ? (
                   <span id="invite-role-error" role="alert">
                     {errors.role.message}

@@ -2,7 +2,7 @@ const defaultPath = "/trips" as const;
 const invitationPathPattern = /^\/invites\/[A-Za-z0-9_-]{43}$/;
 const tripIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const tripPathPattern = new RegExp(`^/trips/${tripIdPattern.source.slice(1, -1)}$`, "i");
-const workspaceViews = new Set(["overview", "itinerary", "preparation", "expenses"]);
+const workspaceViews = new Set(["overview", "itinerary", "preparation", "expenses", "settings"]);
 const internalUrlOrigin = "https://tripmate.local";
 
 export type PostAuthenticationPath =

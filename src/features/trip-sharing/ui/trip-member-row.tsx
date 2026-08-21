@@ -1,4 +1,5 @@
 import type { TripMember } from "@/entities/trip/model/trip-membership";
+import { NativeSelect } from "@/shared/ui/native-select";
 
 type EditableTripMemberRole = "editor" | "viewer";
 
@@ -65,7 +66,7 @@ export function TripMemberRow({
           <label className="sr-only" htmlFor={`trip-member-role-${member.userId}`}>
             {label} 권한
           </label>
-          <select
+          <NativeSelect
             aria-label={`${label} 권한`}
             disabled={isMutating}
             id={`trip-member-role-${member.userId}`}
@@ -74,7 +75,7 @@ export function TripMemberRow({
           >
             <option value="editor">편집자</option>
             <option value="viewer">보기 전용</option>
-          </select>
+          </NativeSelect>
           <button
             aria-label={`${label} 제외`}
             className="text-action text-action-danger"

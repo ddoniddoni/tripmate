@@ -26,6 +26,7 @@ import {
   type PreparationChecklistMutation,
 } from "@/features/collaboration/model/liveblocks-preparation-checklist";
 import { calendarDateSchema, formatCalendarDate } from "@/shared/lib/calendar-date";
+import { NativeSelect } from "@/shared/ui/native-select";
 import { z } from "@/shared/lib/zod";
 
 const optionalCalendarDateFormSchema = z
@@ -215,7 +216,7 @@ function PreparationChecklistItemRow({
             <label className="sr-only" htmlFor={`preparation-assignee-${item.id}`}>
               {item.title} 담당자
             </label>
-            <select
+            <NativeSelect
               aria-label={`${item.title} 담당자`}
               disabled={!canEditChecklist}
               id={`preparation-assignee-${item.id}`}
@@ -228,7 +229,7 @@ function PreparationChecklistItemRow({
                   {memberLabels.get(member.userId) ?? "여행 멤버"}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
             {canEditChecklist ? (
               <>
                 <button
@@ -320,13 +321,13 @@ function PreparationChecklistItemEditForm({
         <label className="sr-only" htmlFor={`preparation-edit-category-${item.id}`}>
           준비 항목 분류 수정
         </label>
-        <select id={`preparation-edit-category-${item.id}`} {...register("category")}>
+        <NativeSelect id={`preparation-edit-category-${item.id}`} {...register("category")}>
           {preparationChecklistCategories.map((category) => (
             <option key={category} value={category}>
               {categoryCopy[category].title}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
       <div className="preparation-item-edit-date-field">
         <label className="sr-only" htmlFor={`preparation-edit-due-date-${item.id}`}>
@@ -580,13 +581,17 @@ export function TripPreparationChecklistView({
           <label className="sr-only" htmlFor="preparation-item-category">
             카테고리
           </label>
-          <select id="preparation-item-category" {...register("category")}>
+          <NativeSelect
+            containerClassName="preparation-select-field"
+            id="preparation-item-category"
+            {...register("category")}
+          >
             {preparationChecklistCategories.map((category) => (
               <option key={category} value={category}>
                 {categoryCopy[category].title}
               </option>
             ))}
-          </select>
+          </NativeSelect>
           <div className="preparation-due-date-field">
             <label className="sr-only" htmlFor="preparation-item-due-date">
               마감일
@@ -607,14 +612,18 @@ export function TripPreparationChecklistView({
           <label className="sr-only" htmlFor="preparation-item-assignee">
             담당자
           </label>
-          <select id="preparation-item-assignee" {...register("assigneeId")}>
+          <NativeSelect
+            containerClassName="preparation-select-field"
+            id="preparation-item-assignee"
+            {...register("assigneeId")}
+          >
             <option value="">담당자 없음</option>
             {members.map((member) => (
               <option key={member.userId} value={member.userId}>
                 {memberLabels.get(member.userId) ?? "여행 멤버"}
               </option>
             ))}
-          </select>
+          </NativeSelect>
           <button className="preparation-add-button" type="submit">
             <span aria-hidden="true">+</span>
             추가

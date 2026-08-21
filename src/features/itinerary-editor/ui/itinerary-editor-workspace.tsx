@@ -98,12 +98,8 @@ const koreanAccessibility = Accessibility.configure({
   },
 });
 
-function getDayLabel(index: number, dayCount: number) {
-  if (index === dayCount - 1) {
-    return "마지막 날";
-  }
-
-  return ["첫째 날", "둘째 날", "셋째 날"][index] ?? `${index + 1}일차`;
+function getDayLabel(index: number) {
+  return `${index + 1}일차`;
 }
 
 function formatDuration(durationMinutes?: number) {
@@ -435,7 +431,6 @@ type DaySidebarProps = {
 
 type DayDropTargetProps = {
   day: TripDay;
-  dayCount: number;
   index: number;
   onSelect: (dayId: string, index: number) => void;
   selectedDayId?: string;
@@ -443,7 +438,6 @@ type DayDropTargetProps = {
 
 function DayDropTarget({
   day,
-  dayCount,
   index,
   onSelect,
   selectedDayId,
@@ -466,7 +460,7 @@ function DayDropTarget({
           {formatCalendarDate(day.date, { weekday: "short" })}
         </span>
         <strong>{formatCalendarDate(day.date, { day: "numeric" }).replace("일", "")}</strong>
-        <span className="day-label">{getDayLabel(index, dayCount)}</span>
+        <span className="day-label">{getDayLabel(index)}</span>
         {isSelected ? <i className="day-active-dot" aria-hidden="true" /> : null}
       </button>
       {isDropTarget ? <span className="day-drop-hint">여기에 놓기</span> : null}
@@ -485,7 +479,6 @@ function DaySidebar({ days, onSelect, selectedDayId, startDate }: DaySidebarProp
         {days.map((day, index) => (
           <DayDropTarget
             day={day}
-            dayCount={days.length}
             index={index}
             key={day.id}
             onSelect={onSelect}
