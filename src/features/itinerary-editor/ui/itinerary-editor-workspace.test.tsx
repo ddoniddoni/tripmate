@@ -150,6 +150,19 @@ describe("ItineraryEditorWorkspace", () => {
           );
         }
 
+        if (typeof input === "string" && input.startsWith("/api/place-details")) {
+          return new Response(
+            JSON.stringify({
+              details: {
+                rating: 4.6,
+                regularOpeningHours: ["월요일: 오전 9:00 ~ 오후 6:00"],
+                userRatingCount: 321,
+              },
+            }),
+            { headers: { "Content-Type": "application/json" } },
+          );
+        }
+
         return new Response(
           JSON.stringify({
             places: [
@@ -185,7 +198,9 @@ describe("ItineraryEditorWorkspace", () => {
     const dialog = await screen.findByRole("dialog", { name: "장소를 일정에 추가" });
 
     await user.type(within(dialog).getByLabelText("장소 검색"), "성산");
-    await user.click(await within(dialog).findByRole("button", { name: "성산일출봉 선택" }));
+    await user.click(await within(dialog).findByRole("button", { name: "성산일출봉 정보 확인" }));
+    const previewDialog = await screen.findByRole("dialog", { name: "성산일출봉 정보 확인" });
+    await user.click(within(previewDialog).getByRole("button", { name: "이 장소 선택" }));
     await user.click(within(dialog).getByRole("button", { name: "일정 추가" }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -212,7 +227,19 @@ describe("ItineraryEditorWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "장소 추가" }));
     const dialog = await screen.findByRole("dialog", { name: "장소를 일정에 추가" });
     await user.type(within(dialog).getByLabelText("장소 검색"), "성산");
-    await user.click(await within(dialog).findByRole("button", { name: "성산일출봉 선택" }));
+    await user.click(await within(dialog).findByRole("button", { name: "성산일출봉 정보 확인" }));
+    const previewDialog = await screen.findByRole("dialog", { name: "성산일출봉 정보 확인" });
+    await user.click(within(previewDialog).getByRole("button", { name: "상세 정보 보기" }));
+
+    expect(await within(previewDialog).findByText(/4\.6점/)).toBeInTheDocument();
+    expect(within(previewDialog).getByText(/321개 리뷰/)).toBeInTheDocument();
+    expect(within(previewDialog).getByText("주간 영업시간 보기")).toBeInTheDocument();
+    expect(within(previewDialog).getByRole("link", { name: /Google 지도에서 보기/ })).toHaveAttribute(
+      "target",
+      "_blank",
+    );
+
+    await user.click(within(previewDialog).getByRole("button", { name: "이 장소 선택" }));
 
     expect(within(dialog).getByLabelText("장소 이름")).toHaveValue("성산일출봉");
     expect(within(dialog).getByLabelText("주소")).toHaveValue(

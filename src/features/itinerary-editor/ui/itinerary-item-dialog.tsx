@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as Dialog from "@radix-ui/react-dialog";
+import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import type { PlaceSnapshot } from "@/entities/place/model/place-snapshot";
@@ -13,6 +14,8 @@ import {
   type ItineraryItemFormValues,
 } from "@/features/itinerary-editor/model/itinerary-item-form";
 import { usePlaceSearch } from "@/features/place-search/model/use-place-search";
+import { usePlaceDetails } from "@/features/place-search/model/use-place-details";
+import { PlacePreviewDialog } from "@/features/place-search/ui/place-preview-dialog";
 import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
 import { TimePicker } from "@/shared/ui/time-picker";
 
@@ -58,6 +61,8 @@ export function ItineraryItemDialog({
 
   const mode = item ? "edit" : "add";
   const placeSearch = usePlaceSearch();
+  const placeDetails = usePlaceDetails();
+  const [previewPlace, setPreviewPlace] = useState<PlaceSnapshot | null>(null);
   const startTime = useWatch({ control, name: "startTime" });
   const durationMinutes = useWatch({ control, name: "durationMinutes" });
   const parsedDurationMinutes = Number(durationMinutes);
@@ -98,6 +103,8 @@ export function ItineraryItemDialog({
     setValue("address", place.address, { shouldDirty: true, shouldValidate: true });
     setValue("category", place.category ?? "", { shouldDirty: true, shouldValidate: true });
     placeSearch.clear();
+    placeDetails.reset();
+    setPreviewPlace(null);
   }
 
   function handleFormSubmit(values: ItineraryItemFormFields) {
@@ -169,8 +176,8 @@ export function ItineraryItemDialog({
                     <li key={place.providerPlaceId}>
                       <button
                         type="button"
-                        onClick={() => handlePlaceSelect(place)}
-                        aria-label={`${place.name} 선택`}
+                        onClick={() => setPreviewPlace(place)}
+                        aria-label={`${place.name} 정보 확인`}
                       >
                         <strong>{place.name}</strong>
                         <span>{place.category ?? "장소"}</span>
@@ -217,8 +224,8 @@ export function ItineraryItemDialog({
               />
             </div>
 
-            <div className="form-field itinerary-item-time-field">
-              <label>도착 시간</label>
+            <fieldset className="form-field time-picker-field itinerary-item-time-field">
+              <legend>도착 시간</legend>
               <TimePicker
                 aria-describedby={errors.startTime ? "place-start-time-error" : undefined}
                 invalid={Boolean(errors.startTime)}
@@ -232,7 +239,7 @@ export function ItineraryItemDialog({
                   {errors.startTime.message}
                 </span>
               ) : null}
-            </div>
+            </fieldset>
 
             <div className="form-field itinerary-item-duration-field">
               <label htmlFor="place-duration">예상 체류 시간</label>
@@ -290,6 +297,21 @@ export function ItineraryItemDialog({
               </button>
             </div>
           </form>
+          {previewPlace ? (
+            <PlacePreviewDialog
+              detailsState={placeDetails}
+              onLoadDetails={placeDetails.load}
+              onOpenChange={(nextOpen) => {
+                if (!nextOpen) {
+                  placeDetails.reset();
+                  setPreviewPlace(null);
+                }
+              }}
+              onSelect={handlePlaceSelect}
+              open
+              place={previewPlace}
+            />
+          ) : null}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
