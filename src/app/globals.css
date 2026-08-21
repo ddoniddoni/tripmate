@@ -11859,6 +11859,243 @@ html[data-theme="dark"] .new-trip-dialog-content .new-trip-ai-option {
   border-color: var(--primary-active);
 }
 
+/* Place preview keeps provider details deliberate: selecting a result itself has no extra request. */
+.place-preview-dialog {
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(680px, calc(100dvh - 32px));
+  overflow: auto;
+}
+
+.place-preview-dialog .dialog-heading {
+  padding: 24px 26px 20px;
+}
+
+.place-preview-content {
+  display: grid;
+  gap: 14px;
+  padding: 20px 26px 24px;
+}
+
+.place-preview-location-card,
+.place-preview-details {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.place-preview-location-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+}
+
+.place-preview-location-card > span {
+  width: fit-content;
+  padding: 4px 8px;
+  color: var(--primary-active);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--line));
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.place-preview-location-card > strong {
+  color: var(--ink);
+  font-size: 20px;
+  letter-spacing: -0.035em;
+  line-height: 1.25;
+}
+
+.place-preview-location-card > p,
+.place-preview-details > div > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.place-preview-location-card > a {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  color: var(--primary-active);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.place-preview-location-card > a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.place-preview-details {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  background: var(--surface-soft);
+}
+
+.place-preview-details > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.place-preview-details h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.place-preview-detail-result {
+  display: grid;
+  gap: 12px;
+}
+
+.place-preview-detail-result dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.place-preview-detail-result dl > div {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.place-preview-detail-result dt {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.place-preview-detail-result dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.place-preview-detail-result details {
+  padding-top: 2px;
+}
+
+.place-preview-detail-result summary {
+  width: fit-content;
+  color: var(--primary-active);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.place-preview-detail-result ul {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0 0;
+  padding: 10px 0 0 18px;
+  color: var(--body);
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.place-preview-detail-error {
+  margin: 0;
+  color: var(--danger-strong);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.place-preview-details-button,
+.place-preview-dismiss {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.place-preview-details-button {
+  width: fit-content;
+  color: var(--primary-active);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--primary) 42%, var(--line));
+}
+
+.place-preview-details-button:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.place-preview-details-button:disabled {
+  cursor: wait;
+  color: var(--muted);
+  background: var(--surface-sunken);
+  border-color: var(--line);
+}
+
+.place-preview-actions {
+  margin-top: 2px;
+  padding-top: 4px;
+}
+
+.place-preview-dismiss {
+  color: var(--body);
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+.place-preview-dismiss:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-soft);
+  border-color: var(--line-strong);
+}
+
+html[data-theme="dark"] .place-preview-location-card {
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface-raised));
+}
+
+html[data-theme="dark"] .place-preview-location-card > span,
+html[data-theme="dark"] .place-preview-detail-result dl > div,
+html[data-theme="dark"] .place-preview-details-button {
+  background: var(--surface-sunken);
+}
+
+@media (max-width: 560px) {
+  .place-preview-dialog {
+    width: min(100vw - 20px, 520px);
+    max-height: calc(100dvh - 20px);
+  }
+
+  .place-preview-dialog .dialog-heading {
+    padding: 20px 19px 16px;
+  }
+
+  .place-preview-content {
+    gap: 12px;
+    padding: 16px 19px 19px;
+  }
+
+  .place-preview-detail-result dl {
+    grid-template-columns: 1fr;
+  }
+
+  .place-preview-details-button {
+    width: 100%;
+  }
+}
+
 /* All native selects share one chevron, inset, and touch target. */
 .native-select {
   position: relative;
