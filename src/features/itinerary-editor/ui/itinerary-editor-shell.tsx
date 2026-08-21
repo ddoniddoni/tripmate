@@ -5,6 +5,7 @@ import type { TripItinerary } from "@/entities/itinerary/model/trip-itinerary";
 import { formatTripDateRange, formatTripLength } from "@/entities/trip/lib/format-trip";
 import { ItineraryEditorWorkspace } from "@/features/itinerary-editor/ui/itinerary-editor-workspace";
 import { BrandMark } from "@/shared/ui/brand-mark";
+import { ThemeToggle } from "@/shared/ui/theme-toggle";
 
 type ItineraryEditorShellProps = {
   canEditItinerary?: boolean;
@@ -43,6 +44,7 @@ export function ItineraryEditorShell({
         </div>
 
         <div className="header-actions">
+          <ThemeToggle />
           {collaborationControl ?? (
             <span className="sync-pill">
               <i aria-hidden="true" />

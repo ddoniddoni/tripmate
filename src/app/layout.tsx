@@ -5,7 +5,7 @@ import Script from "next/script";
 
 import { publicEnv } from "@/shared/config/public-env";
 import { themeInitializationScript } from "@/shared/lib/theme-preference";
-import { ThemeToggle } from "@/shared/ui/theme-toggle";
+import { SupabaseSessionRefresher } from "@/shared/ui/supabase-session-refresher";
 
 import "./globals.css";
 
@@ -25,8 +25,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Script id="theme-initializer" strategy="beforeInteractive">
           {themeInitializationScript}
         </Script>
+        <SupabaseSessionRefresher />
         {children}
-        <ThemeToggle />
       </body>
     </html>
   );

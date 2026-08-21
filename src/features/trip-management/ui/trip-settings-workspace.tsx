@@ -6,6 +6,7 @@ import type { Trip } from "@/entities/trip/model/trip";
 
 type TripSettingsWorkspaceProps = {
   deletionControl: ReactNode;
+  coverControl: ReactNode;
   memberCount: number;
   permissions: TripPermissions;
   sharingControl: ReactNode;
@@ -42,6 +43,7 @@ function SettingsSectionIcon({ name }: { name: "details" | "members" | "danger" 
 }
 
 export function TripSettingsWorkspace({
+  coverControl,
   deletionControl,
   memberCount,
   permissions,
@@ -54,7 +56,7 @@ export function TripSettingsWorkspace({
       <header className="trip-settings-heading">
         <span className="section-kicker">여행 관리</span>
         <h2 id="trip-settings-title">여행을 관리해요</h2>
-        <p>기본 정보와 멤버를 확인하고, 필요한 설정을 바꿔 보세요.</p>
+        <p>여행 정보와 멤버를 확인하고, 필요한 설정을 바꿔 보세요.</p>
       </header>
 
       <div className="trip-settings-grid">
@@ -121,6 +123,13 @@ export function TripSettingsWorkspace({
           <div className="trip-settings-card-action">{sharingControl}</div>
         </section>
       </div>
+
+      <section aria-labelledby="trip-settings-cover-title" className="trip-settings-cover-card">
+        <h3 className="sr-only" id="trip-settings-cover-title">
+          여행 커버 사진
+        </h3>
+        {coverControl}
+      </section>
 
       <section aria-labelledby="trip-settings-danger-title" className="trip-settings-danger-zone">
         <div className="trip-settings-danger-copy">

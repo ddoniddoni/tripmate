@@ -133,6 +133,25 @@ describe("TripPreparationChecklistView", () => {
     expect(screen.queryByText("첫 준비 항목을 적어 볼까요?")).not.toBeInTheDocument();
   });
 
+  it("keeps the add-form validation message with its field and uses shared select chevrons", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<ChecklistHarness />);
+
+    await user.click(screen.getByRole("button", { name: "추가" }));
+
+    const titleInput = screen.getByLabelText("준비할 일");
+    const errorMessage = screen.getByRole("alert");
+    const selectFields = container.querySelectorAll(".preparation-select-field");
+
+    expect(errorMessage).toHaveTextContent("준비할 일을 입력해 주세요.");
+    expect(errorMessage.closest(".preparation-title-field")).toContainElement(titleInput);
+    expect(selectFields).toHaveLength(2);
+    expect(selectFields[0]).toHaveClass("native-select");
+    expect(selectFields[1]).toHaveClass("native-select");
+    expect(selectFields[0]?.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(selectFields[1]?.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+  });
+
   it("adds a categorized task, assigns a member, and marks it complete", async () => {
     const user = userEvent.setup();
     render(<ChecklistHarness />);

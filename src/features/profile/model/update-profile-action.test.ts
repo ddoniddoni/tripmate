@@ -23,9 +23,10 @@ import { updateProfileDisplayName } from "@/features/profile/model/update-profil
 
 const userId = "b37aa707-35d7-4d7d-a8c5-b5ea8c703673";
 
-function createFormData(displayName = "지우") {
+function createFormData(displayName = "지우", nextPath = "/trips") {
   const formData = new FormData();
   formData.set("displayName", displayName);
+  formData.set("next", nextPath);
   return formData;
 }
 
@@ -51,6 +52,14 @@ describe("updateProfileDisplayName", () => {
     expect(mocks.eq).toHaveBeenCalledWith("id", userId);
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/profile");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/trips");
+  });
+
+  it("revalidates a safe settings destination after saving", async () => {
+    const settingsPath = "/trips/d4f6f86c-8e85-4d2a-b77f-f2b15d1be3d8?view=settings";
+
+    await updateProfileDisplayName(createFormData("지우", settingsPath));
+
+    expect(mocks.revalidatePath).toHaveBeenCalledWith(settingsPath);
   });
 
   it("rejects an empty name after authentication without mutating", async () => {

@@ -12,6 +12,7 @@ import {
 import { createTrip } from "@/features/trip-management/model/create-trip-action";
 import { initialCreateTripActionState } from "@/features/trip-management/model/create-trip-action-state";
 import { DialogCloseIcon } from "@/shared/ui/dialog-close-icon";
+import { NativeSelect } from "@/shared/ui/native-select";
 
 const defaultValues: CreateTripInput = {
   destination: "",
@@ -190,7 +191,7 @@ export function NewTripForm() {
 
             <div className="form-field form-field-wide">
               <label htmlFor="trip-time-zone">여행 시간대</label>
-              <select
+              <NativeSelect
                 id="trip-time-zone"
                 aria-describedby={errors.timeZone ? "trip-time-zone-error" : undefined}
                 aria-invalid={Boolean(errors.timeZone)}
@@ -202,7 +203,7 @@ export function NewTripForm() {
                 <option value="Asia/Bangkok">태국 (Asia/Bangkok)</option>
                 <option value="Europe/Paris">프랑스 (Europe/Paris)</option>
                 <option value="America/Los_Angeles">미국 서부 (America/Los_Angeles)</option>
-              </select>
+              </NativeSelect>
               {errors.timeZone ? (
                 <span id="trip-time-zone-error" role="alert">
                   {errors.timeZone.message}

@@ -18,6 +18,7 @@ describe("TripSettingsWorkspace", () => {
   it("groups trip information, member management, and deletion into settings", () => {
     render(
       <TripSettingsWorkspace
+        coverControl={<button type="button">사진 올리기</button>}
         deletionControl={<button type="button">여행 삭제</button>}
         memberCount={3}
         permissions={{
@@ -40,13 +41,17 @@ describe("TripSettingsWorkspace", () => {
     expect(screen.getByText("현재 3명")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "여행 삭제" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "여행 정보 수정" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "사진 올리기" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "멤버 관리" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "여행 삭제" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "내 프로필" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "회원 탈퇴" })).not.toBeInTheDocument();
   });
 
   it("explains restricted owner actions without rendering their controls", () => {
     render(
       <TripSettingsWorkspace
+        coverControl={<span>커버 사진 변경은 소유자만 할 수 있어요.</span>}
         deletionControl={<button type="button">여행 삭제</button>}
         memberCount={2}
         permissions={{
@@ -62,9 +67,11 @@ describe("TripSettingsWorkspace", () => {
     );
 
     expect(screen.getByText("여행 정보 수정은 소유자만 할 수 있어요.")).toBeInTheDocument();
+    expect(screen.getByText("커버 사진 변경은 소유자만 할 수 있어요.")).toBeInTheDocument();
     expect(screen.getByText("여행 삭제는 소유자만 할 수 있어요.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "여행 정보 수정" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "여행 삭제" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "멤버 관리" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "회원 탈퇴" })).not.toBeInTheDocument();
   });
 });

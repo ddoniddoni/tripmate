@@ -117,30 +117,26 @@ a {
 }
 
 .theme-toggle {
-  position: fixed;
-  z-index: 70;
-  right: max(18px, env(safe-area-inset-right));
-  bottom: max(18px, env(safe-area-inset-bottom));
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
   align-items: center;
   justify-items: center;
-  padding: 5px;
+  padding: 0;
   color: var(--ink);
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  box-shadow: var(--shadow);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   cursor: pointer;
   font: inherit;
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition: transform 160ms ease;
 }
 
 .theme-toggle:hover {
-  border-color: var(--primary);
-  box-shadow: 0 4px 8px rgb(0 0 0 / 10%);
-  transform: translateY(-2px);
+  background: transparent;
+  transform: scale(1.06);
 }
 
 .theme-toggle:focus-visible {
@@ -150,8 +146,8 @@ a {
 
 .theme-toggle-icon {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   flex: 0 0 auto;
   place-items: center;
   color: var(--primary);
@@ -283,24 +279,10 @@ textarea {
   height: 38px;
   place-items: center;
   color: white;
-  background: var(--green);
+  background: var(--primary);
   border-radius: 50%;
   font-size: 12px;
   font-weight: 700;
-}
-
-.profile-avatar-link {
-  transition: transform 160ms ease, background-color 160ms ease;
-}
-
-.profile-avatar-link:hover {
-  background: var(--green-dark);
-  transform: translateY(-1px);
-}
-
-.profile-avatar-link:focus-visible {
-  outline: 3px solid rgb(38 112 82 / 28%);
-  outline-offset: 3px;
 }
 
 .account-actions {
@@ -1470,10 +1452,23 @@ textarea {
 
 .preparation-title-field {
   position: relative;
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 6px;
 }
 
 .preparation-due-date-field {
   position: relative;
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 6px;
+}
+
+.preparation-select-field {
+  position: relative;
+  min-width: 0;
 }
 
 .preparation-add-form input,
@@ -1494,13 +1489,35 @@ textarea {
   color: #a2aaa5;
 }
 
+.preparation-select-field select {
+  padding-right: 38px;
+  appearance: none;
+}
+
+.preparation-select-field svg {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  pointer-events: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  transform: translateY(-50%);
+}
+
 .preparation-title-field > span,
 .preparation-due-date-field > span {
-  position: absolute;
-  top: calc(100% + 5px);
-  left: 2px;
-  color: #a14136;
-  font-size: 10px;
+  position: static;
+  min-height: 14px;
+  padding-left: 2px;
+  color: var(--danger-strong);
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .preparation-add-button {
@@ -2876,13 +2893,6 @@ textarea {
   min-width: 0;
 }
 
-.day-list > li.is-day-drop-target .day-row {
-  color: var(--green-dark);
-  background: var(--green-soft);
-  border-color: rgb(38 112 82 / 62%);
-  box-shadow: 0 0 0 3px rgb(38 112 82 / 13%);
-}
-
 .day-drop-hint {
   position: absolute;
   z-index: 2;
@@ -2890,7 +2900,7 @@ textarea {
   bottom: 5px;
   padding: 2px 5px;
   color: white;
-  background: var(--green);
+  background: var(--primary);
   border-radius: 4px;
   font-size: 7px;
   font-weight: 800;
@@ -2916,7 +2926,7 @@ textarea {
 }
 
 .day-row:focus-visible {
-  outline: 3px solid rgb(38 112 82 / 25%);
+  outline: 3px solid rgb(255 56 92 / 28%);
   outline-offset: 2px;
 }
 
@@ -2924,7 +2934,7 @@ textarea {
   color: var(--ink);
   background: var(--surface);
   border-color: var(--line);
-  box-shadow: 0 8px 24px rgb(38 55 45 / 6%);
+  box-shadow: 0 8px 24px rgb(255 56 92 / 12%);
 }
 
 .day-weekday {
@@ -7798,20 +7808,22 @@ button.place-suggestion-vote:hover {
 }
 
 .day-row:hover {
-  color: var(--green-dark);
-  background: rgb(255 255 255 / 55%);
+  color: var(--ink);
+  background: var(--surface-subtle);
 }
 
 .day-row-active {
-  color: #fff;
-  background: var(--green);
-  border-color: var(--green);
-  box-shadow: 0 5px 13px rgb(38 112 82 / 16%);
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 5px 13px rgb(255 56 92 / 20%);
 }
 
 .day-row-active:hover {
-  color: #fff;
-  background: var(--green-dark);
+  color: var(--on-primary);
+  background: var(--primary-active);
+  border-color: var(--primary-active);
+  box-shadow: 0 6px 16px rgb(255 56 92 / 28%);
 }
 
 .day-weekday,
@@ -9804,24 +9816,12 @@ button.place-suggestion-vote:hover {
   }
 }
 
-/* Itinerary days retain their route colour even when they are not selected. */
+/* Day navigation uses one quiet surface. Only the selected day carries the accent. */
 
-.day-list > li:nth-child(3n + 1) .day-row:not(.day-row-active) {
-  color: var(--primary-active);
-  background: var(--green-soft);
-  border-color: #ffd1da;
-}
-
-.day-list > li:nth-child(3n + 2) .day-row:not(.day-row-active) {
-  color: #c52748;
-  background: #fff5f7;
-  border-color: #ffdce4;
-}
-
-.day-list > li:nth-child(3n) .day-row:not(.day-row-active) {
-  color: #a92341;
-  background: #fff8f9;
-  border-color: #f8dbe2;
+.day-list > li .day-row:not(.day-row-active) {
+  color: var(--body);
+  background: var(--surface);
+  border-color: var(--line);
 }
 
 .day-list > li .day-row:not(.day-row-active) :is(.day-weekday, strong, .day-label) {
@@ -9829,7 +9829,24 @@ button.place-suggestion-vote:hover {
 }
 
 .day-list > li .day-row:not(.day-row-active):hover {
-  filter: saturate(1.1) brightness(0.98);
+  color: var(--ink);
+  background: var(--surface-subtle);
+  border-color: var(--line-strong);
+  filter: none;
+}
+
+.day-list > li.is-day-drop-target .day-row:not(.day-row-active) {
+  color: var(--primary-active);
+  background: var(--green-soft);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(255 56 92 / 16%);
+}
+
+.day-list > li.is-day-drop-target .day-row.day-row-active {
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(255 56 92 / 22%);
 }
 
 /* AI route draft · suggestions stay separate from the shared itinerary */
@@ -10541,13 +10558,6 @@ html[data-theme="dark"] .alert-dialog-content::before {
   border-color: var(--danger-line);
 }
 
-@media (max-width: 620px) {
-  .theme-toggle {
-    right: max(12px, env(safe-area-inset-right));
-    bottom: calc(82px + env(safe-area-inset-bottom));
-  }
-}
-
 @media (max-width: 860px) {
   .trip-delete-trigger {
     width: 34px;
@@ -10963,24 +10973,39 @@ html[data-theme="dark"] .mobile-view-switch {
   }
 }
 
-/* Keep dark state accents last: legacy page styles above use literal colours. */
+/* Keep dark navigation states last so legacy editor styles cannot split the day palette. */
 
-html[data-theme="dark"] .day-list > li:nth-child(3n + 1) .day-row:not(.day-row-active) {
-  color: #ffd1da;
-  background: #3d2029;
-  border-color: #914055;
+html[data-theme="dark"] .day-list > li .day-row:not(.day-row-active) {
+  color: var(--body);
+  background: var(--surface);
+  border-color: var(--line);
 }
 
-html[data-theme="dark"] .day-list > li:nth-child(3n + 2) .day-row:not(.day-row-active) {
-  color: #ffb3c2;
-  background: #352127;
-  border-color: #743746;
+html[data-theme="dark"] .day-list > li .day-row:not(.day-row-active):hover {
+  color: var(--ink);
+  background: var(--surface-subtle);
+  border-color: var(--line-strong);
 }
 
-html[data-theme="dark"] .day-list > li:nth-child(3n) .day-row:not(.day-row-active) {
-  color: #ff9eb3;
-  background: #302126;
-  border-color: #633440;
+html[data-theme="dark"] .day-list > li.is-day-drop-target .day-row:not(.day-row-active) {
+  color: var(--primary);
+  background: var(--green-soft);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(255 90 120 / 22%);
+}
+
+html[data-theme="dark"] .day-list > li.is-day-drop-target .day-row.day-row-active {
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(255 90 120 / 28%);
+}
+
+html[data-theme="dark"] .day-row-active:hover {
+  color: var(--on-primary);
+  background: var(--primary-active);
+  border-color: var(--primary-active);
+  box-shadow: 0 6px 16px rgb(255 56 92 / 34%);
 }
 
 html[data-theme="dark"] .day-list > li .day-row:not(.day-row-active) :is(
@@ -11834,6 +11859,685 @@ html[data-theme="dark"] .new-trip-dialog-content .new-trip-ai-option {
   border-color: var(--primary-active);
 }
 
+/* All native selects share one chevron, inset, and touch target. */
+.native-select {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.native-select > select {
+  width: 100%;
+  padding-right: 44px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: none;
+}
+
+.native-select > svg {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  pointer-events: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  transform: translateY(-50%);
+}
+
+.native-select > select:disabled + svg {
+  opacity: 0.5;
+}
+
+.time-picker .native-select > select {
+  padding: 0 20px 0 7px;
+}
+
+.time-picker .native-select > svg {
+  right: 6px;
+  width: 12px;
+  height: 12px;
+  stroke-width: 1.5;
+}
+
+.trip-member-controls > .native-select {
+  width: 92px;
+  flex: 0 0 92px;
+}
+
+.preparation-item-actions > .native-select {
+  width: 97px;
+  flex: 0 0 97px;
+}
+
+@media (max-width: 620px) {
+  .trip-member-controls > .native-select,
+  .preparation-item-actions > .native-select {
+    width: auto;
+    flex: 1 1 110px;
+  }
+}
+
+/* 여행 카드의 사진이 주인공이 되도록 커버 비율을 넓힙니다. */
+.trip-card,
+.new-trip-card {
+  min-height: 394px;
+}
+
+.trip-card {
+  grid-template-rows: 208px minmax(186px, 1fr);
+}
+
+.trip-card::before {
+  border-color: var(--primary);
+}
+
+.trip-card-art {
+  isolation: isolate;
+}
+
+.trip-card-art.has-cover-image {
+  background: var(--surface-soft);
+}
+
+.trip-card-art.has-cover-image::after {
+  display: none;
+}
+
+.trip-card-cover-image {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.trip-card-art.has-cover-image .trip-date-badge {
+  color: var(--ink);
+  background: var(--green-soft);
+  border-color: color-mix(in srgb, var(--primary) 52%, var(--line));
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.trip-card-art.has-cover-image .trip-date-badge :is(strong, span) {
+  color: var(--ink);
+}
+
+.trip-settings-cover-card {
+  width: min(100%, 980px);
+  margin: 0 auto 24px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.trip-cover-image-control {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.9fr) minmax(0, 1.1fr);
+  min-height: 236px;
+}
+
+.trip-cover-image-preview {
+  position: relative;
+  min-height: 236px;
+  overflow: hidden;
+  background: var(--surface-soft);
+}
+
+.trip-cover-image-preview > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.trip-cover-image-fallback,
+.trip-cover-image-fallback::before,
+.trip-cover-image-fallback::after {
+  position: absolute;
+  content: "";
+}
+
+.trip-cover-image-fallback {
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(150deg, #fff7f8 0%, #fff0f3 52%, #ffe2e8 100%);
+}
+
+.trip-cover-image-fallback::before {
+  right: -13%;
+  bottom: -38%;
+  left: -19%;
+  height: 72%;
+  background: #d2d2d2;
+  border-radius: 50% 50% 0 0;
+  transform: rotate(-4deg);
+}
+
+.trip-cover-image-fallback::after {
+  top: 18%;
+  right: 16%;
+  width: 52px;
+  height: 52px;
+  background: var(--primary);
+  border-radius: 50%;
+  box-shadow: 0 0 0 16px rgb(255 56 92 / 12%);
+}
+
+.trip-cover-image-fallback span,
+.trip-cover-image-fallback i,
+.trip-cover-image-fallback b {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  border-radius: 50%;
+}
+
+.trip-cover-image-fallback span {
+  right: 4%;
+  bottom: 4%;
+  left: -12%;
+  height: 43%;
+  background: #3f3f3f;
+}
+
+.trip-cover-image-fallback i {
+  bottom: 13%;
+  left: 17%;
+  width: 57%;
+  height: 17%;
+  background: #b7b7b7;
+}
+
+.trip-cover-image-fallback b {
+  right: 21%;
+  bottom: 25%;
+  width: 17%;
+  height: 17%;
+  background: #939393;
+}
+
+.trip-cover-image-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 20px;
+  padding: clamp(24px, 4vw, 38px);
+}
+
+.trip-cover-image-copy .section-kicker {
+  color: var(--primary-active);
+}
+
+.trip-cover-image-copy h3 {
+  margin: 5px 0 7px;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.trip-cover-image-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.trip-cover-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trip-cover-image-actions .secondary-button,
+.trip-cover-image-delete {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.trip-cover-image-actions .secondary-button {
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.trip-cover-image-actions .secondary-button:hover {
+  color: var(--on-primary);
+  background: var(--primary-active);
+  border-color: var(--primary-active);
+}
+
+.trip-cover-image-delete {
+  color: var(--danger-strong);
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+}
+
+.trip-cover-image-delete:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: var(--danger-strong);
+  border-color: var(--danger-strong);
+}
+
+.trip-cover-image-actions :is(.secondary-button, .trip-cover-image-delete):disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.trip-cover-image-message {
+  width: 100%;
+}
+
+html[data-theme="dark"] .trip-settings-cover-card {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+html[data-theme="dark"] .trip-cover-image-preview {
+  background: var(--surface-soft);
+}
+
+/* Each new trip receives one stable, bundled travel photograph until its owner uploads a cover. */
+.default-trip-cover-art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #1b2224;
+}
+
+.default-trip-cover-art-image {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.default-trip-cover-art::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: linear-gradient(112deg, rgb(7 16 21 / 65%) 0%, rgb(7 16 21 / 22%) 53%, rgb(7 16 21 / 8%) 100%);
+  content: "";
+}
+
+.default-trip-cover-art-ticket,
+.default-trip-cover-art-wordmark,
+.default-trip-cover-art-caption {
+  position: absolute;
+  z-index: 2;
+}
+
+.default-trip-cover-art-ticket {
+  top: 17px;
+  left: 18px;
+  padding: 6px 9px;
+  color: #ffffff;
+  background: rgb(18 28 31 / 48%);
+  border: 1px solid rgb(255 255 255 / 48%);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1;
+}
+
+.default-trip-cover-art-wordmark {
+  bottom: 29px;
+  left: 20px;
+  color: #ffffff;
+  font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", system-ui, sans-serif;
+  font-size: clamp(28px, 4.1vw, 42px);
+  font-weight: 800;
+  letter-spacing: -0.075em;
+  line-height: 0.9;
+  text-shadow: 0 2px 18px rgb(0 0 0 / 46%);
+}
+
+.default-trip-cover-art-caption {
+  bottom: 16px;
+  left: 22px;
+  color: rgb(255 255 255 / 88%);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  line-height: 1;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 44%);
+}
+
+.trip-card-art .default-trip-cover-art-ticket {
+  right: 18px;
+  left: auto;
+}
+
+.trip-cover-image-preview .trip-cover-image-default-art {
+  min-height: 100%;
+}
+
+html[data-theme="dark"] .default-trip-cover-art::after {
+  background: linear-gradient(112deg, rgb(3 8 11 / 76%) 0%, rgb(3 8 11 / 34%) 53%, rgb(3 8 11 / 16%) 100%);
+}
+
+@media (max-width: 700px) {
+  .default-trip-cover-art-ticket {
+    top: 14px;
+    left: 15px;
+  }
+
+  .trip-card-art .default-trip-cover-art-ticket {
+    right: 15px;
+    left: auto;
+  }
+
+  .default-trip-cover-art-wordmark {
+    bottom: 25px;
+    left: 17px;
+    font-size: 34px;
+  }
+
+  .default-trip-cover-art-caption {
+    bottom: 14px;
+    left: 18px;
+  }
+}
+
+@media (max-width: 700px) {
+  .trip-card,
+  .new-trip-card {
+    min-height: 374px;
+  }
+
+  .trip-card {
+    grid-template-rows: 190px minmax(184px, 1fr);
+  }
+
+  .trip-cover-image-control {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-cover-image-preview {
+    min-height: 190px;
+  }
+}
+
+/* Account settings belong to the person, not to an individual trip. */
+.profile-account-trigger {
+  padding: 0;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.profile-account-trigger:hover:not(:disabled) {
+  background: var(--primary-active);
+  box-shadow: 0 0 0 4px rgb(255 56 92 / 14%);
+  transform: translateY(-1px);
+}
+
+.profile-account-trigger:focus-visible {
+  outline: 3px solid rgb(255 56 92 / 32%);
+  outline-offset: 3px;
+}
+
+.account-settings-dialog {
+  width: min(480px, calc(100vw - 32px));
+}
+
+.account-settings-dialog .dialog-close {
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.account-settings-dialog .dialog-close::before {
+  display: none;
+}
+
+.account-settings-dialog .dialog-close-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.account-settings-dialog .dialog-close:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-subtle);
+  border-color: var(--line-strong);
+}
+
+.account-settings-content {
+  display: grid;
+  gap: 16px;
+  padding: 20px 24px 24px;
+}
+
+.account-settings-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+}
+
+.account-settings-avatar {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--on-primary);
+  background: var(--primary);
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.account-settings-summary > div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.account-settings-summary strong {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.account-settings-summary span:not(.account-settings-avatar) {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.account-settings-profile {
+  display: grid;
+  gap: 12px;
+}
+
+.account-settings-profile h3,
+.account-settings-danger h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.account-settings-profile p,
+.account-settings-danger p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.account-settings-profile .profile-form-account {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  column-gap: 10px;
+  row-gap: 8px;
+  align-items: end;
+}
+
+.account-settings-profile .profile-name-field {
+  gap: 7px;
+}
+
+.account-settings-profile .profile-name-field label {
+  color: var(--body);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.account-settings-profile .profile-name-field input {
+  min-height: 42px;
+  border-radius: 8px;
+}
+
+.account-settings-profile .profile-name-field input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(255 56 92 / 16%);
+}
+
+.account-settings-profile .profile-save-button {
+  grid-column: 2;
+  grid-row: 1;
+  width: fit-content;
+  min-height: 42px;
+  padding-inline: 14px;
+}
+
+.account-settings-profile .profile-form-account .form-message {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.account-settings-danger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-line);
+  border-radius: 14px;
+}
+
+.account-settings-danger .section-kicker {
+  color: var(--danger-strong);
+}
+
+.account-settings-danger .account-delete-trigger {
+  display: inline-flex;
+  min-height: 40px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  color: var(--danger-strong);
+  background: var(--surface);
+  border: 1px solid var(--danger-line);
+  border-radius: 8px;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.account-settings-danger .account-delete-trigger:hover:not(:disabled) {
+  color: var(--on-primary);
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+@media (max-width: 620px) {
+  .account-settings-content {
+    padding: 17px 19px 20px;
+  }
+
+  .account-settings-profile .profile-form-account {
+    grid-template-columns: 1fr;
+  }
+
+  .account-settings-profile .profile-save-button {
+    grid-column: 1;
+    grid-row: auto;
+    width: 100%;
+  }
+
+  .account-settings-danger {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .account-settings-danger .account-delete-trigger {
+    width: 100%;
+  }
+}
+
+/* Keep the invitation role affordance comfortably inside its field. */
+.trip-sharing-role-select {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.trip-sharing-role-select select {
+  padding-right: 44px;
+  appearance: none;
+}
+
+.trip-sharing-role-select svg {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  fill: none;
+  stroke: var(--body);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+  transform: translateY(-50%);
+}
+
 /* Itinerary item dialog: keep the everyday form compact without sacrificing field hierarchy. */
 .itinerary-item-dialog-content {
   max-height: calc(
@@ -12207,24 +12911,27 @@ html[data-theme="dark"] .new-trip-dialog-content .new-trip-ai-option {
   border-color: #9d1f04;
 }
 
-.alert-dialog-content .delete-trip-confirmation-field {
+.alert-dialog-content :is(.delete-trip-confirmation-field, .delete-account-confirmation-field) {
   display: grid;
   gap: 8px;
   margin-top: 22px;
 }
 
-.alert-dialog-content .delete-trip-confirmation-field label {
+.alert-dialog-content :is(.delete-trip-confirmation-field, .delete-account-confirmation-field) label {
   color: var(--body);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.5;
 }
 
-.alert-dialog-content .delete-trip-confirmation-field label strong {
+.alert-dialog-content
+  :is(.delete-trip-confirmation-field, .delete-account-confirmation-field)
+  label
+  strong {
   color: var(--danger-strong);
 }
 
-.alert-dialog-content .delete-trip-confirmation-field input {
+.alert-dialog-content :is(.delete-trip-confirmation-field, .delete-account-confirmation-field) input {
   min-height: 42px;
   padding: 0 12px;
   color: var(--ink);
@@ -12233,13 +12940,17 @@ html[data-theme="dark"] .new-trip-dialog-content .new-trip-ai-option {
   border-radius: 8px;
 }
 
-.alert-dialog-content .delete-trip-confirmation-field input:focus {
+.alert-dialog-content
+  :is(.delete-trip-confirmation-field, .delete-account-confirmation-field)
+  input:focus {
   border-color: var(--danger);
   outline: 3px solid rgb(193 53 21 / 18%);
   outline-offset: 0;
 }
 
-.alert-dialog-content .delete-trip-confirmation-field span[role="alert"] {
+.alert-dialog-content
+  :is(.delete-trip-confirmation-field, .delete-account-confirmation-field)
+  span[role="alert"] {
   color: var(--danger-strong);
   font-size: 12px;
   font-weight: 600;
@@ -12269,7 +12980,10 @@ html[data-theme="dark"] .trip-settings-danger-zone {
 }
 
 html[data-theme="dark"] .trip-settings-card-action .trip-details-button,
-html[data-theme="dark"] .alert-dialog-content .delete-trip-confirmation-field input {
+html[data-theme="dark"]
+  .alert-dialog-content
+  :is(.delete-trip-confirmation-field, .delete-account-confirmation-field)
+  input {
   color: var(--ink);
   background: var(--surface);
 }
@@ -12308,6 +13022,7 @@ html[data-theme="dark"] .alert-dialog-content .delete-trip-confirmation-field la
   .trip-settings-danger-action .trip-delete-trigger {
     width: 100%;
   }
+
 }
 
 /* 다이얼로그 입력 라벨은 보조색이 아닌 본문 대비를 사용해 빠르게 읽히게 합니다. */

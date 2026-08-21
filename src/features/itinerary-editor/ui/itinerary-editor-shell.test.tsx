@@ -21,4 +21,12 @@ describe("ItineraryEditorShell", () => {
       "trip-workspace-content",
     );
   });
+
+  it("places the theme toggle in the editor header", () => {
+    render(
+      <ItineraryEditorShell itineraryEditor={<p>여행 작업 공간</p>} tripItinerary={jejuTrip} />,
+    );
+
+    expect(screen.getByRole("button", { name: "다크 모드로 전환" })).toBeInTheDocument();
+  });
 });

@@ -1,15 +1,19 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 
 import { listSupabaseTrips } from "@/entities/trip/api/supabase-trip-repository";
 import { formatTripDateRange } from "@/entities/trip/lib/format-trip";
 import type { Trip } from "@/entities/trip/model/trip";
+import { DefaultTripCoverArt } from "@/entities/trip/ui/default-trip-cover-art";
 import { getSupabaseUserProfile } from "@/entities/user/api/supabase-profile-repository";
 import { getAuthenticatedUser } from "@/features/auth/model/get-authenticated-user";
 import { SignOutButton } from "@/features/auth/ui/sign-out-button";
+import { AccountSettingsDialog } from "@/features/profile/ui/account-settings-dialog";
 import { NewTripForm } from "@/features/trip-management/ui/new-trip-form";
 import { calendarDateToUtcDate } from "@/shared/lib/calendar-date";
 import { BrandMark } from "@/shared/ui/brand-mark";
+import { ThemeToggle } from "@/shared/ui/theme-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -48,10 +52,22 @@ function TripCard({ trip }: TripCardProps) {
 
   return (
     <Link className="trip-card" href={`/trips/${trip.id}`}>
-      <div className="trip-card-art" aria-hidden="true">
-        <span className="sun" />
-        <span className="island island-back" />
-        <span className="island island-front" />
+      <div className="trip-card-art has-cover-image" aria-hidden="true">
+        {trip.coverImagePath ? (
+          <Image
+            alt=""
+            className="trip-card-cover-image"
+            fill
+            sizes="(max-width: 700px) 100vw, (max-width: 980px) 50vw, 33vw"
+            src={`/api/trips/${trip.id}/cover`}
+            unoptimized
+          />
+        ) : (
+          <DefaultTripCoverArt
+            sizes="(max-width: 700px) 100vw, (max-width: 980px) 50vw, 33vw"
+            tripId={trip.id}
+          />
+        )}
         <span className="trip-date-badge">
           <strong>{startDate.getUTCDate()}</strong>
           <span>{startDate.getUTCMonth() + 1}월</span>
@@ -118,20 +134,13 @@ export default async function TripsPage() {
 
   const trips = tripsResult.value;
 
-  const profileInitial = Array.from(profile.displayName)[0]?.toLocaleUpperCase("ko-KR") ?? "여";
-
   return (
     <main className="trips-page">
       <header className="trips-header">
         <BrandMark />
         <div className="account-actions">
-          <Link
-            aria-label={`${profile.displayName} 프로필 설정`}
-            className="profile-avatar profile-avatar-link"
-            href="/profile"
-          >
-            {profileInitial}
-          </Link>
+          <ThemeToggle />
+          <AccountSettingsDialog displayName={profile.displayName} email={user.email} />
           <SignOutButton />
         </div>
       </header>
