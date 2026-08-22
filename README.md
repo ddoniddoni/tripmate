@@ -2,98 +2,209 @@
 
 # TripMate
 
-### 함께 떠나는 여행, 함께 완성하는 일정
+### 함께 계획하고, 같은 여행을 기대하는 방법
 
-친구들과 여행 계획을 만들고, 장소와 시간을 채우고,<br />
-준비물과 공동 경비까지 한 화면에서 정리하는 협업 여행 플래너
+친구들과 한 화면에서 일정을 만들고, 장소·준비물·공동 경비까지 정리하는<br />
+**실시간 협업 여행 플래너**
+
+[![Live Demo](https://img.shields.io/badge/Live-Demo-0F766E?style=for-the-badge&logo=vercel&logoColor=white)](https://tripmate-xi-six.vercel.app)
+[![Next.js](https://img.shields.io/badge/Next.js-16-111111?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Portfolio](https://img.shields.io/badge/Portfolio-Project-F59E0B?style=for-the-badge)](https://github.com/ddoniddoni/tripmate)
+
+[서비스 열기](https://tripmate-xi-six.vercel.app) · [기능 살펴보기](#핵심-경험) · [로컬에서 실행하기](#로컬에서-실행하기)
 
 </div>
 
 ---
 
-## 여행 준비가 가벼워지는 순간
+## 여행 계획의 대화가, 실제 일정이 되기까지
 
-여행을 준비하다 보면 단체 채팅방에는 맛집 링크가 쌓이고,<br />
-“여기는 언제 갈까?”라는 대화는 끝없이 이어집니다.
+여행 준비는 보통 단체 채팅방에서 시작하지만, 맛집 링크와 의견은 금세 흩어집니다.
+TripMate는 **장소를 찾고, 일정으로 옮기고, 함께 조정하는 과정**을 하나의 여행판에 담았습니다.
 
-**TripMate는 흩어진 여행 아이디어를 하나의 일정으로 모아 주는 웹 서비스입니다.**<br />
-친구들과 같은 여행판을 보며, 가고 싶은 곳과 시간을 함께 정해 보세요. 여행을 떠나기 전부터 이미 여행이 시작됩니다.
+<table>
+  <tr>
+    <td width="33%" align="center"><strong>📍 발견</strong><br /><sub>가고 싶은 장소를 찾고 후보로 남겨요.</sub></td>
+    <td width="33%" align="center"><strong>🗓️ 설계</strong><br /><sub>날짜와 시간에 맞춰 하루의 흐름을 만들어요.</sub></td>
+    <td width="33%" align="center"><strong>🤝 완성</strong><br /><sub>친구들과 같은 계획을 보며 함께 결정해요.</sub></td>
+  </tr>
+</table>
 
-## 이렇게 여행을 완성해요
+## 핵심 경험
 
-| 단계 | 할 수 있는 일 |
-| :---: | --- |
-| **01** | 여행 이름과 기간을 정하고 나만의 여행판을 만듭니다. |
-| **02** | 날짜별로 장소, 시간, 카테고리, 메모를 채워 하루를 설계합니다. |
-| **03** | 초대 링크로 친구를 불러와 같은 계획을 함께 살펴봅니다. |
-| **04** | 일정의 순서를 바꾸고 의견을 더하며 모두가 만족하는 여행을 완성합니다. |
-| **05** | 출발 전 준비물과 함께 쓴 경비를 정리하고, 가벼운 마음으로 떠납니다. |
-
-## TripMate에서 만나는 여행 계획
-
-### 🗓️ 하루가 한눈에 보이는 타임라인
-
-여행의 모든 날을 한눈에 확인하고, 오전부터 밤까지의 일정을 차곡차곡 정리할 수 있습니다. 일정은 언제든 추가·수정·삭제할 수 있으며, 순서나 날짜를 바꾸는 것도 간단합니다.
-
-### 📍 장소에서 시작하는 하루의 동선
-
-가고 싶은 장소에 시간과 메모를 더해 나만의 하루를 만드세요. 선택한 장소는 지도와 함께 확인할 수 있어, 일정의 흐름과 위치를 자연스럽게 살펴볼 수 있습니다.
-
-### 🤝 친구와 함께 만드는 하나의 여행판
-
-초대 링크를 공유하면 친구들도 같은 여행에 참여할 수 있습니다. 누군가 일정을 바꾸면 모두의 여행판에 반영되어, 캡처를 보내거나 변경 사항을 다시 설명할 필요가 없습니다.
-
-### ✨ 각자에게 맞는 참여 방식
-
-여행을 만든 사람은 참여자를 관리하고, 함께 계획을 만들 친구에게는 편집 권한을 줄 수 있습니다. 일정만 공유하고 싶은 친구는 보기 전용으로 초대할 수 있습니다.
-
-### ↩️ 마음껏 바꾸고, 다시 정하기
-
-“이 맛집은 둘째 날이 더 좋지 않을까?” 고민되면 일정을 자유롭게 옮겨 보세요. 바꾼 내용은 되돌리거나 다시 적용할 수 있어, 가장 좋은 여행 계획을 편하게 찾아갈 수 있습니다.
-
-### 🌗 낮에도 밤에도 편안한 여행판
-
-오래 여행을 정리하는 날에는 화면 오른쪽 아래의 테마 버튼으로 야간 화면으로 바꿔 보세요. 선택한 화면은 다음에 다시 열어도 유지됩니다.
-
-## 여행을 준비하는 모든 순간
-
-### 💬 아직 정하지 못한 곳도, 놓치지 않아요
-
-“여기도 괜찮대” 싶은 장소는 우선 후보로 남겨 보세요. 날짜별 메모와 함께 모아 두었다가, 모두의 의견이 모이면 실제 일정으로 옮길 수 있습니다. 링크가 대화 속으로 사라지지 않고, 여행의 맥락 안에 남습니다.
-
-### ✅ 출발 전에는 각자 맡은 일을 확인해요
-
-준비물과 할 일을 항목별로 적고, 담당자를 정해 보세요. 여권 확인부터 짐 챙기기까지 누가 무엇을 맡았는지 한눈에 보이고, 끝낸 일은 바로 체크할 수 있습니다.
-
-### ₩ 함께 쓴 돈도, 복잡한 계산 없이
-
-식비·교통·숙소처럼 함께 쓴 돈을 기록하고, 필요하면 결제자·참여자·금액을 바로 고칠 수 있어요. 카테고리별로 지출을 골라 보며 각자 부담할 금액과 꼭 필요한 송금만 정리하고, 송금이 끝난 항목은 모두에게 보이는 완료 표시로 남길 수 있어요.
-
-## 한 여행판에서 만나는 네 가지 장면
-
-| 여행의 순간 | TripMate가 도와주는 일 |
+| 여행을 준비하는 순간 | TripMate가 하는 일 |
 | --- | --- |
-| **가고 싶은 곳을 발견했을 때** | 장소를 찾아 저장하고, 날짜별 후보로 먼저 모아 둡니다. |
-| **하루의 흐름을 정할 때** | 시간과 메모를 더해 타임라인을 만들고, 지도에서 동선을 함께 봅니다. |
-| **친구들과 의견을 맞출 때** | 같은 여행판에서 실시간으로 확인하고, 초대받은 방식에 맞춰 함께 참여합니다. |
-| **떠날 준비를 마칠 때** | 준비물 담당과 공동 경비를 정리해, 챙길 것과 보낼 돈·송금 진행도를 분명하게 확인합니다. |
+| **“여기 가보고 싶어.”** | Google Places 검색으로 장소를 찾고, 주소·좌표가 포함된 일정 카드로 추가합니다. |
+| **“이건 둘째 날이 더 낫겠다.”** | 드래그 앤 드롭으로 같은 날 안에서 순서를 바꾸거나 다른 날짜로 이동합니다. |
+| **“동선이 괜찮을까?”** | 타임라인 선택과 지도 마커를 양방향으로 연결하고, 확정된 순서로 이동 경로를 표시합니다. |
+| **“같이 정하자.”** | 초대 링크로 owner·editor·viewer 역할에 맞게 여행판을 공유하고, 동시 편집 상태를 확인합니다. |
+| **“출발 전에 뭐 챙기지?”** | 담당자와 상태를 갖춘 준비물 체크리스트, 공동 경비와 정산 가이드를 한곳에서 관리합니다. |
 
-## 이런 여행에 추천해요
+### 계획을 바꿔도 불안하지 않게
 
-<div align="center">
+- 일정 추가·수정·복제·삭제와 날짜 간 이동
+- 변경 한 번을 한 단계로 되돌리는 Undo / Redo
+- 겹치는 일정과 이동 시간에 대한 비차단 안내
+- 연결 중·재연결 중·오프라인·읽기 전용 상태를 분명하게 표시
+- 데스크톱 3열 편집 화면과 모바일 친화적 화면 전환
+- 선택한 테마를 기억하는 라이트 / 다크 모드
 
-친구들과 처음 떠나는 국내·해외여행 &nbsp;·&nbsp;<br />
-커플 또는 가족과 준비하는 주말 여행 &nbsp;·&nbsp;<br />
-가고 싶은 곳이 많아 순서를 정하기 어려운 여행
+### AI로 시작하고, 팀과 완성하기
 
-</div>
+여행지와 취향을 바탕으로 AI가 하루별 동선 초안을 제안합니다. 초안은 정답이 아니라 출발점입니다. 장소 검색, 시간 조정, 팀원의 의견으로 실제 여행에 맞는 일정으로 다듬을 수 있습니다.
+
+> `OPENAI_API_KEY`가 없는 로컬 개발 환경에서는 외부 호출 없이 명확히 구분된 미리보기 초안을 제공합니다.
+
+## 1분 사용 흐름
+
+```text
+이메일 매직 링크 로그인
+        ↓
+여행 이름 · 기간 · 목적지로 여행판 생성
+        ↓
+장소 검색 → 날짜별 일정에 추가 → 드래그로 순서 조정
+        ↓
+지도와 이동 경로로 동선 확인
+        ↓
+초대 링크 공유 → 준비물 · 공동 경비까지 함께 정리
+```
+
+## 어떻게 함께 동작하나요?
+
+```mermaid
+flowchart LR
+  U[여행자] --> W[Next.js App]
+  W --> S[Supabase\n인증 · 여행 메타데이터 · 권한]
+  W --> L[Liveblocks\n공동 일정 · Presence · Undo/Redo]
+  W --> G[Google Maps Platform\n장소 · 지도 · 경로]
+  W --> A[OpenAI\n일정 초안 선택 기능]
+```
+
+| 영역 | 역할 |
+| --- | --- |
+| **Supabase** | 이메일 매직 링크 인증, 여행·멤버십·초대 데이터, Row Level Security 기반 권한 관리 |
+| **Liveblocks** | 여러 사람이 동시에 다루는 일정·준비물·경비 상태와 접속 상태, 변경 이력 |
+| **Google Maps Platform** | 장소 검색·상세 정보, 지도 렌더링, 일정 순서 기반 경로 계산 |
+| **OpenAI** | 선택적으로 사용하는 여행 동선 초안 생성 |
+
+## 기술 스택
+
+| 분야 | 사용 기술 |
+| --- | --- |
+| Framework | Next.js 16 App Router, React 19, TypeScript |
+| UI | CSS, Radix UI, Pretendard |
+| Form & Validation | React Hook Form, Zod |
+| Drag & Drop | dnd-kit |
+| Collaboration | Liveblocks Storage, Presence, History |
+| Authentication & Data | Supabase SSR, PostgreSQL, RLS |
+| Maps | Google Maps JavaScript API, Places API (New), Routes API |
+| Testing | Vitest, React Testing Library, Playwright |
+| Deployment | Vercel |
+
+## 로컬에서 실행하기
+
+### 준비물
+
+- Node.js `24.x`
+- npm
+- Supabase, Liveblocks, Google Maps Platform 계정
+- AI 일정 초안을 사용할 경우 OpenAI API 키
+
+```bash
+git clone https://github.com/ddoniddoni/tripmate.git
+cd tripmate
+npm install
+cp .env.example .env
+npm run dev
+```
+
+브라우저에서 [http://localhost:3000](http://localhost:3000)을 열면 됩니다.
+
+### 환경 변수
+
+값은 절대 Git에 커밋하지 않습니다. 변수 이름과 설명은 [`.env.example`](.env.example)에 정리되어 있습니다.
+
+| 구분 | 변수 | 설명 |
+| --- | --- | --- |
+| Public | `NEXT_PUBLIC_APP_URL` | 현재 앱 URL. 로컬에서는 `http://localhost:3000` |
+| Public | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL |
+| Public | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` **또는** `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 브라우저 Supabase 키. 두 키를 함께 설정하지 않습니다. |
+| Secret | `SUPABASE_SERVICE_ROLE_KEY` | 서버 전용 Supabase 관리자 키 |
+| Secret | `LIVEBLOCKS_SECRET_KEY` | 서버에서 협업 권한을 발급하는 키 |
+| Secret | `GOOGLE_MAPS_API_KEY` | Places API (New), Routes API용 서버 키 |
+| Public | `NEXT_PUBLIC_GOOGLE_MAPS_MAP_KEY` | Maps JavaScript API용 브라우저 키 |
+| Optional secret | `OPENAI_API_KEY` | Production AI 일정 초안 생성용 키 |
+
+Google 키는 반드시 둘로 분리합니다.
+
+- `NEXT_PUBLIC_GOOGLE_MAPS_MAP_KEY`: 웹사이트 도메인과 **Maps JavaScript API**로 제한
+- `GOOGLE_MAPS_API_KEY`: **Places API (New)**, **Routes API**로만 제한하고 서버에만 보관
+
+Google 사용량 한도 변수는 기본값이 준비되어 있습니다. 필요할 때만 `.env.example`의 `GOOGLE_*_LIMIT` 값을 조정하세요. 빈 문자열을 설정하면 안 됩니다.
+
+## 품질 확인
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm run test:e2e
+```
+
+| 검증 | 범위 |
+| --- | --- |
+| Unit / Integration | 일정 도메인 규칙, 권한, 지도·장소 API 어댑터, UI 상호작용 |
+| E2E | 비로그인 흐름, 로그인 UI, 모바일 주요 화면 |
+| Opt-in authenticated E2E | 전용 테스트 계정으로 이메일 로그인, 여행 생성·삭제 |
+
+인증된 E2E는 실제 Supabase 데이터를 사용하므로 전용 테스트 계정으로만 실행합니다.
+
+```bash
+E2E_AUTHENTICATED=1 E2E_TEST_EMAIL=<test-email> \
+  npx playwright test tests/e2e/authenticated-trip.spec.ts
+```
+
+## 배포
+
+권장 릴리스 흐름은 `develop`에서 작업한 뒤 `develop → main` Pull Request로 안정 버전을 승격하고, Vercel Production Branch를 `main`으로 지정하는 방식입니다.
+
+배포 전에 아래를 확인하세요.
+
+- Vercel Production 환경 변수와 `NEXT_PUBLIC_APP_URL`
+- Supabase Auth의 Site URL 및 `/auth/confirm` Redirect URL
+- Liveblocks 서버 비밀 키
+- Google Maps API 활성화, 키 제한, Billing과 예산 알림
+- 실제 이메일 매직 링크 로그인과 두 계정 협업 흐름
+
+세부 절차는 [배포 체크리스트](docs/DEPLOYMENT_CHECKLIST.md)를 참고하세요.
+
+## 프로젝트 구조
+
+```text
+src/
+├── app/        # 라우트, 레이아웃, Route Handler
+├── features/   # 일정 편집, 지도, 협업, 공유, 경비 등 사용자 기능
+├── entities/   # Trip, Itinerary, Place 등 도메인 모델과 규칙
+└── shared/     # Supabase 클라이언트, 설정, 공용 UI와 유틸리티
+```
+
+의존성은 `app → features → entities → shared` 방향을 지키며, 각 상태는 한 곳에서만 관리합니다. 자세한 설계 원칙은 [Engineering Guide](docs/TRIPMATE_ENGINEERING_GUIDE.md)를 참고하세요.
+
+## 보안과 데이터 원칙
+
+- `NEXT_PUBLIC_` 접두사는 브라우저에 노출되어도 안전한 값에만 사용합니다.
+- Liveblocks·Supabase service role·서버 Google·OpenAI 키는 서버 환경 변수로만 보관합니다.
+- Supabase 공개 테이블은 RLS를 사용하며, UI 표시 여부와 별개로 서버에서 멤버십·역할 권한을 확인합니다.
+- 초대 링크와 개인 여행 정보는 민감한 데이터로 취급합니다.
 
 ---
 
 <div align="center">
 
-### 여행 전의 대화가, 여행의 기대가 되도록
+**여행 전의 대화를, 출발이 기다려지는 계획으로.**
 
-**다음 여행은 단체 채팅방 대신 TripMate에서 시작해 보세요.**
+[TripMate 시작하기](https://tripmate-xi-six.vercel.app) · [GitHub 저장소](https://github.com/ddoniddoni/tripmate)
 
 </div>
