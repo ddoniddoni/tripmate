@@ -11,6 +11,7 @@ type ItineraryEditorShellProps = {
   canEditItinerary?: boolean;
   collaborationControl?: ReactNode;
   itineraryEditor?: ReactNode;
+  notificationControl?: ReactNode;
   tripItinerary: TripItinerary;
 };
 
@@ -18,6 +19,7 @@ export function ItineraryEditorShell({
   canEditItinerary = true,
   collaborationControl,
   itineraryEditor,
+  notificationControl,
   tripItinerary,
 }: ItineraryEditorShellProps) {
   const { trip } = tripItinerary;
@@ -44,6 +46,7 @@ export function ItineraryEditorShell({
         </div>
 
         <div className="header-actions">
+          {notificationControl}
           <ThemeToggle />
           {collaborationControl ?? (
             <span className="sync-pill">

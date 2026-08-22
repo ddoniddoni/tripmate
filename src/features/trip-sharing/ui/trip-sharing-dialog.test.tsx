@@ -53,4 +53,27 @@ describe("TripSharingDialog", () => {
     expect(screen.getByText("현재 멤버")).toHaveAttribute("data-can-manage-members", "false");
     expect(screen.queryByLabelText("초대할 이메일")).not.toBeInTheDocument();
   });
+
+  it("lets the owner invite a registered account without exposing a share link", async () => {
+    const user = userEvent.setup();
+    render(
+      <TripSharingDialog
+        canManageMembers
+        currentUserId={ownerId}
+        invitations={[]}
+        memberCount={1}
+        members={[{ displayName: "지우", role: "owner", userId: ownerId }]}
+        tripId={tripId}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "멤버 1명 · 초대" }));
+
+    expect(screen.getByLabelText("가입된 계정 이메일")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "초대 보내기" })).toBeInTheDocument();
+    expect(screen.queryByText("초대 링크")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      "등록된 TripMate 계정으로 초대를 보내면 상대방 알림에 바로 도착해요.",
+    );
+  });
 });

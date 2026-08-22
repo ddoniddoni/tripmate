@@ -13,7 +13,8 @@
 - 아직 필요한 검증: 두 계정 실시간 협업, Preview·Production 스모크 테스트
 - 원격 Supabase의 모든 `public` 테이블은 RLS가 활성화되어 있다. (2026-08-22 확인)
 - 로컬·원격 Supabase 마이그레이션 11개의 버전과 이름이 일치하며, 장소 상세 조회 사용량 마이그레이션까지 적용됐다. (2026-08-22 확인)
-- 개발 환경에서만 이메일 인증 없이 바로 로그인하며, Production에서는 이메일 매직 링크로 로그인한다.
+- 계정 알림형 초대 마이그레이션 `20260822203356_add_registered_user_invitation_notifications.sql`은 원격에 적용됐다. 이제 호환 애플리케이션 코드를 배포해야 한다. (2026-08-23)
+- 개발·Production 환경 모두 이메일·비밀번호로 로그인한다. 이메일 확인은 새 계정 가입 때만 필요하다.
 
 ## 진행 순서
 
@@ -67,7 +68,7 @@
 - [x] 전용 테스트 계정으로 로그인·여행 생성·삭제를 검증하는 옵트인 E2E를 작성한다. (2026-08-18)
   - 기본 `npm run test:e2e`는 외부 API·DB 쓰기 없이 실행된다.
   - 실제 Supabase 테스트는 전용 계정으로만 실행한다. 생성된 여행은 테스트 마지막에 소유자 권한으로 삭제한다.
-  - 실행: `E2E_AUTHENTICATED=1 E2E_TEST_EMAIL=<전용-테스트-이메일> npx playwright test tests/e2e/authenticated-trip.spec.ts`
+  - 실행: `E2E_AUTHENTICATED=1 E2E_TEST_EMAIL=<전용-테스트-이메일> E2E_TEST_PASSWORD=<전용-테스트-비밀번호> npx playwright test tests/e2e/authenticated-trip.spec.ts`
   - [x] 전용 합성 테스트 계정으로 인증 E2E를 실행한다. (2026-08-18)
   - [x] 이메일 로그인
   - [x] 여행 생성·삭제
@@ -103,7 +104,7 @@
 
 | 변수 | 공개 여부 | 용도 |
 | --- | --- | --- |
-| `NEXT_PUBLIC_APP_URL` | 공개 가능 | 현재 배포의 정식 URL, 매직 링크·초대 링크 생성 |
+| `NEXT_PUBLIC_APP_URL` | 공개 가능 | 현재 배포의 정식 URL과 가입 확인 경로 생성 |
 | `NEXT_PUBLIC_SUPABASE_URL` | 공개 가능 | Supabase 프로젝트 URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | 공개 가능 | 브라우저 Supabase 인증 키 |
 | `SUPABASE_SERVICE_ROLE_KEY` | 비밀 | 서버에서 사용량 제한 및 관리자 작업 수행 |
@@ -127,6 +128,8 @@
 - [x] 로컬·원격 마이그레이션 11개의 버전과 이름이 일치하는지 확인한다. (2026-08-22)
   - 같은 SQL이 다른 타임스탬프로 기록된 4개 이력을 로컬 버전에 맞추고, 스키마에 존재하지만 누락됐던 최초 이력을 등록했다.
 - [ ] `supabase db push --dry-run`으로 적용 대상을 검토한 뒤 `supabase db push`를 실행한다.
+- [x] 계정 알림형 초대 마이그레이션을 원격에 적용한다. (2026-08-23)
+- [ ] `status`·RPC를 사용하는 호환 애플리케이션을 배포한다. 배포 전까지 기존 Production의 링크 초대 생성은 동작하지 않을 수 있다.
 - [x] `20260821202200_add_google_place_details_usage_operation.sql`이 원격에 적용됐는지 확인한다. (2026-08-22)
 - [x] Database Security Advisor와 Performance Advisor를 확인한다. (2026-08-22, 아래 후속 항목 제외)
 - [x] 모든 `public` 테이블의 RLS 활성화를 확인한다. (2026-08-22)
@@ -137,7 +140,7 @@
 - [ ] Auth Site URL을 Production URL로 설정한다.
 - [ ] Redirect URL에 정확한 `https://<production-domain>/auth/confirm`을 등록한다.
 - [ ] Preview 로그인까지 검증할 경우 Vercel Preview URL 패턴 `https://*-<team-or-account-slug>.vercel.app/**`도 Redirect URL에 등록한다.
-- [ ] 이메일 매직 링크 템플릿이 `{{ .RedirectTo }}`를 사용하도록 확인한다.
+- [ ] Auth > Email Templates > Confirm signup 템플릿이 `{{ .ConfirmationURL }}`를 사용하도록 확인한다. `{{ .RedirectTo }}`만 단독으로 쓰면 확인 토큰이 전달되지 않는다.
 - [ ] 외부 사용자 로그인을 공개하려면 Custom SMTP를 설정한다.
 - [ ] Supabase 관리자 계정에 MFA를 적용한다.
 
@@ -168,6 +171,8 @@
 
 - [ ] 계정 A가 여행을 생성한다.
 - [ ] 계정 A가 계정 B를 editor로 초대한다.
+- [ ] 계정 B 헤더의 알림 배지와 알림 목록에서 초대를 확인하고 수락한다.
+- [ ] 별도 초대는 거절한 뒤 멤버십이 생성되지 않는지 확인한다.
 - [ ] 두 계정이 같은 일정을 동시에 편집하고 변경 사항을 확인한다.
 - [ ] 계정 B를 viewer로 바꾼 뒤 수정이 차단되는지 확인한다.
 - [ ] 계정 A가 준비물과 경비를 변경하고 계정 B에 실시간 반영되는지 확인한다.
@@ -209,8 +214,8 @@
 
 - [ ] 최초 `main` 생성 이후에는 `develop`에서 `main`으로 안정 릴리스 PR을 만들고 검증 후 병합한다.
 - [ ] Vercel Production 배포를 실행한다.
-- [ ] 실제 Production URL에서 매직 링크 로그인을 재확인한다.
-- [ ] 공유·초대 링크가 Production 도메인을 가리키는지 확인한다.
+- [ ] 실제 Production URL에서 이메일·비밀번호 회원가입, 이메일 확인, 재로그인을 재확인한다.
+- [ ] 가입된 두 계정으로 초대 알림 수신, 수락·거절, 멤버 권한을 확인한다.
 - [ ] Google Maps 사용량과 비용 알림을 확인한다.
 - [ ] 배포 후 오류 로그를 확인한다.
 - [ ] README와 포트폴리오에 공개 URL을 연결한다.

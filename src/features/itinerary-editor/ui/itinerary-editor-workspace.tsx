@@ -592,7 +592,7 @@ function TimelinePanel({
       aria-labelledby="timeline-heading"
     >
       <div className="timeline-header">
-        <div>
+        <div className="timeline-header-copy">
           <span className="section-kicker">
             {selectedDayIndex + 1}일차 ·{" "}
             {selectedDay
@@ -917,6 +917,7 @@ export function ItineraryEditorWorkspaceView({
             selectedDayId={editor.selectedDay?.id}
             startDate={editor.trip.startDate}
           />
+          <MobileViewSwitch mobileView={editor.mobileView} onChange={editor.setMobileView} />
           <TimelinePanel
             canDuplicateDay={
               Boolean(editor.selectedDay?.itemIds.length) && editor.days.length > 1
@@ -970,8 +971,6 @@ export function ItineraryEditorWorkspaceView({
           }}
         </DragOverlay>
       </DragDropProvider>
-
-      <MobileViewSwitch mobileView={editor.mobileView} onChange={editor.setMobileView} />
 
       {editor.isItemDialogOpen ? (
         <ItineraryItemDialog

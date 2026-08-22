@@ -638,9 +638,11 @@ describe("ItineraryEditorWorkspace", () => {
 
   it("switches the mobile itinerary and map controls", async () => {
     const user = renderWorkspace();
+    const mobileViewSwitch = screen.getByRole("group", { name: "모바일 화면 전환" });
     const itineraryButton = screen.getByRole("button", { name: "일정" });
     const mapButton = screen.getByRole("button", { name: "지도" });
 
+    expect(mobileViewSwitch.closest(".editor-layout")).not.toBeNull();
     expect(itineraryButton).toHaveAttribute("aria-pressed", "true");
     expect(itineraryButton).toHaveAttribute("aria-controls", "itinerary-timeline-panel");
     expect(mapButton).toHaveAttribute("aria-controls", "itinerary-map-panel");

@@ -7,6 +7,7 @@ import {
   listSupabasePendingTripInvitations,
   listSupabaseTripMembers,
 } from "@/entities/trip/api/supabase-trip-repository";
+import { countSupabasePendingTripInvitationNotifications } from "@/entities/trip/api/supabase-trip-notification-repository";
 import { getTripPermissions } from "@/entities/trip/model/trip-membership";
 import { getSupabaseUserProfile } from "@/entities/user/api/supabase-profile-repository";
 import { getAuthenticatedUser } from "@/features/auth/model/get-authenticated-user";
@@ -16,6 +17,7 @@ import { LiveblocksItineraryEditor } from "@/features/collaboration/ui/liveblock
 import { TripCollaborationRoom } from "@/features/collaboration/ui/trip-collaboration-room";
 import { TripCollaborationStatus } from "@/features/collaboration/ui/trip-collaboration-status";
 import { ItineraryEditorShell } from "@/features/itinerary-editor/ui/itinerary-editor-shell";
+import { NotificationLink } from "@/features/notifications/ui/notification-link";
 import { getSafeTripEditorPath } from "@/shared/lib/safe-internal-path";
 
 type TripEditorPageProps = {
@@ -46,11 +48,13 @@ export default async function TripEditorPage({ params, searchParams }: TripEdito
     redirect(`/login?next=${encodeURIComponent(tripEditorPath)}`);
   }
 
-  const [profileResult, tripResult, membersResult] = await Promise.allSettled([
-    getSupabaseUserProfile(user.id),
-    getSupabaseTrip(tripId),
-    listSupabaseTripMembers(tripId),
-  ]);
+  const [profileResult, tripResult, membersResult, pendingNotificationCountResult] =
+    await Promise.allSettled([
+      getSupabaseUserProfile(user.id),
+      getSupabaseTrip(tripId),
+      listSupabaseTripMembers(tripId),
+      countSupabasePendingTripInvitationNotifications(user.id),
+    ]);
 
   if (profileResult.status === "rejected") {
     throw profileResult.reason;
@@ -72,6 +76,10 @@ export default async function TripEditorPage({ params, searchParams }: TripEdito
 
   const trip = tripResult.value;
   const members = membersResult.value;
+  const pendingNotificationCount =
+    pendingNotificationCountResult.status === "fulfilled"
+      ? pendingNotificationCountResult.value
+      : 0;
 
   if (!trip) {
     notFound();
@@ -109,6 +117,7 @@ export default async function TripEditorPage({ params, searchParams }: TripEdito
           trip={trip}
         />
       }
+      notificationControl={<NotificationLink pendingCount={pendingNotificationCount} />}
       tripItinerary={initialTripItinerary}
     />
   );

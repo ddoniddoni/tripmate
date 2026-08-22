@@ -1,15 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import {
-  requestMagicLink,
-  startDevelopmentSession,
+  signInWithPassword,
+  signUpWithPassword,
 } from "@/features/auth/model/auth-actions";
-import { initialMagicLinkActionState } from "@/features/auth/model/magic-link";
+import { initialAuthActionState } from "@/features/auth/model/credentials";
 
 type LoginFormProps = {
-  allowDevelopmentSession: boolean;
   nextPath: string;
 };
 
@@ -22,10 +21,19 @@ function MailIcon() {
   );
 }
 
+function LockIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20">
+      <rect height="9" rx="1.75" width="13" x="3.5" y="8" />
+      <path d="M6.5 8V5.75a3.5 3.5 0 0 1 7 0V8M10 11.5v2.5" />
+    </svg>
+  );
+}
+
 function EmailField({ disabled }: { disabled: boolean }) {
   return (
     <>
-      <label htmlFor="login-email">이메일</label>
+      <label htmlFor="login-email">이메일 (로그인 아이디)</label>
       <div className="login-email-field">
         <MailIcon />
         <input
@@ -43,64 +51,91 @@ function EmailField({ disabled }: { disabled: boolean }) {
   );
 }
 
-function DevelopmentLoginForm({ nextPath }: Pick<LoginFormProps, "nextPath">) {
-  const [developmentState, developmentAction, isDevelopmentPending] = useActionState(
-    startDevelopmentSession,
-    initialMagicLinkActionState,
-  );
+type PasswordFieldProps = {
+  autoComplete: "current-password" | "new-password";
+  disabled: boolean;
+  id: string;
+  label: string;
+  name: "password" | "passwordConfirmation";
+};
 
+function PasswordField({ autoComplete, disabled, id, label, name }: PasswordFieldProps) {
   return (
-    <form className="login-form">
-      <input name="next" type="hidden" value={nextPath} />
-      <EmailField disabled={isDevelopmentPending} />
-      <div className="login-actions">
-        <button formAction={developmentAction} type="submit" disabled={isDevelopmentPending}>
-          {isDevelopmentPending ? "입장하는 중…" : "이메일로 바로 시작하기"}
-        </button>
+    <>
+      <label htmlFor={id}>{label}</label>
+      <div className="login-password-field">
+        <LockIcon />
+        <input
+          autoComplete={autoComplete}
+          disabled={disabled}
+          id={id}
+          minLength={8}
+          name={name}
+          placeholder="8자 이상 입력하세요"
+          required
+          type="password"
+        />
       </div>
-      {developmentState.status !== "idle" ? (
-        <p
-          className={`login-message login-message-${developmentState.status}`}
-          role={developmentState.status === "error" ? "alert" : "status"}
-        >
-          {developmentState.message}
-        </p>
-      ) : null}
-    </form>
+    </>
   );
 }
 
-function MagicLinkLoginForm({ nextPath }: Pick<LoginFormProps, "nextPath">) {
-  const [magicLinkState, magicLinkAction, isMagicLinkPending] = useActionState(
-    requestMagicLink,
-    initialMagicLinkActionState,
+export function LoginForm({ nextPath }: LoginFormProps) {
+  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
+  const [signInState, signInAction, isSignInPending] = useActionState(
+    signInWithPassword,
+    initialAuthActionState,
   );
+  const [signUpState, signUpAction, isSignUpPending] = useActionState(
+    signUpWithPassword,
+    initialAuthActionState,
+  );
+  const isSignUp = mode === "sign-up";
+  const isPending = isSignUp ? isSignUpPending : isSignInPending;
+  const action = isSignUp ? signUpAction : signInAction;
+  const actionState = isSignUp ? signUpState : signInState;
 
   return (
-    <form action={magicLinkAction} className="login-form">
+    <form action={action} className="login-form" key={mode}>
       <input name="next" type="hidden" value={nextPath} />
-      <EmailField disabled={isMagicLinkPending} />
+      <EmailField disabled={isPending} />
+      <PasswordField
+        autoComplete={isSignUp ? "new-password" : "current-password"}
+        disabled={isPending}
+        id="login-password"
+        label="비밀번호"
+        name="password"
+      />
+      {isSignUp ? (
+        <PasswordField
+          autoComplete="new-password"
+          disabled={isPending}
+          id="login-password-confirmation"
+          label="비밀번호 확인"
+          name="passwordConfirmation"
+        />
+      ) : null}
       <div className="login-actions">
-        <button type="submit" disabled={isMagicLinkPending}>
-          {isMagicLinkPending ? "메일을 보내는 중…" : "이메일 인증 링크 보내기"}
+        <button type="submit" disabled={isPending}>
+          {isPending ? "처리하는 중…" : isSignUp ? "회원가입하기" : "로그인하기"}
+        </button>
+        <button
+          className="login-mode-button"
+          disabled={isPending}
+          onClick={() => setMode(isSignUp ? "sign-in" : "sign-up")}
+          type="button"
+        >
+          {isSignUp ? "이미 계정이 있어요 · 로그인" : "처음이신가요? 회원가입"}
         </button>
       </div>
-      {magicLinkState.status !== "idle" ? (
+      {actionState.status !== "idle" ? (
         <p
-          className={`login-message login-message-${magicLinkState.status}`}
-          role={magicLinkState.status === "error" ? "alert" : "status"}
+          className={`login-message login-message-${actionState.status}`}
+          role={actionState.status === "error" ? "alert" : "status"}
         >
-          {magicLinkState.message}
+          {actionState.message}
         </p>
       ) : null}
     </form>
-  );
-}
-
-export function LoginForm({ allowDevelopmentSession, nextPath }: LoginFormProps) {
-  return allowDevelopmentSession ? (
-    <DevelopmentLoginForm nextPath={nextPath} />
-  ) : (
-    <MagicLinkLoginForm nextPath={nextPath} />
   );
 }

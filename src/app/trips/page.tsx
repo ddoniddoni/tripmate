@@ -3,6 +3,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 
 import { listSupabaseTrips } from "@/entities/trip/api/supabase-trip-repository";
+import { countSupabasePendingTripInvitationNotifications } from "@/entities/trip/api/supabase-trip-notification-repository";
 import { formatTripDateRange } from "@/entities/trip/lib/format-trip";
 import type { Trip } from "@/entities/trip/model/trip";
 import { DefaultTripCoverArt } from "@/entities/trip/ui/default-trip-cover-art";
@@ -11,6 +12,7 @@ import { getAuthenticatedUser } from "@/features/auth/model/get-authenticated-us
 import { SignOutButton } from "@/features/auth/ui/sign-out-button";
 import { AccountSettingsDialog } from "@/features/profile/ui/account-settings-dialog";
 import { NewTripForm } from "@/features/trip-management/ui/new-trip-form";
+import { NotificationLink } from "@/features/notifications/ui/notification-link";
 import { calendarDateToUtcDate } from "@/shared/lib/calendar-date";
 import { BrandMark } from "@/shared/ui/brand-mark";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
@@ -113,9 +115,10 @@ export default async function TripsPage() {
     redirect("/login");
   }
 
-  const [profileResult, tripsResult] = await Promise.allSettled([
+  const [profileResult, tripsResult, pendingNotificationCountResult] = await Promise.allSettled([
     getSupabaseUserProfile(user.id),
     listSupabaseTrips(),
+    countSupabasePendingTripInvitationNotifications(user.id),
   ]);
 
   if (profileResult.status === "rejected") {
@@ -133,12 +136,17 @@ export default async function TripsPage() {
   }
 
   const trips = tripsResult.value;
+  const pendingNotificationCount =
+    pendingNotificationCountResult.status === "fulfilled"
+      ? pendingNotificationCountResult.value
+      : 0;
 
   return (
     <main className="trips-page">
       <header className="trips-header">
         <BrandMark />
         <div className="account-actions">
+          <NotificationLink pendingCount={pendingNotificationCount} />
           <ThemeToggle />
           <AccountSettingsDialog displayName={profile.displayName} email={user.email} />
           <SignOutButton />

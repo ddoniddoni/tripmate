@@ -3,8 +3,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteHandlerClient } from "@/shared/api/supabase/route-handler";
 import { getSafeInternalPath } from "@/shared/lib/safe-internal-path";
 
-function isEmailLinkType(value: string | null): value is "email" {
-  return value === "email";
+function isEmailLinkType(value: string | null): value is "email" | "signup" {
+  return value === "email" || value === "signup";
 }
 
 export async function GET(request: NextRequest) {

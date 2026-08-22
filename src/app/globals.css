@@ -396,16 +396,87 @@ textarea {
   gap: 9px;
 }
 
+.email-confirmation-card {
+  gap: 22px;
+}
+
+.email-confirmation-steps {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.email-confirmation-steps li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 48px;
+  padding: 8px 10px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.email-confirmation-steps span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  color: white;
+  background: var(--green);
+  border-radius: 50%;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.email-confirmation-steps p,
+.email-confirmation-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.email-confirmation-help {
+  padding: 13px 0 0;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.email-confirmation-link {
+  display: grid;
+  min-height: 46px;
+  color: white;
+  background: var(--green);
+  border-radius: 10px;
+  box-shadow: 0 7px 16px rgb(38 112 82 / 20%);
+  font-size: 14px;
+  font-weight: 800;
+  place-items: center;
+  text-decoration: none;
+}
+
+.email-confirmation-link:hover {
+  color: white;
+  background: var(--green-dark);
+}
+
 .login-form label {
   font-size: 12px;
   font-weight: 800;
 }
 
-.login-email-field {
+.login-email-field,
+.login-password-field {
   position: relative;
 }
 
-.login-email-field > svg {
+.login-email-field > svg,
+.login-password-field > svg {
   position: absolute;
   z-index: 1;
   top: 50%;
@@ -422,7 +493,8 @@ textarea {
   transform: translateY(-50%);
 }
 
-.login-email-field input {
+.login-email-field input,
+.login-password-field input {
   width: 100%;
   min-height: 48px;
   padding: 0 14px 0 42px;
@@ -536,7 +608,8 @@ textarea {
   min-height: 50px;
 }
 
-.login-email-field input:focus {
+.login-email-field input:focus,
+.login-password-field input:focus {
   border-color: var(--green);
   box-shadow: 0 0 0 3px rgb(38 112 82 / 13%);
 }
@@ -560,6 +633,23 @@ textarea {
 .login-actions {
   display: grid;
   gap: 9px;
+}
+
+.login-actions .login-mode-button {
+  min-height: auto;
+  margin-top: 0;
+  padding: 3px;
+  color: var(--green-dark);
+  background: transparent;
+  box-shadow: none;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.login-actions .login-mode-button:hover:not(:disabled) {
+  color: var(--green);
+  background: transparent;
 }
 
 .login-form button:disabled,
@@ -5982,7 +6072,7 @@ button.place-suggestion-vote:hover {
 
 @media (max-width: 1080px) {
   .trip-overview-workspace {
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .trip-overview-canvas {
@@ -7850,6 +7940,10 @@ button.place-suggestion-vote:hover {
   margin-bottom: 20px;
 }
 
+.timeline-header-copy {
+  min-width: 0;
+}
+
 .timeline-header::before {
   position: absolute;
   top: 8px;
@@ -8137,13 +8231,17 @@ button.place-suggestion-vote:hover {
   }
 
   .editor-layout {
+    display: grid;
     min-height: calc(100dvh - var(--mobile-header-height) - env(safe-area-inset-top));
+    grid-template-columns: minmax(0, 1fr) auto;
     background: var(--paper);
   }
 
   .day-sidebar {
     position: static;
     height: auto;
+    grid-column: 1 / -1;
+    grid-row: 1;
     padding: 13px max(16px, env(safe-area-inset-right)) 13px
       max(16px, env(safe-area-inset-left));
     overflow-x: auto;
@@ -8165,8 +8263,15 @@ button.place-suggestion-vote:hover {
   }
 
   .timeline-panel {
+    grid-column: 1 / -1;
+    grid-row: 2;
     padding: 28px max(17px, 4vw) calc(100px + env(safe-area-inset-bottom))
       max(45px, calc(4vw + 28px));
+  }
+
+  .map-panel {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
 
   .timeline-panel::before {
@@ -8179,6 +8284,14 @@ button.place-suggestion-vote:hover {
 
   .timeline-header h2 {
     font-size: 25px;
+  }
+
+  .timeline-header {
+    align-items: flex-start;
+  }
+
+  .timeline-header-copy {
+    padding-right: 132px;
   }
 
   .timeline-item,
@@ -8199,22 +8312,22 @@ button.place-suggestion-vote:hover {
   }
 
   .mobile-view-switch {
-    position: fixed;
-    z-index: 34;
-    top: calc(var(--mobile-header-height) + env(safe-area-inset-top) + 12px);
-    right: 16px;
-    bottom: auto;
-    left: auto;
+    position: relative;
+    z-index: 5;
     display: grid;
-    width: 132px;
+    width: 120px;
+    grid-column: 2;
+    grid-row: 2;
     grid-template-columns: 1fr 1fr;
+    align-self: start;
+    justify-self: end;
     gap: 3px;
+    margin: 42px max(17px, 4vw) 0 0;
     padding: 4px;
-    background: rgb(255 255 255 / 94%);
-    border: 1px solid rgb(223 227 221 / 94%);
+    background: var(--surface-raised);
+    border: 1px solid var(--line);
     border-radius: 999px;
-    box-shadow: 0 7px 20px rgb(24 37 31 / 13%);
-    backdrop-filter: blur(14px);
+    box-shadow: 0 5px 16px rgb(24 37 31 / 10%);
   }
 
   .mobile-view-switch button {
@@ -8222,6 +8335,11 @@ button.place-suggestion-vote:hover {
     padding: 7px 9px;
     border-radius: 999px;
     font-size: 10px;
+  }
+
+  .mobile-view-switch .mobile-view-active {
+    color: var(--on-primary);
+    background: var(--primary);
   }
 
   .mobile-map-view .day-sidebar {
@@ -8241,10 +8359,11 @@ button.place-suggestion-vote:hover {
   }
 
   .mobile-map-view .map-panel-header {
-    top: 62px;
+    top: 16px;
     right: 16px;
     left: 16px;
-    padding: 10px 12px;
+    min-height: 52px;
+    padding: 10px 140px 10px 12px;
   }
 
   .mobile-map-view .map-live-badge {
@@ -10483,8 +10602,15 @@ html[data-theme="dark"] .place-search-results button,
 html[data-theme="dark"] .pending-invitations-list li,
 html[data-theme="dark"] .trip-members-list li {
   color: var(--ink);
-  background-color: #203028;
+  background-color: var(--surface-soft);
   border-color: var(--line);
+}
+
+html[data-theme="dark"] .trip-sharing-dialog-content .pending-invitations-empty {
+  color: var(--muted);
+  background-color: var(--surface-sunken);
+  border-color: var(--line);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%);
 }
 
 html[data-theme="dark"] .secondary-button:hover,
@@ -11833,6 +11959,676 @@ html[data-theme="dark"] .new-trip-dialog-content .new-trip-ai-option {
   color: var(--on-primary);
   background: var(--primary-active);
   border-color: var(--primary-active);
+}
+
+/* Responsive workspace foundation
+ * Keep every trip surface within the viewport and let the desktop workspace
+ * fold into touch-friendly tablet and mobile layouts instead of squeezing.
+ */
+.editor-shell,
+.editor-shell > section,
+.editor-header > *,
+.trip-heading,
+.trip-heading > div,
+.header-actions,
+.trip-overview-workspace,
+.trip-overview-canvas,
+.trip-overview-heading-copy,
+.trip-overview-bento,
+.preparation-workspace,
+.expense-workspace,
+.trip-settings-workspace {
+  min-width: 0;
+}
+
+.trip-heading h1 {
+  overflow: hidden;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:is(
+    .trip-overview-heading-copy,
+    .trip-overview-briefing-card,
+    .trip-overview-next-card,
+    .preparation-briefing,
+    .expense-briefing,
+    .trip-settings-heading,
+    .notification-card-content
+  )
+  :is(h1, h2, h3, p, strong, small) {
+  overflow-wrap: break-word;
+  word-break: keep-all;
+}
+
+@media (max-width: 1120px) and (min-width: 861px) {
+  .editor-header {
+    grid-template-columns: 164px minmax(180px, 1fr) auto;
+    gap: 12px;
+    padding-inline: 18px;
+  }
+
+  .trip-heading {
+    padding-left: 16px;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .collaboration-activity,
+  .history-control-shortcut {
+    display: none;
+  }
+
+  .trip-overview-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trip-overview-canvas {
+    width: 100%;
+    padding-inline: clamp(46px, 6vw, 68px) clamp(24px, 4vw, 44px);
+  }
+}
+
+@media (max-width: 860px) {
+  .editor-shell {
+    width: 100%;
+    overflow-x: clip;
+  }
+
+  .editor-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 10px;
+  }
+
+  .trip-heading {
+    min-width: 0;
+  }
+
+  .trip-heading > div {
+    display: block;
+  }
+
+  .header-actions {
+    flex: 0 0 auto;
+  }
+
+  .trip-workspace-tabs {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    overscroll-behavior: contain;
+  }
+
+  .trip-workspace-tabs button {
+    min-width: 0;
+    min-height: 54px;
+    touch-action: manipulation;
+  }
+
+  .trip-workspace-tabs .trip-workspace-tab-active {
+    color: var(--on-primary);
+    background: var(--primary);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, white 16%, transparent);
+  }
+
+  .trip-workspace-tabs .trip-workspace-tab-active:hover {
+    color: var(--on-primary);
+    background: var(--primary-active);
+  }
+
+  html[data-theme="dark"] .trip-workspace-tabs .trip-workspace-tab-active {
+    color: var(--on-primary);
+    background: var(--primary);
+  }
+
+  html[data-theme="dark"] .trip-workspace-tabs .trip-workspace-tab-active:hover {
+    color: var(--on-primary);
+    background: var(--primary-active);
+  }
+
+  .trip-overview-workspace {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trip-overview-canvas,
+  .trip-overview-heading,
+  .trip-overview-bento {
+    width: 100%;
+  }
+
+  .dialog-content {
+    overscroll-behavior: contain;
+  }
+
+  #liveblocks-badge {
+    right: max(8px, env(safe-area-inset-right)) !important;
+    bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .editor-header {
+    column-gap: 7px;
+    padding-right: max(11px, env(safe-area-inset-right));
+    padding-left: max(11px, env(safe-area-inset-left));
+  }
+
+  .editor-header .brand-symbol {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+  }
+
+  .trip-heading {
+    margin-left: 0;
+    padding-left: 8px;
+  }
+
+  .trip-heading h1 {
+    font-size: clamp(15px, 4.5vw, 18px);
+  }
+
+  .header-actions {
+    gap: 2px;
+  }
+
+  .header-actions :is(.notification-link, .theme-toggle) {
+    width: 38px;
+    height: 40px;
+  }
+
+  .trip-workspace-tabs {
+    padding-right: max(4px, env(safe-area-inset-right));
+    padding-left: max(4px, env(safe-area-inset-left));
+  }
+
+  .trip-workspace-tabs button {
+    gap: 2px;
+    padding-inline: 1px;
+    font-size: clamp(8px, 2.5vw, 10px);
+  }
+
+  .trip-overview-canvas {
+    padding: 26px 18px calc(100px + env(safe-area-inset-bottom));
+  }
+
+  .trip-overview-heading {
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr);
+    gap: 0 12px;
+  }
+
+  .trip-overview-marker {
+    position: static;
+    grid-column: 1;
+    grid-row: 1;
+    margin-top: 10px;
+    box-shadow: none;
+  }
+
+  .trip-overview-heading-copy {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .trip-overview-heading h2 {
+    font-size: clamp(27px, 9vw, 32px);
+  }
+
+  .trip-overview-heading-actions {
+    width: 100%;
+    grid-column: 1 / -1;
+    margin-top: 16px;
+    padding-top: 0;
+  }
+
+  .trip-overview-heading-actions > * {
+    width: 100%;
+  }
+
+  .trip-overview-briefing-card,
+  .trip-overview-progress-card,
+  .trip-overview-next-card,
+  .trip-overview-stat {
+    max-width: 100%;
+  }
+
+  .trip-overview-next-action {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .dialog-content {
+    width: min(100vw - 20px, 560px);
+    max-height: calc(
+      100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+    );
+  }
+
+  .dialog-heading {
+    gap: 14px;
+  }
+
+  .dialog-content .dialog-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dialog-content .dialog-actions > :only-child,
+  .dialog-content .dialog-actions > :is(button, a) {
+    min-width: 0;
+  }
+
+  .dialog-content .dialog-actions > :only-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Notifications · invitation inbox */
+.notification-link {
+  position: relative;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.notification-link > svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.notification-link:hover,
+.notification-link[aria-current="page"] {
+  color: var(--ink);
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+.notification-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 28%, transparent);
+  outline-offset: 3px;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  place-items: center;
+  color: var(--on-primary);
+  background: var(--primary);
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.notifications-page {
+  min-height: 100vh;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.notifications-content {
+  width: min(100% - 40px, 920px);
+  margin: 0 auto;
+  padding: clamp(48px, 7vw, 80px) 0 88px;
+}
+
+.notifications-title-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 30px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.notifications-title-row h1 {
+  margin: 7px 0 6px;
+  font-size: clamp(36px, 6vw, 52px);
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.notifications-title-row p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.notifications-pending-count {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  color: var(--primary-active);
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--line));
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.notification-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notification-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 16px;
+  overflow: hidden;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.notification-card::before {
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 0;
+  width: 3px;
+  content: "";
+  background: var(--line-strong);
+  border-radius: 0 999px 999px 0;
+}
+
+.notification-card-pending {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--line));
+}
+
+.notification-card-pending::before {
+  background: var(--primary);
+}
+
+.notification-card-icon,
+.notifications-empty-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 11%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--line));
+  border-radius: 13px;
+}
+
+.notification-card-icon svg,
+.notifications-empty-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.notification-card-content {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+.notification-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.notification-card-heading time {
+  color: var(--muted-soft);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.notification-status {
+  width: max-content;
+  padding: 5px 8px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.notification-status-pending {
+  color: var(--primary-active);
+  background: color-mix(in srgb, var(--primary) 11%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 26%, var(--line));
+}
+
+.notification-status-declined {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+}
+
+.notification-card h2 {
+  margin: 0;
+  font-size: clamp(19px, 3vw, 23px);
+  letter-spacing: -0.035em;
+  line-height: 1.25;
+}
+
+.notification-card-content > p {
+  margin: -3px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.notification-card-content > p strong {
+  color: var(--ink);
+}
+
+.notification-trip-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px;
+  gap: 10px;
+  margin: 2px 0 0;
+}
+
+.notification-trip-meta > div {
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+}
+
+.notification-trip-meta dt {
+  color: var(--muted-soft);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.notification-trip-meta dd {
+  margin: 0;
+  color: var(--body);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.notification-response-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+.notification-response-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.notification-response-actions :is(.primary-button, .secondary-button) {
+  min-width: 82px;
+  min-height: 40px;
+  border-radius: 9px;
+}
+
+.notification-response-actions .secondary-button {
+  color: var(--muted);
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+.notification-response-actions .secondary-button:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-raised);
+  border-color: var(--line-strong);
+}
+
+.notification-response-actions .primary-button {
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.notification-response-actions .primary-button:hover:not(:disabled) {
+  background: var(--primary-active);
+  border-color: var(--primary-active);
+}
+
+.notification-trip-link {
+  width: max-content;
+  margin-top: 3px;
+  color: var(--primary-active);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.notification-trip-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 28%, transparent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.notifications-empty {
+  display: grid;
+  min-height: 360px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 42px 24px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px dashed var(--line-strong);
+  border-radius: 14px;
+}
+
+.notifications-empty h2 {
+  margin: 8px 0 0;
+  font-size: 23px;
+  letter-spacing: -0.035em;
+}
+
+.notifications-empty p {
+  max-width: 420px;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.notifications-empty .secondary-button {
+  display: inline-grid;
+  min-height: 40px;
+  place-items: center;
+  color: var(--ink);
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+@media (max-width: 620px) {
+  .notifications-content {
+    width: min(100% - 32px, 540px);
+    padding: 40px 0 68px;
+  }
+
+  .notifications-title-row {
+    align-items: start;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .notification-card {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 12px;
+    padding: 19px 17px;
+  }
+
+  .notification-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+  }
+
+  .notification-card-icon svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .notification-card-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .notification-trip-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-response-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .notification-response-actions :is(.primary-button, .secondary-button) {
+    width: 100%;
+  }
+
+  .notifications-empty {
+    min-height: 330px;
+  }
 }
 
 /* Place preview keeps provider details deliberate: selecting a result itself has no extra request. */
@@ -13571,6 +14367,216 @@ html[data-theme="dark"]
   color: var(--on-primary);
   background: #b32505;
   border-color: #b32505;
+}
+
+/* Itinerary search uses the same neutral surfaces and pink emphasis in both themes. */
+.itinerary-search-trigger,
+.duplicate-day-trigger {
+  color: var(--primary-active);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.itinerary-search-trigger:hover,
+.duplicate-day-trigger:hover:not(:disabled) {
+  color: var(--primary-active);
+  background: var(--surface-subtle);
+  border-color: var(--primary);
+}
+
+.itinerary-search-trigger:focus-visible,
+.duplicate-day-trigger:focus-visible {
+  outline-color: color-mix(in srgb, var(--primary) 32%, transparent);
+}
+
+.duplicate-day-trigger:disabled {
+  color: var(--muted-soft);
+  background: var(--surface-sunken);
+  border-color: var(--line);
+}
+
+html[data-theme="dark"] .editor-shell :is(.itinerary-search-trigger, .duplicate-day-trigger) {
+  color: var(--primary-active);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+html[data-theme="dark"]
+  .editor-shell
+  :is(.itinerary-search-trigger:hover, .duplicate-day-trigger:hover:not(:disabled)) {
+  color: var(--primary-active);
+  background: var(--surface-subtle);
+  border-color: var(--primary);
+}
+
+html[data-theme="dark"] .editor-shell .duplicate-day-trigger:disabled {
+  color: var(--muted-soft);
+  background: var(--surface-sunken);
+  border-color: var(--line);
+}
+
+.dialog-content.itinerary-search-dialog .itinerary-search-field {
+  color: var(--body);
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+.dialog-content.itinerary-search-dialog .itinerary-search-field input::placeholder {
+  color: var(--muted-soft);
+}
+
+.dialog-content.itinerary-search-dialog .itinerary-search-clear {
+  color: var(--muted);
+  background: var(--surface-sunken);
+}
+
+.dialog-content.itinerary-search-dialog .itinerary-search-result-heading {
+  color: var(--muted);
+}
+
+.dialog-content.itinerary-search-dialog .itinerary-search-result-heading strong {
+  color: var(--primary-active);
+}
+
+.dialog-content.itinerary-search-dialog .itinerary-search-results button {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.dialog-content.itinerary-search-dialog .itinerary-search-results button:hover {
+  background: var(--surface-subtle);
+  border-color: var(--primary);
+}
+
+.dialog-content.itinerary-search-dialog .itinerary-search-day,
+.dialog-content.itinerary-search-dialog .itinerary-search-result-copy em,
+.dialog-content.itinerary-search-dialog .itinerary-search-empty > span {
+  color: var(--primary-active);
+  background: color-mix(in srgb, var(--primary) 13%, var(--surface));
+}
+
+.dialog-content.itinerary-search-dialog .itinerary-search-result-copy strong,
+.dialog-content.itinerary-search-dialog .itinerary-search-empty strong {
+  color: var(--ink);
+}
+
+.dialog-content.itinerary-search-dialog .itinerary-search-result-copy small,
+.dialog-content.itinerary-search-dialog .itinerary-search-empty p {
+  color: var(--muted);
+}
+
+.dialog-content.itinerary-search-dialog .itinerary-search-result-arrow {
+  color: var(--primary);
+  background: var(--surface-raised);
+  border-color: var(--line);
+}
+
+.dialog-content.itinerary-search-dialog :is(
+  .itinerary-search-field:focus-within,
+  .itinerary-search-clear:focus-visible,
+  .itinerary-search-results button:focus-visible
+) {
+  outline-color: color-mix(in srgb, var(--primary) 32%, transparent);
+}
+
+/* Timeline continuity is an accent, not a second green status color. */
+.timeline-header h2,
+.timeline-time strong,
+.place-card h3 {
+  color: var(--ink);
+}
+
+.timeline-time span {
+  color: var(--muted);
+}
+
+.timeline-track i {
+  background: color-mix(in srgb, var(--primary) 46%, var(--line));
+}
+
+.track-dot {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+.sortable-timeline-item.is-selected .place-card {
+  border-color: var(--primary);
+  box-shadow: inset 4px 0 0 var(--primary), 0 7px 20px rgb(0 0 0 / 8%);
+}
+
+.place-card-title-button:focus-visible {
+  outline-color: color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+/* Overview cards share neutral surfaces; pink marks progress and the next action. */
+.trip-overview-briefing-card,
+.trip-overview-progress-card {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+.trip-overview-briefing-card::before {
+  background:
+    radial-gradient(circle at 82% 5%, color-mix(in srgb, var(--primary) 22%, transparent) 0 11%, transparent 11.5%),
+    radial-gradient(ellipse at 68% 112%, color-mix(in srgb, var(--primary) 14%, transparent) 0 38%, transparent 38.5%),
+    linear-gradient(
+      154deg,
+      color-mix(in srgb, var(--primary) 6%, var(--surface)) 0 48%,
+      var(--surface) 48% 100%
+    );
+}
+
+.trip-overview-briefing-card::after {
+  background: color-mix(in srgb, var(--primary) 44%, var(--surface));
+  border-color: color-mix(in srgb, var(--on-primary) 22%, transparent);
+  box-shadow: -34px -16px 0 color-mix(in srgb, var(--primary) 24%, transparent);
+}
+
+.trip-overview-destination-pill {
+  color: var(--primary-active);
+  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--line));
+}
+
+.trip-overview-briefing-card h3 {
+  color: var(--ink);
+}
+
+.trip-overview-briefing-card p,
+.trip-overview-progress-item p {
+  color: var(--body);
+}
+
+.trip-overview-progress-item strong {
+  color: var(--primary-active);
+}
+
+.trip-overview-progress-track {
+  background: var(--surface-sunken);
+}
+
+.trip-overview-progress-track i {
+  background: var(--primary);
+}
+
+.trip-overview-next-card {
+  background: var(--primary);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.trip-overview-next-card:hover {
+  background: var(--primary-active);
+  box-shadow: 0 12px 25px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+.trip-overview-next-card small,
+.trip-overview-next-card > span > span {
+  color: rgb(255 255 255 / 76%);
+}
+
+.trip-overview-next-card:focus-visible {
+  outline-color: color-mix(in srgb, var(--primary) 38%, transparent);
 }
 
 /* Editor header: neutral boundaries and a single 16px outline-icon language. */

@@ -34,6 +34,17 @@ describe("GET /auth/confirm", () => {
     expect(response.headers.get("location")).toBe("http://localhost:3000/trips");
   });
 
+  it("verifies a password sign-up confirmation link", async () => {
+    verifyOtp.mockResolvedValue({ error: null });
+
+    const response = await GET(
+      new NextRequest("http://localhost:3000/auth/confirm?token_hash=opaque&type=signup"),
+    );
+
+    expect(verifyOtp).toHaveBeenCalledWith({ token_hash: "opaque", type: "signup" });
+    expect(response.headers.get("location")).toBe("http://localhost:3000/trips");
+  });
+
   it("exchanges PKCE codes from the default Supabase email redirect", async () => {
     exchangeCodeForSession.mockResolvedValue({ error: null });
 
