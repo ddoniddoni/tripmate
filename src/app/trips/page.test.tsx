@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 
 const mocks = vi.hoisted(() => ({
   getAuthenticatedUser: vi.fn(),
@@ -16,6 +17,9 @@ vi.mock("@/entities/user/api/supabase-profile-repository", () => ({
 }));
 vi.mock("@/features/auth/model/get-authenticated-user", () => ({
   getAuthenticatedUser: mocks.getAuthenticatedUser,
+}));
+vi.mock("@/features/trip-management/ui/new-trip-form", () => ({
+  NewTripForm: () => <button type="button">새 여행 만들기</button>,
 }));
 
 import TripsPage from "@/app/trips/page";
@@ -37,5 +41,23 @@ describe("TripsPage", () => {
 
     await expect(TripsPage()).rejects.toThrow("NEXT_REDIRECT:/profile");
     expect(mocks.redirect).toHaveBeenCalledWith("/profile");
+  });
+
+  it("places the new trip action before existing trip cards", async () => {
+    mocks.getSupabaseUserProfile.mockResolvedValue({ displayName: "여행자", id: userId });
+    mocks.listSupabaseTrips.mockResolvedValue([
+      {
+        destination: "부산",
+        endDate: "2026-08-24",
+        id: "trip-1",
+        startDate: "2026-08-22",
+        timeZone: "Asia/Seoul",
+        title: "여름 부산",
+      },
+    ]);
+
+    const markup = renderToStaticMarkup(await TripsPage());
+
+    expect(markup.indexOf("새 여행 만들기")).toBeLessThan(markup.indexOf("여름 부산"));
   });
 });
