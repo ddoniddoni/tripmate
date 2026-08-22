@@ -57,7 +57,6 @@ export function TripSharingDialog({
   triggerLabel,
 }: TripSharingDialogProps) {
   const router = useRouter();
-  const [copyMessage, setCopyMessage] = useState("");
   const [open, setOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(
     createTripInvitation,
@@ -67,6 +66,7 @@ export function TripSharingDialog({
     formState: { errors },
     handleSubmit,
     register,
+    reset,
   } = useForm<TripInvitationFormValues>({
     defaultValues,
     resolver: zodResolver(createTripInvitationSchema.omit({ tripId: true })),
@@ -74,28 +74,15 @@ export function TripSharingDialog({
 
   useEffect(() => {
     if (state.status === "success") {
+      reset(defaultValues);
       router.refresh();
     }
-  }, [router, state.invitationUrl, state.status]);
+  }, [reset, router, state.status]);
 
   function handleInvite(values: TripInvitationFormValues) {
-    setCopyMessage("");
     startTransition(() => {
       formAction(toFormData(values, tripId));
     });
-  }
-
-  async function handleCopyInvitationLink() {
-    if (!state.invitationUrl) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(state.invitationUrl);
-      setCopyMessage("링크를 복사했어요.");
-    } catch {
-      setCopyMessage("링크를 직접 복사해 보내 주세요.");
-    }
   }
 
   return (
@@ -117,7 +104,7 @@ export function TripSharingDialog({
               <Dialog.Title>함께 여행을 계획해요</Dialog.Title>
               <Dialog.Description className="dialog-description" id="trip-sharing-description">
                 {canManageMembers
-                  ? "초대받은 이메일의 실제 계정만 링크를 수락할 수 있어요."
+                  ? "등록된 TripMate 계정으로 초대를 보내면 상대방 알림에 바로 도착해요."
                   : "함께 여행하는 멤버와 내 참여 상태를 확인할 수 있어요."}
               </Dialog.Description>
             </div>
@@ -129,7 +116,7 @@ export function TripSharingDialog({
           {canManageMembers ? (
             <form className="itinerary-form" noValidate onSubmit={handleSubmit(handleInvite)}>
               <div className="form-field trip-sharing-email-field">
-                <label htmlFor="invite-email">초대할 이메일</label>
+                <label htmlFor="invite-email">가입된 계정 이메일</label>
                 <input
                   id="invite-email"
                   aria-describedby={errors.email ? "invite-email-error" : undefined}
@@ -177,17 +164,6 @@ export function TripSharingDialog({
                 </p>
               ) : null}
 
-              {state.invitationUrl ? (
-                <div className="form-field form-field-wide invitation-link-field">
-                  <label htmlFor="invitation-link">초대 링크</label>
-                  <input id="invitation-link" readOnly value={state.invitationUrl} />
-                  <button className="secondary-button" type="button" onClick={handleCopyInvitationLink}>
-                    링크 복사
-                  </button>
-                  {copyMessage ? <span role="status">{copyMessage}</span> : null}
-                </div>
-              ) : null}
-
               <TripMembers
                 canManageMembers
                 currentUserId={currentUserId}
@@ -202,7 +178,7 @@ export function TripSharingDialog({
                   닫기
                 </Dialog.Close>
                 <button className="primary-button" type="submit" disabled={isPending}>
-                  {isPending ? "링크 만드는 중…" : "초대 링크 만들기"}
+                  {isPending ? "초대 보내는 중…" : "초대 보내기"}
                 </button>
               </div>
             </form>

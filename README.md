@@ -38,7 +38,7 @@ TripMate는 **장소를 찾고, 일정으로 옮기고, 함께 조정하는 과�
 | **“여기 가보고 싶어.”** | Google Places 검색으로 장소를 찾고, 주소·좌표가 포함된 일정 카드로 추가합니다. |
 | **“이건 둘째 날이 더 낫겠다.”** | 드래그 앤 드롭으로 같은 날 안에서 순서를 바꾸거나 다른 날짜로 이동합니다. |
 | **“동선이 괜찮을까?”** | 타임라인 선택과 지도 마커를 양방향으로 연결하고, 확정된 순서로 이동 경로를 표시합니다. |
-| **“같이 정하자.”** | 초대 링크로 owner·editor·viewer 역할에 맞게 여행판을 공유하고, 동시 편집 상태를 확인합니다. |
+| **“같이 정하자.”** | 가입된 계정을 편집자·보기 전용으로 초대하고, 알림에서 수락·거절한 뒤 함께 계획합니다. |
 | **“출발 전에 뭐 챙기지?”** | 담당자와 상태를 갖춘 준비물 체크리스트, 공동 경비와 정산 가이드를 한곳에서 관리합니다. |
 
 ### 계획을 바꿔도 불안하지 않게
@@ -59,7 +59,7 @@ TripMate는 **장소를 찾고, 일정으로 옮기고, 함께 조정하는 과�
 ## 1분 사용 흐름
 
 ```text
-이메일 매직 링크 로그인
+이메일·비밀번호 회원가입 / 로그인
         ↓
 여행 이름 · 기간 · 목적지로 여행판 생성
         ↓
@@ -67,7 +67,7 @@ TripMate는 **장소를 찾고, 일정으로 옮기고, 함께 조정하는 과�
         ↓
 지도와 이동 경로로 동선 확인
         ↓
-초대 링크 공유 → 준비물 · 공동 경비까지 함께 정리
+계정 초대 → 알림에서 수락 → 준비물 · 공동 경비까지 함께 정리
 ```
 
 ## 어떻게 함께 동작하나요?
@@ -83,7 +83,7 @@ flowchart LR
 
 | 영역 | 역할 |
 | --- | --- |
-| **Supabase** | 이메일 매직 링크 인증, 여행·멤버십·초대 데이터, Row Level Security 기반 권한 관리 |
+| **Supabase** | 이메일·비밀번호 인증, 여행·멤버십·초대 데이터, Row Level Security 기반 권한 관리 |
 | **Liveblocks** | 여러 사람이 동시에 다루는 일정·준비물·경비 상태와 접속 상태, 변경 이력 |
 | **Google Maps Platform** | 장소 검색·상세 정보, 지도 렌더링, 일정 순서 기반 경로 계산 |
 | **OpenAI** | 선택적으로 사용하는 여행 동선 초안 생성 |
@@ -162,7 +162,7 @@ npm run test:e2e
 인증된 E2E는 실제 Supabase 데이터를 사용하므로 전용 테스트 계정으로만 실행합니다.
 
 ```bash
-E2E_AUTHENTICATED=1 E2E_TEST_EMAIL=<test-email> \
+E2E_AUTHENTICATED=1 E2E_TEST_EMAIL=<test-email> E2E_TEST_PASSWORD=<test-password> \
   npx playwright test tests/e2e/authenticated-trip.spec.ts
 ```
 
@@ -176,7 +176,7 @@ E2E_AUTHENTICATED=1 E2E_TEST_EMAIL=<test-email> \
 - Supabase Auth의 Site URL 및 `/auth/confirm` Redirect URL
 - Liveblocks 서버 비밀 키
 - Google Maps API 활성화, 키 제한, Billing과 예산 알림
-- 실제 이메일 매직 링크 로그인과 두 계정 협업 흐름
+- 실제 이메일·비밀번호 회원가입/로그인과 두 계정 협업 흐름
 
 세부 절차는 [배포 체크리스트](docs/DEPLOYMENT_CHECKLIST.md)를 참고하세요.
 
@@ -197,7 +197,7 @@ src/
 - `NEXT_PUBLIC_` 접두사는 브라우저에 노출되어도 안전한 값에만 사용합니다.
 - Liveblocks·Supabase service role·서버 Google·OpenAI 키는 서버 환경 변수로만 보관합니다.
 - Supabase 공개 테이블은 RLS를 사용하며, UI 표시 여부와 별개로 서버에서 멤버십·역할 권한을 확인합니다.
-- 초대 링크와 개인 여행 정보는 민감한 데이터로 취급합니다.
+- 여행 초대와 개인 여행 정보는 수신자·멤버만 확인할 수 있도록 제한합니다.
 
 ---
 

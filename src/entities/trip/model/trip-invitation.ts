@@ -15,6 +15,10 @@ export const tripInvitationTokenSchema = z
   .string()
   .regex(/^[A-Za-z0-9_-]{43}$/, "초대 링크가 올바르지 않습니다.");
 
+export const tripInvitationStatusSchema = z.enum(["pending", "accepted", "declined"]);
+
+export type TripInvitationStatus = z.infer<typeof tripInvitationStatusSchema>;
+
 export const createTripInvitationSchema = z.object({
   email: tripInvitationEmailSchema,
   role: tripInvitationRoleSchema,
@@ -40,10 +44,28 @@ export const tripInvitationPreviewSchema = z.object({
 
 export type TripInvitationPreview = z.infer<typeof tripInvitationPreviewSchema>;
 
+export const tripInvitationNotificationSchema = z.object({
+  createdAt: z.iso.datetime({ offset: true }),
+  expiresAt: z.iso.datetime({ offset: true }),
+  id: z.uuid(),
+  role: tripInvitationRoleSchema,
+  status: tripInvitationStatusSchema,
+  trip: tripSchema,
+});
+
+export type TripInvitationNotification = z.infer<typeof tripInvitationNotificationSchema>;
+
 export const revokeTripInvitationSchema = z.object({
   invitationId: z.uuid(),
   tripId: z.uuid(),
 });
+
+export const respondToTripInvitationSchema = z.object({
+  invitationId: z.uuid(),
+  response: z.enum(["accepted", "declined"]),
+});
+
+export type RespondToTripInvitationInput = z.infer<typeof respondToTripInvitationSchema>;
 
 export function parseCreateTripInvitationFormData(formData: FormData) {
   return createTripInvitationSchema.safeParse({
@@ -60,6 +82,23 @@ export function parseRevokeTripInvitationFormData(formData: FormData) {
   });
 }
 
+export function parseRespondToTripInvitationFormData(formData: FormData) {
+  return respondToTripInvitationSchema.safeParse({
+    invitationId: formData.get("invitationId"),
+    response: formData.get("response"),
+  });
+}
+
 export function isTripInvitationExpired(invitation: TripInvitation, now = new Date()) {
   return new Date(invitation.expiresAt).getTime() <= now.getTime();
+}
+
+export function isTripInvitationNotificationActionable(
+  notification: TripInvitationNotification,
+  now = new Date(),
+) {
+  return (
+    notification.status === "pending" &&
+    new Date(notification.expiresAt).getTime() > now.getTime()
+  );
 }

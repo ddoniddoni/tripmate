@@ -29,4 +29,19 @@ describe("ItineraryEditorShell", () => {
 
     expect(screen.getByRole("button", { name: "다크 모드로 전환" })).toBeInTheDocument();
   });
+
+  it("composes a notification control into the editor header", () => {
+    render(
+      <ItineraryEditorShell
+        itineraryEditor={<p>여행 작업 공간</p>}
+        notificationControl={<a href="/notifications">알림, 응답할 초대 1개</a>}
+        tripItinerary={jejuTrip}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "알림, 응답할 초대 1개" })).toHaveAttribute(
+      "href",
+      "/notifications",
+    );
+  });
 });

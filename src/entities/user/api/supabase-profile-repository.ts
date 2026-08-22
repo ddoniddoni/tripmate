@@ -6,8 +6,7 @@ import {
   userProfileSchema,
 } from "@/entities/user/model/profile";
 import {
-  isSupabaseJwtIssuedInFutureError,
-  waitForSupabaseTokenClockSync,
+  retrySupabaseJwtValidation,
 } from "@/shared/api/supabase/auth-retry";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 
@@ -39,12 +38,7 @@ export async function getSupabaseUserProfile(userId: string): Promise<UserProfil
   const supabase = await createSupabaseServerClient();
   const requestProfile = () =>
     supabase.from("profiles").select("id, display_name").eq("id", userId).maybeSingle();
-  let { data, error } = await requestProfile();
-
-  if (isSupabaseJwtIssuedInFutureError(error)) {
-    await waitForSupabaseTokenClockSync();
-    ({ data, error } = await requestProfile());
-  }
+  const { data, error } = await retrySupabaseJwtValidation(requestProfile);
 
   if (error) {
     console.error("Supabase profile query failed.", {

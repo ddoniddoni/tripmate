@@ -3,90 +3,93 @@
 import { redirect } from "next/navigation";
 
 import {
-  parseMagicLinkEmail,
-  type MagicLinkActionState,
-} from "@/features/auth/model/magic-link";
-import { isDevelopmentAuthenticationEnabled } from "@/features/auth/model/development-auth";
-import { createSupabaseAdminClient } from "@/shared/api/supabase/admin";
+  parseCredentials,
+  parseSignUpCredentials,
+  type AuthActionState,
+} from "@/features/auth/model/credentials";
 import { publicEnv } from "@/shared/config/public-env";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { getSafeInternalPath } from "@/shared/lib/safe-internal-path";
 
-export async function requestMagicLink(
-  _previousState: MagicLinkActionState,
-  formData: FormData,
-): Promise<MagicLinkActionState> {
-  const emailResult = parseMagicLinkEmail(formData.get("email"));
-
-  if (!emailResult.success) {
-    return { message: emailResult.error.issues[0]?.message ?? "이메일을 확인해 주세요.", status: "error" };
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const emailRedirectUrl = new URL("/auth/confirm", publicEnv.NEXT_PUBLIC_APP_URL);
-  emailRedirectUrl.searchParams.set("next", getSafeInternalPath(formData.get("next")));
-  const { error } = await supabase.auth.signInWithOtp({
-    email: emailResult.data,
-    options: { emailRedirectTo: emailRedirectUrl.toString() },
-  });
-
-  if (error) {
-    return {
-      message: "로그인 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요.",
-      status: "error",
-    };
-  }
-
-  return {
-    message: "로그인 링크를 보냈어요. 이메일에서 링크를 열어 계속해 주세요.",
-    status: "success",
-  };
+function getValidationErrorMessage(error: { issues: ReadonlyArray<{ message: string }> }) {
+  return error.issues[0]?.message ?? "입력 내용을 확인해 주세요.";
 }
 
-export async function startDevelopmentSession(
-  _previousState: MagicLinkActionState,
+export async function signInWithPassword(
+  _previousState: AuthActionState,
   formData: FormData,
-): Promise<MagicLinkActionState> {
-  const emailResult = parseMagicLinkEmail(formData.get("email"));
+): Promise<AuthActionState> {
+  const credentialsResult = parseCredentials(formData);
 
-  if (!emailResult.success) {
-    return { message: emailResult.error.issues[0]?.message ?? "이메일을 확인해 주세요.", status: "error" };
+  if (!credentialsResult.success) {
+    return { message: getValidationErrorMessage(credentialsResult.error), status: "error" };
   }
 
-  if (!isDevelopmentAuthenticationEnabled()) {
+  const response = await (async () => {
+    try {
+      const supabase = await createSupabaseServerClient();
+
+      return await supabase.auth.signInWithPassword(credentialsResult.data);
+    } catch {
+      return null;
+    }
+  })();
+
+  if (!response) {
     return {
-      message: "개발용 바로 시작은 로컬 개발 환경에서만 사용할 수 있습니다.",
+      message: "로그인을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       status: "error",
     };
   }
 
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.auth.admin.generateLink({
-    email: emailResult.data,
-    type: "magiclink",
-  });
-
-  if (error || !data) {
+  if (response.error) {
     return {
-      message: "개발용 계정을 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-      status: "error",
-    };
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const { error: verificationError } = await supabase.auth.verifyOtp({
-    token_hash: data.properties.hashed_token,
-    type: "email",
-  });
-
-  if (verificationError) {
-    return {
-      message: "개발용 로그인을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      message: "이메일 또는 비밀번호를 확인해 주세요.",
       status: "error",
     };
   }
 
   redirect(getSafeInternalPath(formData.get("next")));
+}
+
+export async function signUpWithPassword(
+  _previousState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const credentialsResult = parseSignUpCredentials(formData);
+
+  if (!credentialsResult.success) {
+    return { message: getValidationErrorMessage(credentialsResult.error), status: "error" };
+  }
+
+  const emailRedirectUrl = new URL("/auth/confirm", publicEnv.NEXT_PUBLIC_APP_URL);
+  emailRedirectUrl.searchParams.set("next", getSafeInternalPath(formData.get("next")));
+  const response = await (async () => {
+    try {
+      const supabase = await createSupabaseServerClient();
+
+      return await supabase.auth.signUp({
+        email: credentialsResult.data.email,
+        password: credentialsResult.data.password,
+        options: { emailRedirectTo: emailRedirectUrl.toString() },
+      });
+    } catch {
+      return null;
+    }
+  })();
+
+  if (!response || response.error) {
+    return {
+      message: "회원가입을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      status: "error",
+    };
+  }
+
+  if (response.data.session) {
+    redirect(getSafeInternalPath(formData.get("next")));
+  }
+
+  redirect("/signup/check-email");
 }
 
 export async function signOut(formData?: FormData) {

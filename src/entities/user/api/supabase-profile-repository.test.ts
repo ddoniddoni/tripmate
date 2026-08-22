@@ -13,9 +13,18 @@ vi.mock("@/shared/api/supabase/server", () => ({
 }));
 
 vi.mock("@/shared/api/supabase/auth-retry", () => ({
-  isSupabaseJwtIssuedInFutureError: (error: { code?: string } | null) =>
-    error?.code === "PGRST303",
-  waitForSupabaseTokenClockSync: mocks.waitForSupabaseTokenClockSync,
+  retrySupabaseJwtValidation: async <Result extends { error: { code?: string } | null }>(
+    request: () => Promise<Result>,
+  ) => {
+    const result = await request();
+
+    if (result.error?.code !== "PGRST303") {
+      return result;
+    }
+
+    await mocks.waitForSupabaseTokenClockSync(1_000);
+    return request();
+  },
 }));
 
 import {

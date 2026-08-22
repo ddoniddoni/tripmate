@@ -1,7 +1,5 @@
 "use server";
 
-import { randomBytes } from "node:crypto";
-
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "@/shared/lib/zod";
@@ -18,12 +16,40 @@ import type {
 } from "@/features/trip-sharing/model/trip-invitation-action-state";
 import { getTripInvitationTokenHash } from "@/features/trip-sharing/lib/trip-invitation-token";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
-import { publicEnv } from "@/shared/config/public-env";
 
 const invitationLookupSchema = z.object({
   id: z.uuid(),
   trip_id: z.uuid(),
 });
+
+function getCreateInvitationErrorMessage(error: unknown) {
+  const message =
+    typeof error === "object" && error !== null && "message" in error
+      ? String((error as { message: unknown }).message)
+      : "";
+
+  if (message.includes("INVITEE_NOT_FOUND")) {
+    return "아직 TripMate에 가입하지 않은 이메일이에요.";
+  }
+
+  if (message.includes("CANNOT_INVITE_SELF")) {
+    return "내 계정은 여행에 초대할 수 없어요.";
+  }
+
+  if (message.includes("ALREADY_TRIP_MEMBER")) {
+    return "이미 이 여행에 참여하고 있는 계정이에요.";
+  }
+
+  if (message.includes("INVITATION_ALREADY_PENDING")) {
+    return "이미 응답을 기다리는 초대가 있어요.";
+  }
+
+  if (message.includes("NOT_TRIP_OWNER")) {
+    return "여행 소유자만 멤버를 초대할 수 있어요.";
+  }
+
+  return "초대를 보내지 못했습니다. 잠시 후 다시 시도해 주세요.";
+}
 
 export async function createTripInvitation(
   _previousState: CreateTripInvitationActionState,
@@ -48,20 +74,15 @@ export async function createTripInvitation(
     };
   }
 
-  const token = randomBytes(32).toString("base64url");
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1_000).toISOString();
-  const { error } = await supabase.from("trip_invitations").insert({
-    created_by: user.id,
-    email: inputResult.data.email,
-    expires_at: expiresAt,
-    role: inputResult.data.role,
-    token_hash: getTripInvitationTokenHash(token),
-    trip_id: inputResult.data.tripId,
+  const { error } = await supabase.rpc("create_trip_invitation_for_registered_user", {
+    target_email: inputResult.data.email,
+    target_role: inputResult.data.role,
+    target_trip_id: inputResult.data.tripId,
   });
 
   if (error) {
     return {
-      message: "초대를 만들지 못했습니다. 이미 초대했거나 권한이 없을 수 있어요.",
+      message: getCreateInvitationErrorMessage(error),
       status: "error",
     };
   }
@@ -69,8 +90,7 @@ export async function createTripInvitation(
   revalidatePath(`/trips/${inputResult.data.tripId}`);
 
   return {
-    invitationUrl: new URL(`/invites/${token}`, publicEnv.NEXT_PUBLIC_APP_URL).toString(),
-    message: "초대 링크를 만들었어요. 이 링크는 7일 동안 유효합니다.",
+    message: `${inputResult.data.email}님에게 초대를 보냈어요. 알림에서 바로 확인할 수 있어요.`,
     status: "success",
   };
 }
@@ -99,6 +119,7 @@ export async function revokeTripInvitation(
     .delete()
     .eq("id", inputResult.data.invitationId)
     .eq("trip_id", inputResult.data.tripId)
+    .eq("status", "pending")
     .select("id")
     .maybeSingle();
 

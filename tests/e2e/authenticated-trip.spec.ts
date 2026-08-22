@@ -1,15 +1,17 @@
 import { expect, test } from "@playwright/test";
 
 const testEmail = process.env.E2E_TEST_EMAIL?.trim();
-const isAuthenticatedE2EEnabled = process.env.E2E_AUTHENTICATED === "1" && Boolean(testEmail);
+const testPassword = process.env.E2E_TEST_PASSWORD;
+const isAuthenticatedE2EEnabled =
+  process.env.E2E_AUTHENTICATED === "1" && Boolean(testEmail) && Boolean(testPassword);
 
 test.describe("인증된 사용자 핵심 여정", () => {
   test.skip(
     !isAuthenticatedE2EEnabled,
-    "E2E_AUTHENTICATED=1과 전용 E2E_TEST_EMAIL이 있을 때만 실제 Supabase 여정을 실행합니다.",
+    "E2E_AUTHENTICATED=1, 전용 E2E_TEST_EMAIL, E2E_TEST_PASSWORD가 있을 때만 실제 Supabase 여정을 실행합니다.",
   );
 
-  test("개발용 로그인으로 여행을 만들고 삭제한다", async ({ page }) => {
+  test("이메일과 비밀번호로 로그인해 여행을 만들고 삭제한다", async ({ page }) => {
     const tripTitle = `E2E 삭제 확인 ${Date.now()}`;
 
     // This test exercises Supabase only. Avoid the unrelated real-time provider while the
@@ -17,8 +19,9 @@ test.describe("인증된 사용자 핵심 여정", () => {
     await page.route("**/api/liveblocks-auth", (route) => route.abort());
 
     await page.goto("/login");
-    await page.getByLabel("이메일").fill(testEmail ?? "");
-    await page.getByRole("button", { name: "이메일로 바로 시작하기" }).click();
+    await page.getByLabel("이메일 (로그인 아이디)").fill(testEmail ?? "");
+    await page.getByLabel("비밀번호").fill(testPassword ?? "");
+    await page.getByRole("button", { name: "로그인하기" }).click();
 
     const profileHeading = page.getByRole("heading", {
       name: "여행에서 사용할 이름을 알려 주세요.",

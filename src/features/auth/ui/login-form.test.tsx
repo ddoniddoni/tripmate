@@ -1,27 +1,32 @@
 // @vitest-environment jsdom
 
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/auth/model/auth-actions", () => ({
-  requestMagicLink: vi.fn(),
-  startDevelopmentSession: vi.fn(),
+  signInWithPassword: vi.fn(),
+  signUpWithPassword: vi.fn(),
 }));
 
 import { LoginForm } from "@/features/auth/ui/login-form";
 
 describe("LoginForm", () => {
-  it("uses direct sign-in for development", () => {
-    render(<LoginForm allowDevelopmentSession nextPath="/trips" />);
+  it("uses email and password sign-in in every environment", () => {
+    render(<LoginForm nextPath="/trips" />);
 
-    expect(screen.getByRole("button", { name: "이메일로 바로 시작하기" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "이메일 인증 링크 보내기" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "로그인하기" })).toBeInTheDocument();
+    expect(screen.getByLabelText("비밀번호")).toHaveAttribute("type", "password");
+    expect(screen.getByRole("button", { name: "처음이신가요? 회원가입" })).toBeInTheDocument();
   });
 
-  it("uses email verification outside development", () => {
-    render(<LoginForm allowDevelopmentSession={false} nextPath="/trips" />);
+  it("collects matching password confirmation when signing up", async () => {
+    const user = userEvent.setup();
+    render(<LoginForm nextPath="/trips" />);
 
-    expect(screen.getByRole("button", { name: "이메일 인증 링크 보내기" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "이메일로 바로 시작하기" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "처음이신가요? 회원가입" }));
+
+    expect(screen.getByRole("button", { name: "회원가입하기" })).toBeInTheDocument();
+    expect(screen.getByLabelText("비밀번호 확인")).toHaveAttribute("autocomplete", "new-password");
   });
 });

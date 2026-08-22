@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 const mocks = vi.hoisted(() => ({
   getAuthenticatedUser: vi.fn(),
   getSupabaseUserProfile: vi.fn(),
+  countPendingNotifications: vi.fn(),
   listSupabaseTrips: vi.fn(),
   redirect: vi.fn(),
 }));
@@ -11,6 +12,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/entities/trip/api/supabase-trip-repository", () => ({
   listSupabaseTrips: mocks.listSupabaseTrips,
+}));
+vi.mock("@/entities/trip/api/supabase-trip-notification-repository", () => ({
+  countSupabasePendingTripInvitationNotifications: mocks.countPendingNotifications,
 }));
 vi.mock("@/entities/user/api/supabase-profile-repository", () => ({
   getSupabaseUserProfile: mocks.getSupabaseUserProfile,
@@ -30,6 +34,7 @@ describe("TripsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getAuthenticatedUser.mockResolvedValue({ email: "traveler@example.com", id: userId });
+    mocks.countPendingNotifications.mockResolvedValue(0);
     mocks.redirect.mockImplementation((url: string) => {
       throw new Error(`NEXT_REDIRECT:${url}`);
     });
@@ -59,5 +64,15 @@ describe("TripsPage", () => {
     const markup = renderToStaticMarkup(await TripsPage());
 
     expect(markup.indexOf("새 여행 만들기")).toBeLessThan(markup.indexOf("여름 부산"));
+  });
+
+  it("shows pending invitations in the header notification link", async () => {
+    mocks.getSupabaseUserProfile.mockResolvedValue({ displayName: "여행자", id: userId });
+    mocks.listSupabaseTrips.mockResolvedValue([]);
+    mocks.countPendingNotifications.mockResolvedValue(2);
+
+    const markup = renderToStaticMarkup(await TripsPage());
+
+    expect(markup).toContain('aria-label="알림, 응답할 초대 2개"');
   });
 });

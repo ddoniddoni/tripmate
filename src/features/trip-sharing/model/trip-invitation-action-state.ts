@@ -1,7 +1,6 @@
 type TripInvitationActionStatus = "error" | "idle" | "success";
 
 export type CreateTripInvitationActionState = {
-  invitationUrl?: string;
   message: string;
   status: TripInvitationActionStatus;
 };

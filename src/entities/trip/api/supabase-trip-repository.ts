@@ -17,8 +17,7 @@ import { tripCoverImagePathSchema } from "@/entities/trip/model/trip-cover-image
 import { calendarDateSchema } from "@/shared/lib/calendar-date";
 import { createSupabaseAdminClient } from "@/shared/api/supabase/admin";
 import {
-  isSupabaseJwtIssuedInFutureError,
-  waitForSupabaseTokenClockSync,
+  retrySupabaseJwtValidation,
 } from "@/shared/api/supabase/auth-retry";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 
@@ -130,12 +129,7 @@ export async function listSupabaseTrips(): Promise<Trip[]> {
       .from("trips")
       .select(tripSelectFieldsWithCoverImage)
       .order("start_date", { ascending: true });
-  let initialResult = await requestTrips();
-
-  if (isSupabaseJwtIssuedInFutureError(initialResult.error)) {
-    await waitForSupabaseTokenClockSync();
-    initialResult = await requestTrips();
-  }
+  const initialResult = await retrySupabaseJwtValidation(requestTrips);
 
   let data: unknown = initialResult.data;
   let error: unknown = initialResult.error;
@@ -242,7 +236,7 @@ export async function listSupabasePendingTripInvitations(
     .from("trip_invitations")
     .select("id, email, role, expires_at")
     .eq("trip_id", tripId)
-    .is("accepted_at", null)
+    .eq("status", "pending")
     .order("created_at", { ascending: false });
 
   if (error) {
