@@ -680,25 +680,6 @@ textarea {
   transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
-.trip-card::before,
-.new-trip-card::before {
-  position: absolute;
-  z-index: 2;
-  top: 30px;
-  left: -38px;
-  width: 12px;
-  height: 12px;
-  content: "";
-  background: var(--paper);
-  border: 3px solid var(--green);
-  border-radius: 50%;
-  box-shadow: 0 0 0 4px var(--paper);
-}
-
-.new-trip-card::before {
-  border-color: #aebbb3;
-}
-
 .trip-card:hover {
   border-color: #bdc9c1;
   box-shadow: 0 12px 30px rgb(31 49 40 / 10%);
@@ -6369,11 +6350,6 @@ button.place-suggestion-vote:hover {
   .trip-grid {
     grid-template-columns: 1fr;
     padding-left: 36px;
-  }
-
-  .trip-card::before,
-  .new-trip-card::before {
-    left: -29px;
   }
 
   .new-trip-card {
@@ -12168,10 +12144,6 @@ html[data-theme="dark"] .place-preview-details-button {
 
 .trip-card {
   grid-template-rows: 208px minmax(186px, 1fr);
-}
-
-.trip-card::before {
-  border-color: var(--primary);
 }
 
 .trip-card-art {

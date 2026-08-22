@@ -159,10 +159,10 @@ export default async function TripsPage() {
         </div>
 
         <div className="trip-grid">
+          <NewTripForm />
           {trips.map((trip) => (
             <TripCard key={trip.id} trip={trip} />
           ))}
-          <NewTripForm />
         </div>
       </section>
     </main>
