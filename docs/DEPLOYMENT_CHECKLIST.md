@@ -1,15 +1,18 @@
 # TripMate 포트폴리오 배포 체크리스트
 
-> 마지막 갱신: 2026-08-18
+> 마지막 갱신: 2026-08-22
 >
 > 목적: 기능 개발을 종료한 TripMate를 안전하게 Preview로 검증한 뒤,
 > 포트폴리오용 Production 서비스로 공개한다.
 
 ## 현재 상태
 
-- 기본 원격 브랜치: `develop`
-- 로컬 검증 이력: lint, typecheck, unit test(85개 파일·342개 테스트), 기본 E2E, 인증된 E2E 통과
+- 통합 브랜치: `develop`, Production Branch: `main`
+- 로컬과 원격에 `main` 브랜치가 아직 없으므로 최초 안정 릴리스 전에 명시적으로 생성해야 한다.
+- 로컬 검증 이력: lint, typecheck, unit/integration test(102개 파일·396개 테스트), 프로덕션 빌드, 기본 E2E(3개 통과·인증 E2E 1개 옵트인 제외) 통과 (2026-08-22)
 - 아직 필요한 검증: 두 계정 실시간 협업, Preview·Production 스모크 테스트
+- 원격 Supabase의 모든 `public` 테이블은 RLS가 활성화되어 있다. (2026-08-22 확인)
+- 로컬·원격 Supabase 마이그레이션 11개의 버전과 이름이 일치하며, 장소 상세 조회 사용량 마이그레이션까지 적용됐다. (2026-08-22 확인)
 - 개발 환경에서만 이메일 인증 없이 바로 로그인하며, Production에서는 이메일 매직 링크로 로그인한다.
 
 ## 진행 순서
@@ -32,12 +35,13 @@
 ### 해야 할 일
 
 - [ ] 현재 변경 사항의 diff를 검토한다.
-- [x] `npm run lint`를 실행한다. (2026-08-18 통과)
-- [x] `npm run typecheck`를 실행한다. (2026-08-18 통과)
-- [x] `npm test`를 실행한다. (2026-08-18, 85개 파일·342개 테스트 통과)
-- [x] `npm run build`를 실행한다. (2026-08-18 통과)
-- [x] Node.js 실행 기준을 22.x 이상으로 명확히 고정한다.
-- [ ] 변경 사항을 목적에 맞는 Conventional Commit으로 커밋하고 원격에 푸시한다.
+- [x] `npm run lint`를 실행한다. (2026-08-22 통과)
+- [x] `npm run typecheck`를 실행한다. (2026-08-22 통과)
+- [x] `npm test`를 실행한다. (2026-08-22, 102개 파일·396개 테스트 통과)
+- [x] `npm run build`를 실행한다. (2026-08-22 통과)
+- [x] `npm run test:e2e`를 실행한다. (2026-08-22, 기본 3개 통과·인증 E2E 1개 옵트인 제외)
+- [x] Vercel에서 지원하는 Node.js 24.x로 실행 기준을 고정한다.
+- [ ] 변경 사항을 목적별 작업 브랜치에서 Conventional Commit으로 커밋하고 `develop` 대상 PR로 반영한다.
 
 ### 완료 기준
 
@@ -45,7 +49,8 @@
 
 ### 메모
 
-- Supabase JavaScript 클라이언트는 Node.js 20 지원을 종료했으므로, 배포와 로컬 기준을 Node.js 22.x 이상으로 맞춘다.
+- Supabase JavaScript 클라이언트는 Node.js 20 지원을 종료했다. Vercel이 현재 지원하는 LTS 중 프로젝트 실행 기준은 Node.js 24.x로 맞춘다.
+- 로컬 검증 머신은 Node.js 26.4.0이었다. Vercel Preview에서 Node.js 24.x 빌드와 스모크 테스트를 다시 확인한다.
 - Git 작업(브랜치, 커밋, 푸시)은 별도 명시 요청이 있을 때만 실행한다.
 - React Doctor 변경점 진단 결과는 91/100이다. 다음 두 경고는 커밋 전 별도 검토한다.
   - `itinerary-editor-workspace.tsx`: 일정 카드의 boolean props 조합
@@ -87,8 +92,10 @@
 ### Vercel
 
 - [ ] GitHub 저장소를 Vercel 프로젝트에 연결한다.
-- [ ] Production Branch를 `develop`으로 지정한다.
-  - 추후 안정 릴리스용 `main` 브랜치를 다시 운영할 때 이 설정을 변경할 수 있다.
+- [ ] Framework Preset이 `Next.js`, Root Directory가 저장소 루트인지 확인한다.
+- [ ] 최초 안정 릴리스용 `main` 브랜치를 만든다. 브랜치 생성·푸시는 별도 명시 요청 후 실행한다.
+- [ ] Production Branch를 안정 릴리스 브랜치인 `main`으로 지정한다.
+- [ ] `develop` 또는 릴리스 후보 브랜치에서 Preview 배포를 먼저 생성한다.
 - [ ] Preview와 Production 환경 변수를 분리한다.
 - [ ] Preview 배포를 먼저 생성한다.
 
@@ -106,6 +113,8 @@
 | `NEXT_PUBLIC_GOOGLE_MAPS_MAP_KEY` | 공개 가능 | 브라우저 지도 표시 |
 | `GOOGLE_PLACES_SEARCH_DAILY_LIMIT` | 비밀 | 장소 검색 일일 하드 리밋 |
 | `GOOGLE_PLACES_SEARCH_MONTHLY_LIMIT` | 비밀 | 장소 검색 월간 하드 리밋 |
+| `GOOGLE_PLACES_DETAILS_DAILY_LIMIT` | 비밀 | 장소 상세 조회 일일 하드 리밋 |
+| `GOOGLE_PLACES_DETAILS_MONTHLY_LIMIT` | 비밀 | 장소 상세 조회 월간 하드 리밋 |
 | `GOOGLE_ROUTES_DAILY_LIMIT` | 비밀 | 경로 계산 일일 하드 리밋 |
 | `GOOGLE_ROUTES_MONTHLY_LIMIT` | 비밀 | 경로 계산 월간 하드 리밋 |
 | `GOOGLE_MAPS_JAVASCRIPT_DAILY_LIMIT` | 비밀 | 지도 표시 일일 하드 리밋 |
@@ -115,9 +124,16 @@
 
 ### Supabase
 
-- [ ] 모든 마이그레이션이 연결된 원격 프로젝트에 적용됐는지 확인한다.
-- [ ] Database Security Advisor와 Performance Advisor를 확인한다.
-- [ ] 모든 `public` 테이블의 RLS와 정책을 검토한다.
+- [x] 로컬·원격 마이그레이션 11개의 버전과 이름이 일치하는지 확인한다. (2026-08-22)
+  - 같은 SQL이 다른 타임스탬프로 기록된 4개 이력을 로컬 버전에 맞추고, 스키마에 존재하지만 누락됐던 최초 이력을 등록했다.
+- [ ] `supabase db push --dry-run`으로 적용 대상을 검토한 뒤 `supabase db push`를 실행한다.
+- [x] `20260821202200_add_google_place_details_usage_operation.sql`이 원격에 적용됐는지 확인한다. (2026-08-22)
+- [x] Database Security Advisor와 Performance Advisor를 확인한다. (2026-08-22, 아래 후속 항목 제외)
+- [x] 모든 `public` 테이블의 RLS 활성화를 확인한다. (2026-08-22)
+- [x] `google_maps_usage_daily`는 `anon`·`authenticated` 접근을 철회하고 `service_role`만 RPC를 실행할 수 있음을 확인한다. (2026-08-22)
+- [ ] Security Advisor의 `Leaked Password Protection Disabled` 경고를 검토한다. 비밀번호 로그인을 활성화할 경우 보호 기능을 켠다.
+- [ ] Performance Advisor의 외래 키 인덱스·RLS 실행 계획·중복 permissive policy 경고를 출시 후 최적화 항목으로 분류한다.
+- [ ] SSL Enforcement를 켜고, Vercel의 데이터베이스 연결 방식과 호환되는 범위에서 Network Restrictions를 검토한다.
 - [ ] Auth Site URL을 Production URL로 설정한다.
 - [ ] Redirect URL에 정확한 `https://<production-domain>/auth/confirm`을 등록한다.
 - [ ] Preview 로그인까지 검증할 경우 Vercel Preview URL 패턴 `https://*-<team-or-account-slug>.vercel.app/**`도 Redirect URL에 등록한다.
@@ -191,6 +207,7 @@
 
 ## 6. Production 공개
 
+- [ ] 최초 `main` 생성 이후에는 `develop`에서 `main`으로 안정 릴리스 PR을 만들고 검증 후 병합한다.
 - [ ] Vercel Production 배포를 실행한다.
 - [ ] 실제 Production URL에서 매직 링크 로그인을 재확인한다.
 - [ ] 공유·초대 링크가 Production 도메인을 가리키는지 확인한다.
