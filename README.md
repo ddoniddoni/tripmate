@@ -12,7 +12,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Portfolio](https://img.shields.io/badge/Portfolio-Project-F59E0B?style=for-the-badge)](https://github.com/ddoniddoni/tripmate)
 
-[서비스 열기](https://tripmate-xi-six.vercel.app) · [기능 살펴보기](#핵심-경험) · [로컬에서 실행하기](#로컬에서-실행하기)
+[서비스 열기](https://tripmate-xi-six.vercel.app) · [개발 포트폴리오](docs/PORTFOLIO.md) · [기능 살펴보기](#핵심-경험) · [로컬에서 실행하기](#로컬에서-실행하기)
 
 </div>
 
