@@ -41,7 +41,7 @@ TripMate는 단체 채팅방에 흩어지는 장소 링크, 일정 의견, 준�
 | 배포 | Vercel Production |
 | 데이터 | Supabase PostgreSQL + Liveblocks Storage |
 | 주요 외부 연동 | Google Maps Platform, Liveblocks, OpenAI Responses API |
-| 자동화 검증 | Vitest 110개 파일·422개 테스트, Playwright 3개 파일·5개 시나리오 |
+| 자동화 검증 | Vitest 111개 파일·423개 테스트, Playwright 3개 파일·5개 시나리오 |
 
 ## 해결하려 한 문제
 
@@ -312,7 +312,7 @@ src/
 
 테스트는 유료 외부 API를 직접 호출하지 않고 adapter와 mock으로 네트워크 경계를 고정합니다. 실제 Supabase를 사용하는 인증 E2E는 전용 계정과 opt-in 환경 변수에서만 실행됩니다.
 
-현재 저장소 기준 Vitest **110개 파일의 422개 테스트가 통과**하며, Playwright에는 **3개 파일의 5개 브라우저 시나리오**가 정의되어 있습니다. 실제 계정 데이터를 변경하는 인증 E2E는 기본 테스트에서 분리했습니다.
+현재 저장소 기준 Vitest **111개 파일의 423개 테스트가 통과**하며, Playwright에는 **3개 파일의 5개 브라우저 시나리오**가 정의되어 있습니다. 실제 계정 데이터를 변경하는 인증 E2E는 기본 테스트에서 분리했습니다.
 
 ```bash
 npm run lint
