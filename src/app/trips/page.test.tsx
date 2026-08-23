@@ -66,6 +66,25 @@ describe("TripsPage", () => {
     expect(markup.indexOf("새 여행 만들기")).toBeLessThan(markup.indexOf("여름 부산"));
   });
 
+  it("shows the trip start date in one consistent Korean date label", async () => {
+    mocks.getSupabaseUserProfile.mockResolvedValue({ displayName: "여행자", id: userId });
+    mocks.listSupabaseTrips.mockResolvedValue([
+      {
+        destination: "후쿠오카",
+        endDate: "2026-08-28",
+        id: "trip-1",
+        startDate: "2026-08-24",
+        timeZone: "Asia/Tokyo",
+        title: "후쿠오카 맛집여행",
+      },
+    ]);
+
+    const markup = renderToStaticMarkup(await TripsPage());
+
+    expect(markup).toContain('<span class="trip-date-badge">8월 24일</span>');
+    expect(markup).not.toContain("<strong>24</strong><span>8월</span>");
+  });
+
   it("shows pending invitations in the header notification link", async () => {
     mocks.getSupabaseUserProfile.mockResolvedValue({ displayName: "여행자", id: userId });
     mocks.listSupabaseTrips.mockResolvedValue([]);

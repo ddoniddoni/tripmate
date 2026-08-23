@@ -71,8 +71,7 @@ function TripCard({ trip }: TripCardProps) {
           />
         )}
         <span className="trip-date-badge">
-          <strong>{startDate.getUTCDate()}</strong>
-          <span>{startDate.getUTCMonth() + 1}월</span>
+          {startDate.getUTCMonth() + 1}월 {startDate.getUTCDate()}일
         </span>
       </div>
       <div className="trip-card-body">

@@ -766,6 +766,7 @@ textarea {
 .trip-card {
   display: grid;
   grid-template-rows: 160px 1fr;
+  overflow: hidden;
   box-shadow: 0 4px 12px rgb(24 37 31 / 5%);
   transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
@@ -785,7 +786,6 @@ textarea {
   position: relative;
   overflow: hidden;
   background: linear-gradient(180deg, #e8f2ed 0%, #d9e8e0 57%, #ede7d6 100%);
-  border-radius: 19px 19px 0 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -850,29 +850,19 @@ textarea {
   left: 16px;
   display: inline-flex;
   min-height: 28px;
-  align-items: baseline;
-  gap: 4px;
-  padding: 5px 9px;
+  align-items: center;
+  padding: 5px 10px;
   color: var(--ink);
   background: rgb(255 255 255 / 88%);
   border: 1px solid rgb(255 255 255 / 75%);
   border-radius: 999px;
-  text-align: center;
-  backdrop-filter: blur(10px);
-}
-
-.trip-date-badge strong {
   font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", system-ui, sans-serif;
   font-size: 13px;
-  line-height: 1;
-}
-
-.trip-date-badge span {
-  margin-top: 0;
-  color: var(--muted);
-  font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-align: center;
+  backdrop-filter: blur(10px);
 }
 
 .trip-card-body {
@@ -12970,10 +12960,6 @@ html[data-theme="dark"] .place-preview-details-button {
   box-shadow: 0 5px 14px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
-.trip-card-art.has-cover-image .trip-date-badge :is(strong, span) {
-  color: var(--ink);
-}
-
 .trip-settings-cover-card {
   width: min(100%, 980px);
   margin: 0 auto 24px;
@@ -13233,7 +13219,12 @@ html[data-theme="dark"] .trip-cover-image-preview {
 }
 
 .trip-card-art .default-trip-cover-art-ticket {
-  right: 18px;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 5px 10px;
   left: auto;
 }
 
@@ -13246,6 +13237,11 @@ html[data-theme="dark"] .default-trip-cover-art::after {
 }
 
 @media (max-width: 700px) {
+  .trip-date-badge {
+    top: 14px;
+    left: 15px;
+  }
+
   .default-trip-cover-art-ticket {
     top: 14px;
     left: 15px;
