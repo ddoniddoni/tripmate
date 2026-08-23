@@ -143,6 +143,7 @@ describe("TripExpenseWorkspaceView", () => {
 
     await user.type(screen.getByLabelText("지출 내용"), "공항 택시");
     await user.type(screen.getByLabelText("금액"), "36000");
+    expect(screen.getByLabelText("금액")).toHaveValue("36,000");
     await user.click(screen.getByRole("button", { name: "지출 기록하기" }));
 
     expect(screen.getByText("공항 택시")).toBeInTheDocument();
@@ -153,6 +154,25 @@ describe("TripExpenseWorkspaceView", () => {
     expect(screen.getByText("1인당 ₩18,000")).toBeInTheDocument();
     expect(screen.getByLabelText("공항 택시 참여자별 N빵 보기")).toBeInTheDocument();
     expect(screen.getByLabelText("공항 택시 참여자별 부담 금액")).not.toBeVisible();
+  });
+
+  it("clears the expense form back to its defaults after recording an expense", async () => {
+    const user = userEvent.setup();
+    render(<ExpenseHarness />);
+
+    await user.type(screen.getByLabelText("지출 내용"), "공항 택시");
+    await user.type(screen.getByLabelText("금액"), "50000");
+    await user.selectOptions(screen.getByLabelText("분류"), "transport");
+    await user.selectOptions(screen.getByLabelText("결제자"), "user-minji");
+    await user.click(screen.getByRole("checkbox", { name: "나 · 지우" }));
+    await user.click(screen.getByRole("button", { name: "지출 기록하기" }));
+
+    expect(screen.getByLabelText("지출 내용")).toHaveValue("");
+    expect(screen.getByLabelText("금액")).toHaveValue("");
+    expect(screen.getByLabelText("금액")).toHaveAttribute("placeholder", "0");
+    expect(screen.getByLabelText("분류")).toHaveValue("food");
+    expect(screen.getByLabelText("결제자")).toHaveValue("user-jiwoo");
+    screen.getAllByRole("checkbox").forEach((checkbox) => expect(checkbox).toBeChecked());
   });
 
   it("shows an exact split when a person opens an expense's N-bbang details", async () => {
@@ -288,7 +308,7 @@ describe("TripExpenseWorkspaceView", () => {
     await user.click(screen.getByRole("button", { name: "공항 택시 지출 수정" }));
 
     expect(screen.getByText("지출 수정")).toBeInTheDocument();
-    expect(screen.getByLabelText("금액")).toHaveValue(36_000);
+    expect(screen.getByLabelText("금액")).toHaveValue("36,000");
 
     await user.clear(screen.getByLabelText("금액"));
     await user.type(screen.getByLabelText("금액"), "40000");

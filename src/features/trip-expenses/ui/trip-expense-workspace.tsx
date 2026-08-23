@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useStorage } from "@liveblocks/react";
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 
 import {
   addTripExpense,
@@ -98,9 +98,20 @@ const wonFormatter = new Intl.NumberFormat("ko-KR", {
   maximumFractionDigits: 0,
   style: "currency",
 });
+const expenseAmountInputFormatter = new Intl.NumberFormat("ko-KR");
 
 function formatWon(amount: number) {
   return wonFormatter.format(amount);
+}
+
+function formatExpenseAmountInput(amount: number | undefined) {
+  return amount === undefined ? "" : expenseAmountInputFormatter.format(amount);
+}
+
+function parseExpenseAmountInput(value: string) {
+  const digits = value.replace(/[^\d]/g, "");
+
+  return digits === "" ? undefined : Number(digits);
 }
 
 function getMemberName(userId: string, memberLabels: ReadonlyMap<string, string>) {
@@ -526,7 +537,7 @@ export function TripExpenseWorkspaceView({
     }
 
     if (onAdd(values)) {
-      resetExpenseForm({ ...values, amount: undefined, title: "" });
+      resetExpenseForm();
     }
   }
 
@@ -594,15 +605,25 @@ export function TripExpenseWorkspaceView({
                 </div>
                 <div>
                   <label htmlFor="expense-amount">금액</label>
-                  <input
-                    aria-describedby={errors.amount ? "expense-amount-error" : undefined}
-                    aria-invalid={Boolean(errors.amount)}
-                    id="expense-amount"
-                    inputMode="numeric"
-                    min="1"
-                    placeholder="0"
-                    type="number"
-                    {...register("amount", { valueAsNumber: true })}
+                  <Controller
+                    control={control}
+                    name="amount"
+                    render={({ field }) => (
+                      <input
+                        aria-describedby={errors.amount ? "expense-amount-error" : undefined}
+                        aria-invalid={Boolean(errors.amount)}
+                        aria-label="금액"
+                        id="expense-amount"
+                        inputMode="numeric"
+                        name={field.name}
+                        onBlur={field.onBlur}
+                        onChange={(event) => field.onChange(parseExpenseAmountInput(event.target.value))}
+                        placeholder="0"
+                        ref={field.ref}
+                        type="text"
+                        value={formatExpenseAmountInput(field.value)}
+                      />
+                    )}
                   />
                   {errors.amount ? (
                     <span id="expense-amount-error" role="alert">
