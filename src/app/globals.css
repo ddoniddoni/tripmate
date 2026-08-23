@@ -6011,34 +6011,34 @@ button.place-suggestion-vote:hover {
   width: 38px;
   height: 38px;
   place-items: center;
-  color: var(--green) !important;
-  background: var(--green-soft);
+  color: var(--trip-overview-stat-accent) !important;
+  background: var(--trip-overview-stat-accent-surface);
   border-radius: 50%;
 }
 
 .trip-overview-stat:nth-child(2) .trip-overview-stat-icon {
-  color: #a44f3e !important;
-  background: var(--coral-soft);
+  color: var(--trip-overview-stat-accent) !important;
+  background: var(--trip-overview-stat-accent-surface);
 }
 
 .trip-overview-stat:nth-child(3) .trip-overview-stat-icon {
-  color: #3f6d8b !important;
-  background: var(--blue-soft);
+  color: var(--trip-overview-stat-accent) !important;
+  background: var(--trip-overview-stat-accent-surface);
 }
 
 .trip-overview-stat-arrow {
   position: absolute;
   top: 22px;
   right: 19px;
-  color: var(--green) !important;
+  color: var(--trip-overview-stat-accent) !important;
 }
 
 .trip-overview-stat:nth-child(2) .trip-overview-stat-arrow {
-  color: #a44f3e !important;
+  color: var(--trip-overview-stat-accent) !important;
 }
 
 .trip-overview-stat:nth-child(3) .trip-overview-stat-arrow {
-  color: #3f6d8b !important;
+  color: var(--trip-overview-stat-accent) !important;
 }
 
 .trip-overview-stat-arrow svg {
@@ -14048,29 +14048,69 @@ html[data-theme="dark"]
 /* Overview stat icons need brighter semantic contrast on the dark card surface. */
 html[data-theme="dark"] .trip-overview-stat-icon,
 html[data-theme="dark"] .trip-overview-stat-arrow {
-  color: #ff9bad !important;
+  color: var(--trip-overview-stat-accent) !important;
 }
 
 html[data-theme="dark"] .trip-overview-stat-icon {
-  background: #4a2630;
+  background: var(--trip-overview-stat-accent-surface);
 }
 
 html[data-theme="dark"] .trip-overview-stat:nth-child(2) .trip-overview-stat-icon,
 html[data-theme="dark"] .trip-overview-stat:nth-child(2) .trip-overview-stat-arrow {
-  color: var(--danger-strong) !important;
+  color: var(--trip-overview-stat-accent) !important;
 }
 
 html[data-theme="dark"] .trip-overview-stat:nth-child(2) .trip-overview-stat-icon {
-  background: #552d28;
+  background: var(--trip-overview-stat-accent-surface);
 }
 
 html[data-theme="dark"] .trip-overview-stat:nth-child(3) .trip-overview-stat-icon,
 html[data-theme="dark"] .trip-overview-stat:nth-child(3) .trip-overview-stat-arrow {
-  color: #9bc7ff !important;
+  color: var(--trip-overview-stat-accent) !important;
 }
 
 html[data-theme="dark"] .trip-overview-stat:nth-child(3) .trip-overview-stat-icon {
-  background: #293f60;
+  background: var(--trip-overview-stat-accent-surface);
+}
+
+/* Overview shortcuts use compact, high-chroma cues that stay legible on either theme. */
+.trip-overview-stat {
+  --trip-overview-stat-accent: var(--primary-active);
+  --trip-overview-stat-accent-surface: #ffe0e7;
+}
+
+.trip-overview-stat:nth-child(2) {
+  --trip-overview-stat-accent: #df4b30;
+  --trip-overview-stat-accent-surface: #ffe1db;
+}
+
+.trip-overview-stat:nth-child(3) {
+  --trip-overview-stat-accent: #287cff;
+  --trip-overview-stat-accent-surface: #dfecff;
+}
+
+.trip-overview-stat-icon,
+.trip-overview-stat-arrow {
+  color: var(--trip-overview-stat-accent) !important;
+}
+
+.trip-overview-stat-icon {
+  background: var(--trip-overview-stat-accent-surface);
+}
+
+html[data-theme="dark"] .trip-overview-stat {
+  --trip-overview-stat-accent: #ff6684;
+  --trip-overview-stat-accent-surface: #562230;
+}
+
+html[data-theme="dark"] .trip-overview-stat:nth-child(2) {
+  --trip-overview-stat-accent: #ff836d;
+  --trip-overview-stat-accent-surface: #5c2b26;
+}
+
+html[data-theme="dark"] .trip-overview-stat:nth-child(3) {
+  --trip-overview-stat-accent: #72adff;
+  --trip-overview-stat-accent-surface: #23446e;
 }
 
 /* Dialog fields stay neutral; pink is reserved for keyboard focus and selection. */
