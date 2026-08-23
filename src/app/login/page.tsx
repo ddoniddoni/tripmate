@@ -25,7 +25,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <div>
           <span className="eyebrow">함께 만드는 여행</span>
           <h1 id="login-heading">여행을 계속 계획해 볼까요?</h1>
-          <p>처음 가입할 때만 이메일을 확인하고, 이후에는 이메일과 비밀번호로 바로 로그인할 수 있어요.</p>
+          <p>
+            처음 가입할 때만 이메일을 확인하고,
+            <br />{" "}
+            이후에는 이메일과 비밀번호로 바로 로그인할 수 있어요.
+          </p>
         </div>
         {params.auth === "confirmation-failed" ? (
           <p className="login-message login-message-error" role="alert">
