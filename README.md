@@ -12,7 +12,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Portfolio](https://img.shields.io/badge/Portfolio-Project-F59E0B?style=for-the-badge)](https://github.com/ddoniddoni/tripmate)
 
-[서비스 열기](https://tripmate-xi-six.vercel.app) · [개발 포트폴리오](docs/PORTFOLIO.md) · [기능 살펴보기](#핵심-경험) · [로컬에서 실행하기](#로컬에서-실행하기)
+[서비스 열기](https://tripmate-xi-six.vercel.app) · [개발 포트폴리오](docs/PORTFOLIO.md) · [기능 살펴보기](#핵심-경험)
 
 </div>
 
@@ -53,8 +53,6 @@ TripMate는 **장소를 찾고, 일정으로 옮기고, 함께 조정하는 과�
 ### AI로 시작하고, 팀과 완성하기
 
 여행지와 취향을 바탕으로 AI가 하루별 동선 초안을 제안합니다. 초안은 정답이 아니라 출발점입니다. 장소 검색, 시간 조정, 팀원의 의견으로 실제 여행에 맞는 일정으로 다듬을 수 있습니다.
-
-> `OPENAI_API_KEY`가 없는 로컬 개발 환경에서는 외부 호출 없이 명확히 구분된 미리보기 초안을 제공합니다.
 
 ## 1분 사용 흐름
 
@@ -102,84 +100,6 @@ flowchart LR
 | Testing | Vitest, React Testing Library, Playwright |
 | Deployment | Vercel |
 
-## 로컬에서 실행하기
-
-### 준비물
-
-- Node.js `24.x`
-- npm
-- Supabase, Liveblocks, Google Maps Platform 계정
-- AI 일정 초안을 사용할 경우 OpenAI API 키
-
-```bash
-git clone https://github.com/ddoniddoni/tripmate.git
-cd tripmate
-npm install
-cp .env.example .env
-npm run dev
-```
-
-브라우저에서 [http://localhost:3000](http://localhost:3000)을 열면 됩니다.
-
-### 환경 변수
-
-값은 절대 Git에 커밋하지 않습니다. 변수 이름과 설명은 [`.env.example`](.env.example)에 정리되어 있습니다.
-
-| 구분 | 변수 | 설명 |
-| --- | --- | --- |
-| Public | `NEXT_PUBLIC_APP_URL` | 현재 앱 URL. 로컬에서는 `http://localhost:3000` |
-| Public | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL |
-| Public | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` **또는** `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 브라우저 Supabase 키. 두 키를 함께 설정하지 않습니다. |
-| Secret | `SUPABASE_SERVICE_ROLE_KEY` | 서버 전용 Supabase 관리자 키 |
-| Secret | `LIVEBLOCKS_SECRET_KEY` | 서버에서 협업 권한을 발급하는 키 |
-| Secret | `GOOGLE_MAPS_API_KEY` | Places API (New), Routes API용 서버 키 |
-| Public | `NEXT_PUBLIC_GOOGLE_MAPS_MAP_KEY` | Maps JavaScript API용 브라우저 키 |
-| Optional secret | `OPENAI_API_KEY` | Production AI 일정 초안 생성용 키 |
-
-Google 키는 반드시 둘로 분리합니다.
-
-- `NEXT_PUBLIC_GOOGLE_MAPS_MAP_KEY`: 웹사이트 도메인과 **Maps JavaScript API**로 제한
-- `GOOGLE_MAPS_API_KEY`: **Places API (New)**, **Routes API**로만 제한하고 서버에만 보관
-
-Google 사용량 한도 변수는 기본값이 준비되어 있습니다. 필요할 때만 `.env.example`의 `GOOGLE_*_LIMIT` 값을 조정하세요. 빈 문자열을 설정하면 안 됩니다.
-
-## 품질 확인
-
-```bash
-npm run lint
-npm run typecheck
-npm test
-npm run build
-npm run test:e2e
-```
-
-| 검증 | 범위 |
-| --- | --- |
-| Unit / Integration | 일정 도메인 규칙, 권한, 지도·장소 API 어댑터, UI 상호작용 |
-| E2E | 비로그인 흐름, 로그인 UI, 모바일 주요 화면 |
-| Opt-in authenticated E2E | 전용 테스트 계정으로 이메일 로그인, 여행 생성·삭제 |
-
-인증된 E2E는 실제 Supabase 데이터를 사용하므로 전용 테스트 계정으로만 실행합니다.
-
-```bash
-E2E_AUTHENTICATED=1 E2E_TEST_EMAIL=<test-email> E2E_TEST_PASSWORD=<test-password> \
-  npx playwright test tests/e2e/authenticated-trip.spec.ts
-```
-
-## 배포
-
-권장 릴리스 흐름은 `develop`에서 작업한 뒤 `develop → main` Pull Request로 안정 버전을 승격하고, Vercel Production Branch를 `main`으로 지정하는 방식입니다.
-
-배포 전에 아래를 확인하세요.
-
-- Vercel Production 환경 변수와 `NEXT_PUBLIC_APP_URL`
-- Supabase Auth의 Site URL 및 `/auth/confirm` Redirect URL
-- Liveblocks 서버 비밀 키
-- Google Maps API 활성화, 키 제한, Billing과 예산 알림
-- 실제 이메일·비밀번호 회원가입/로그인과 두 계정 협업 흐름
-
-세부 절차는 [배포 체크리스트](docs/DEPLOYMENT_CHECKLIST.md)를 참고하세요.
-
 ## 프로젝트 구조
 
 ```text
@@ -194,8 +114,7 @@ src/
 
 ## 보안과 데이터 원칙
 
-- `NEXT_PUBLIC_` 접두사는 브라우저에 노출되어도 안전한 값에만 사용합니다.
-- Liveblocks·Supabase service role·서버 Google·OpenAI 키는 서버 환경 변수로만 보관합니다.
+- 공개 클라이언트 키와 서버 권한 키를 분리해 민감한 권한이 브라우저에 노출되지 않도록 설계했습니다.
 - Supabase 공개 테이블은 RLS를 사용하며, UI 표시 여부와 별개로 서버에서 멤버십·역할 권한을 확인합니다.
 - 여행 초대와 개인 여행 정보는 수신자·멤버만 확인할 수 있도록 제한합니다.
 
