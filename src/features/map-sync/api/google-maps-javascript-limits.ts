@@ -1,8 +1,8 @@
 import { z } from "@/shared/lib/zod";
 
 const defaultGoogleMapsJavascriptLimits = {
-  daily: 20,
-  monthly: 500,
+  daily: 250,
+  monthly: 8_000,
 } as const;
 
 const googleMapsJavascriptLimitsSchema = z.object({

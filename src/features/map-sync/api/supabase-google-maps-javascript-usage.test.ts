@@ -51,8 +51,8 @@ describe("reserveGoogleMapsJavascriptUsage", () => {
     });
 
     expect(mocks.rpc).toHaveBeenCalledWith("reserve_google_maps_usage", {
-      p_daily_limit: 20,
-      p_monthly_limit: 500,
+      p_daily_limit: 250,
+      p_monthly_limit: 8_000,
       p_operation: "maps_javascript_load",
     });
   });
